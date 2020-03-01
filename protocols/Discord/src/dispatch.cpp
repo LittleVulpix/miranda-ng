@@ -47,7 +47,6 @@ static handlers[] = // these structures must me sorted alphabetically
 	
 	{ L"MESSAGE_ACK", &CDiscordProto::OnCommandMessageAck },
 	{ L"MESSAGE_CREATE", &CDiscordProto::OnCommandMessageCreate },
-	{ L"MESSAGE_DELETE", &CDiscordProto::OnCommandMessageDelete },
 	{ L"MESSAGE_UPDATE", &CDiscordProto::OnCommandMessageUpdate },
 
 	{ L"PRESENCE_UPDATE", &CDiscordProto::OnCommandPresence },
@@ -501,16 +500,6 @@ void CDiscordProto::OnCommandMessageAck(const JSONNode &pRoot)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // message deleted
-
-void CDiscordProto::OnCommandMessageDelete(const JSONNode &pRoot)
-{
-	CMStringA msgid(pRoot["id"].as_mstring());
-	if (!msgid.IsEmpty()) {
-		MEVENT hEvent = db_event_getById(m_szModuleName, msgid);
-		if (hEvent)
-			db_event_delete(hEvent);
-	}
-}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // someone changed its status
