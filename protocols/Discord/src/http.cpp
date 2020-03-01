@@ -30,11 +30,8 @@ void CDiscordProto::Push(AsyncHttpRequest *pReq, int iTimeout)
 void CDiscordProto::SaveToken(const JSONNode &data)
 {
 	CMStringA szToken = data["token"].as_mstring();
-	if (szToken.IsEmpty())
-		return;
-
-	m_szAccessToken = szToken.Detach();
-	setString("AccessToken", m_szAccessToken);
+	if (!szToken.IsEmpty())
+		m_szTempToken = szToken.Detach();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -64,9 +61,9 @@ AsyncHttpRequest::AsyncHttpRequest(CDiscordProto *ppro, int iRequestType, LPCSTR
 		ptrW text(json_write(pRoot));
 		pData = mir_utf8encodeW(text);
 		dataLength = (int)mir_strlen(pData);
-	}
 
-	AddHeader("Content-Type", "application/json");
+		AddHeader("Content-Type", "application/json");
+	}
 
 	m_pFunc = pFunc;
 	requestType = iRequestType;

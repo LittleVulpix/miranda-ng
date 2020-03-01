@@ -217,8 +217,8 @@ void CIcqProto::ProcessHistData(const JSONNode &ev)
 		if (srvRemoteRead > lastRemoteRead) {
 			setId(hContact, DB_KEY_REMOTEREAD, srvRemoteRead);
 
-			MessageReadData data(time(0), MRD_TYPE_READTIME);
-			CallService(MS_MESSAGESTATE_UPDATE, hContact, (LPARAM)&data);
+			if (g_bMessageState)
+				CallService(MS_MESSAGESTATE_UPDATE, hContact, MRD_TYPE_READ);
 		}
 	}
 }
@@ -255,6 +255,7 @@ void CIcqProto::ProcessNotification(const JSONNode &ev)
 			CMStringW wszFrom((*root)["from"].as_mstring());
 			CMStringW wszSubj((*root)["subject"].as_mstring());
 			m_unreadEmails = (*root)["unreadCount"].as_int();
+			debugLogW(L"You received e-mail (%d) from <%s>: <%s>", m_unreadEmails, wszFrom.c_str(), wszSubj.c_str());
 
 			CMStringW wszMessage(FORMAT, TranslateT("You received e-mail from %s: %s"), wszFrom.c_str(), wszSubj.c_str());
 			EmailNotification(wszMessage);
