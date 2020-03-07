@@ -260,15 +260,13 @@ typedef unsigned __int64 JabberCapsBits;
 
 class CJabberClientPartialCaps
 {
-	friend struct CJabberProto;
-
 	ptrA m_szHash, m_szOs, m_szOsVer, m_szSoft, m_szSoftVer, m_szSoftMir;
-	JabberCapsBits m_jcbCaps;
-	int m_nIqId;
-	DWORD m_dwRequestTime;
+	JabberCapsBits m_jcbCaps = JABBER_RESOURCE_CAPS_UNINIT;
+	int m_nIqId = -1, m_iTime;
+	DWORD m_dwRequestTime = 0;
 
 	class CJabberClientCaps *m_parent;
-	CJabberClientPartialCaps *m_pNext;
+	CJabberClientPartialCaps *m_pNext = nullptr;
 
 public:
 	CJabberClientPartialCaps(CJabberClientCaps *pParent, const char *szHash, const char *szVer);
@@ -282,6 +280,7 @@ public:
 	void SetCaps(JabberCapsBits jcbCaps, int nIqId = -1);
 	JabberCapsBits GetCaps();
 
+	__inline int GetTime() const { return m_iTime; }
 	__inline const char* GetHash() const { return m_szHash.get(); }
 	__inline const char* GetNode() const;
 
@@ -290,6 +289,13 @@ public:
 	__inline const char* GetSoft() const { return m_szSoft.get(); }
 	__inline const char* GetSoftVer() const { return m_szSoftVer.get(); }
 	__inline const char* GetSoftMir() const { return m_szSoftMir.get(); }
+
+	__inline void SetTime(int val) { m_iTime = val; }
+	__inline void SetOs(const char *str) { m_szOs = mir_strdup(str); }
+	__inline void SetOsVer(const char *str) { m_szOsVer = mir_strdup(str); }
+	__inline void SetSoft(const char *str) { m_szSoft = mir_strdup(str); }
+	__inline void SetSoftVer(const char *str) { m_szSoftVer = mir_strdup(str); }
+	__inline void SetSoftMir(const char *str) { m_szSoftMir = mir_strdup(str); }
 
 	__inline int GetIqId() const { return m_nIqId; }
 
@@ -314,7 +320,8 @@ public:
 	JabberCapsBits            GetPartialCaps(const char *szVer);
 	CJabberClientPartialCaps* SetPartialCaps(const char *szHash, const char *szVer, JabberCapsBits jcbCaps, int nIqId = -1);
 
-	__inline char* GetNode() const { return m_szNode; }
+	__inline char *GetNode() const { return m_szNode; }
+	__inline CJabberClientPartialCaps *GetFirst() const { return m_pCaps; }
 };
 
 __inline const char* CJabberClientPartialCaps::GetNode() const { return m_parent->GetNode(); }
@@ -324,29 +331,20 @@ class CJabberClientCapsManager
 	mir_cs m_cs;
 	OBJLIST<CJabberClientCaps> m_arCaps;
 
-	CJabberProto *ppro;
-	CMStringA m_szFeaturesCrc;
-
 protected:
 	CJabberClientCaps* FindClient(const char *szNode);
 
 public:
-	CJabberClientCapsManager(CJabberProto *proto);
+	CJabberClientCapsManager();
 	~CJabberClientCapsManager();
 
-	const char* GetFeaturesCrc();
-	void UpdateFeatHash();
+	void Load();
+	void Save();
 
 	JabberCapsBits GetClientCaps(const char *szNode, const char *szHash);
 	CJabberClientPartialCaps* GetPartialCaps(const char *szNode, const char *szHash);
 
 	CJabberClientPartialCaps* SetClientCaps(const char *szNode, const char *szHash, const char *szVer, JabberCapsBits jcbCaps, int nIqId = -1);
-	__inline CJabberClientPartialCaps* SetOwnCaps(const char *szNode, const char *szVer, JabberCapsBits jcbCaps, int nIqId = -1)
-	{
-		return SetClientCaps(szNode, m_szFeaturesCrc, szVer, jcbCaps, nIqId);
-	}
-
-	bool HandleInfoRequest(const TiXmlElement *iqNode, CJabberIqInfo *pInfo, const char *szNode);
 };
 
 struct JabberFeatCapPair
