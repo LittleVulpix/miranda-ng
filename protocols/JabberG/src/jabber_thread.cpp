@@ -314,7 +314,7 @@ LBL_FatalError:
 			}
 		}
 		else {
-			ptrA tszPassw(getUStringA(0, "Password"));
+			ptrA tszPassw(getUStringA("Password"));
 			if (tszPassw == nullptr) {
 				JLoginFailed(LOGINERR_BADUSERID);
 				debugLogA("Thread ended, password is not configured");
@@ -507,8 +507,8 @@ recvRest:
 
 			ListRemoveList(LIST_CHATROOM);
 			ListRemoveList(LIST_BOOKMARK);
-			UI_SAFE_NOTIFY_HWND(m_hwndJabberAddBookmark, WM_JABBER_CHECK_ONLINE);
-			WindowList_Broadcast(m_hWindowList, WM_JABBER_CHECK_ONLINE, 0, 0);
+			UI_SAFE_NOTIFY_HWND(m_hwndJabberAddBookmark, WM_PROTO_CHECK_ONLINE);
+			WindowList_Broadcast(m_hWindowList, WM_PROTO_CHECK_ONLINE, 0, 0);
 
 			// Set status to offline
 			debugLogA("m_iDesiredStatus reset to (%d,%d) => %d", m_iStatus, m_iDesiredStatus, ID_STATUS_OFFLINE);
@@ -836,7 +836,7 @@ void CJabberProto::OnProcessSuccess(const TiXmlElement *node, ThreadData *info)
 
 		debugLogA("Success: Logged-in.");
 		ptrA szNick(getUStringA("Nick"));
-		if (szNick == nullptr)
+		if (!mir_strlen(szNick))
 			setUString("Nick", info->conn.username);
 
 		xmlStreamInitialize("after successful sasl");

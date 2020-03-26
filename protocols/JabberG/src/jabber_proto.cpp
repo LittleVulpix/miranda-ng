@@ -109,7 +109,7 @@ CJabberProto::CJabberProto(const char *aProtoName, const wchar_t *aUserName) :
 	m_bHostNameAsResource(this, "HostNameAsResource", false),
 	m_bIgnoreMUCInvites(this, "IgnoreMUCInvites", false),
 	m_bIgnoreRosterGroups(this, "IgnoreRosterGroups", false),
-	m_bInlinePictures(this, "InlinePictures", true),
+	m_bInlinePictures(this, "InlinePictures", false),
 	m_bKeepAlive(this, "KeepAlive", true),
 	m_bLogChatstates(this, "LogChatstates", false),
 	m_bLogPresence(this, "LogPresence", true),
@@ -473,6 +473,14 @@ int CJabberProto::AuthDeny(MEVENT hDbEvent, const wchar_t*)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
+// JabberAuthRecv - receives a auth
+
+int CJabberProto::AuthRecv(MCONTACT, PROTORECVEVENT *pre)
+{
+	return Proto_AuthRecv(m_szModuleName, pre);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////
 // JabberFileAllow - starts a file transfer
 
 HANDLE CJabberProto::FileAllow(MCONTACT /*hContact*/, HANDLE hTransfer, const wchar_t *szPath)
@@ -577,17 +585,27 @@ int CJabberProto::FileResume(HANDLE hTransfer, int *action, const wchar_t **szFi
 
 INT_PTR CJabberProto::GetCaps(int type, MCONTACT hContact)
 {
+	DWORD dwFlags;
+	
 	switch (type) {
 	case PFLAGNUM_1:
 		return PF1_IM | PF1_AUTHREQ | PF1_CHAT | PF1_SERVERCLIST | PF1_MODEMSG | PF1_BASICSEARCH | PF1_EXTSEARCH | PF1_FILE | PF1_CONTACT;
+	
 	case PFLAGNUM_2:
 		return PF2_ONLINE | PF2_INVISIBLE | PF2_SHORTAWAY | PF2_LONGAWAY | PF2_HEAVYDND | PF2_FREECHAT;
+	
 	case PFLAGNUM_3:
 		return PF2_ONLINE | PF2_SHORTAWAY | PF2_LONGAWAY | PF2_HEAVYDND | PF2_FREECHAT;
+	
 	case PFLAGNUM_4:
-		return PF4_FORCEAUTH | PF4_NOCUSTOMAUTH | PF4_NOAUTHDENYREASON | PF4_SUPPORTTYPING | PF4_AVATARS | PF4_READNOTIFY;
+		dwFlags = PF4_FORCEAUTH | PF4_NOCUSTOMAUTH | PF4_NOAUTHDENYREASON | PF4_SUPPORTTYPING | PF4_AVATARS | PF4_READNOTIFY;
+		if (m_bUseHttpUpload || m_bInlinePictures)
+			dwFlags |= PF4_OFFLINEFILES;
+		return dwFlags;		
+		
 	case PFLAG_UNIQUEIDTEXT:
 		return (INT_PTR)Translate("JID");
+	
 	case PFLAG_MAXCONTACTSPERPACKET:
 		char szClientJid[JABBER_MAX_JID_LEN];
 		if (GetClientJID(hContact, szClientJid, _countof(szClientJid))) {
@@ -809,9 +827,7 @@ int CJabberProto::SendContacts(MCONTACT hContact, int, int nContacts, MCONTACT *
 
 HANDLE CJabberProto::SendFile(MCONTACT hContact, const wchar_t *szDescription, wchar_t** ppszFiles)
 {
-	if (!m_bJabberOnline) return nullptr;
-
-	if (getWord(hContact, "Status", ID_STATUS_OFFLINE) == ID_STATUS_OFFLINE)
+	if (!m_bJabberOnline)
 		return nullptr;
 
 	ptrA jid(getUStringA(hContact, "jid"));
@@ -925,14 +941,14 @@ int CJabberProto::SendMsg(MCONTACT hContact, int unused_unknown, const char *psz
 		}
 	}
 
+	CMStringA szBody;
 	int isEncrypted, id = SerialNext();
 	if (!strncmp(pszSrc, PGP_PROLOG, mir_strlen(PGP_PROLOG))) {
 		const char *szEnd = strstr(pszSrc, PGP_EPILOG);
-		char *tempstring = (char *)alloca(mir_strlen(pszSrc) + 2);
 		size_t nStrippedLength = mir_strlen(pszSrc) - mir_strlen(PGP_PROLOG) - (szEnd ? mir_strlen(szEnd) : 0) + 1;
-		strncpy_s(tempstring, nStrippedLength, pszSrc + mir_strlen(PGP_PROLOG), _TRUNCATE);
-		tempstring[nStrippedLength] = 0;
-		pszSrc = tempstring;
+		szBody.Append(pszSrc + mir_strlen(PGP_PROLOG), (int)nStrippedLength);
+		szBody.Replace("\r\n", "");
+		pszSrc = szBody;
 		isEncrypted = 1;
 	}
 	else isEncrypted = 0;
@@ -958,7 +974,7 @@ int CJabberProto::SendMsg(MCONTACT hContact, int unused_unknown, const char *psz
 			m << XCHILD("body", pszSrc);
 		else {
 			m << XCHILD("body", "[This message is encrypted.]");
-			m << XCHILDNS("x", "jabber:x:encrypted");
+			m << XCHILD("x", pszSrc) << XATTR("xmlns", "jabber:x:encrypted");
 		}
 	}
 
@@ -977,6 +993,9 @@ int CJabberProto::SendMsg(MCONTACT hContact, int unused_unknown, const char *psz
 	m << XATTR("to", szClientJid);
 
 	bool bSendReceipt = (m_bMsgAck || getByte(hContact, "MsgAck", false));
+	if (bSendReceipt && jcb && !(jcb & (JABBER_CAPS_CHAT_MARKERS | JABBER_CAPS_MESSAGE_RECEIPTS)))
+		bSendReceipt = false;
+
 	if (bSendReceipt) {
 		m << XCHILDNS("request", JABBER_FEAT_MESSAGE_RECEIPTS);
 		m << XCHILDNS("markable", JABBER_FEAT_CHAT_MARKERS);
@@ -1195,7 +1214,8 @@ int CJabberProto::SetAwayMsg(int status, const wchar_t *msg)
 
 int CJabberProto::UserIsTyping(MCONTACT hContact, int type)
 {
-	if (!m_bJabberOnline) return 0;
+	if (!m_bJabberOnline)
+		return 0;
 
 	char szClientJid[JABBER_MAX_JID_LEN];
 	if (!GetClientJID(hContact, szClientJid, _countof(szClientJid)))

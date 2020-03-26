@@ -231,7 +231,7 @@ class CDiscordProto : public PROTO<CDiscordProto>
 	bool  GatewayThreadWorker(void);
 	
 	void  GatewaySend(const JSONNode &pNode);
-	void  GatewayProcess(const JSONNode &pNode);
+	bool  GatewayProcess(const JSONNode &pNode);
 
 	void  GatewaySendHeartbeat(void);
 	void  GatewaySendIdentify(void);
@@ -373,6 +373,8 @@ public:
 	INT_PTR __cdecl GetMyAvatar(WPARAM, LPARAM);
 	INT_PTR __cdecl SetMyAvatar(WPARAM, LPARAM);
 
+	INT_PTR __cdecl VoiceCaps(WPARAM, LPARAM);
+
 	//////////////////////////////////////////////////////////////////////////////////////
 	// Events
 
@@ -380,6 +382,8 @@ public:
 	int  __cdecl OnAccountChanged(WPARAM, LPARAM);
 	int  __cdecl OnDbEventRead(WPARAM, LPARAM);
 	
+	int  __cdecl OnVoiceState(WPARAM, LPARAM);
+
 	//////////////////////////////////////////////////////////////////////////////////////
 	// dispatch commands
 
@@ -444,6 +448,8 @@ public:
 struct CMPlugin : public ACCPROTOPLUGIN<CDiscordProto>
 {
 	CMPlugin();
+
+	bool bVoiceService = false;
 
 	int Load() override;
 };

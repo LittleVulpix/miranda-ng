@@ -18,19 +18,15 @@
 
 class logtofile
 {
+	HANDLE    hLogger;
+	bool      bEnabled = false;
+
 public:
-	logtofile& operator<<(wchar_t *buf);
-	logtofile& operator<<(char *buf);
-	logtofile& operator<<(string buf);
-	logtofile& operator<<(wstring buf);
+	logtofile& operator<<(const char *buf);
+	logtofile& operator<<(const std::string &buf);
 	void init();
-	~logtofile();
-	logtofile();
-private:
-	fstream  log;
-	wchar_t *path;
-	bool    _bDebugLog;
-	mir_cs   csLock;
+
+	__forceinline operator bool() const { return bEnabled; }
 };
 
 #endif

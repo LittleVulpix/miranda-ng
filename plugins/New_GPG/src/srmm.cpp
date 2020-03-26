@@ -41,30 +41,30 @@ int __cdecl onIconPressed(WPARAM wParam, LPARAM lParam)
 	if (mir_strcmp(sicd->szModule, MODULENAME))
 		return 0; // not our event
 
-	BYTE enc = g_plugin.getByte(hContact, "GPGEncryption", 0);
+	int enc = g_plugin.getByte(hContact, "GPGEncryption", 0);
 	if (enc) {
 		g_plugin.setByte(hContact, "GPGEncryption", 0);
-		hMeta ? db_set_b(hMeta, MODULENAME, "GPGEncryption", 0) : 0;
+		if (hMeta)
+			g_plugin.setByte(hMeta, "GPGEncryption", 0);
 		setSrmmIcon(hContact);
 		setClistIcon(hContact);
 	}
 	else if (!enc) {
-		if (!isContactHaveKey(hContact)) {
-			void ShowLoadPublicKeyDialog(bool = false);
-			globals.item_num = 0;		 //black magic here
-			globals.user_data[1] = hContact;
-			ShowLoadPublicKeyDialog();
-		}
+		if (!isContactHaveKey(hContact))
+			ShowLoadPublicKeyDialog(hContact, false);
 		else {
 			g_plugin.setByte(hContact, "GPGEncryption", 1);
-			hMeta ? db_set_b(hMeta, MODULENAME, "GPGEncryption", 1) : 0;
+			if (hMeta)
+				g_plugin.setByte(hMeta, "GPGEncryption", 1);
 			setSrmmIcon(hContact);
 			setClistIcon(hContact);
 			return 0;
 		}
+
 		if (isContactHaveKey(hContact)) {
 			g_plugin.setByte(hContact, "GPGEncryption", 1);
-			hMeta ? db_set_b(hMeta, MODULENAME, "GPGEncryption", 1) : 0;
+			if (hMeta)
+				g_plugin.setByte(hMeta, "GPGEncryption", 1);
 			setSrmmIcon(hContact);
 			setClistIcon(hContact);
 		}

@@ -86,18 +86,29 @@ static void __cdecl FakeAckThread(void *param)
 
 void CJabberProto::FtInitiate(const char* jid, filetransfer *ft)
 {
-	char *rs = ListGetBestClientResourceNamePtr(jid);
-	if (ft == nullptr || !m_bJabberOnline || rs == nullptr) {
-		if (ft) {
-			ProtoBroadcastAck(ft->std.hContact, ACKTYPE_FILE, ACKRESULT_FAILED, ft);
-			delete ft;
-		}
+	if (ft == nullptr)
+		return;
+
+	if (!m_bJabberOnline) {
+		debugLogA("Protocol is offline, file transfer failed");
+
+LBL_Error:
+		ProtoBroadcastAck(ft->std.hContact, ACKTYPE_FILE, ACKRESULT_FAILED, ft);
+		delete ft;
 		return;
 	}
 
 	wchar_t *filename = ft->std.pszFiles.w[ft->std.currentFileNumber];
 	if (wchar_t *p = wcsrchr(filename, '\\'))
 		filename = p + 1;
+
+	// if we enabled XEP-0231, try to inline a picture
+	if (m_bInlinePictures && ProtoGetAvatarFileFormat(ft->std.szCurrentFile.w)) {
+		if (FtTryInlineFile(ft->std.hContact, ft->std.szCurrentFile.w)) {
+			mir_forkthread(FakeAckThread, ft);
+			return;
+		}
+	}
 
 	// if we use XEP-0363, send a slot allocation request
 	if (m_bUseHttpUpload) {
@@ -131,12 +142,16 @@ void CJabberProto::FtInitiate(const char* jid, filetransfer *ft)
 		}
 	}
 
-	// if we enabled XEP-0231, try to inline a picture
-	if (m_bInlinePictures && ProtoGetAvatarFileFormat(ft->std.szCurrentFile.w)) {
-		if (FtTryInlineFile(ft->std.hContact, ft->std.szCurrentFile.w)) {
-			mir_forkthread(FakeAckThread, ft);
-			return;
-		}
+	// offline methods are over, the following code assumes that a contact is online
+	if (getWord(ft->std.hContact, "Status", ID_STATUS_OFFLINE) == ID_STATUS_OFFLINE) {
+		debugLogA("%S is offline, file transfer failed", Clist_GetContactDisplayName(ft->std.hContact));
+		goto LBL_Error;
+	}
+
+	char *rs = ListGetBestClientResourceNamePtr(jid);
+	if (rs == nullptr) {
+		debugLogA("%S has no current resource available, file transfer failed", Clist_GetContactDisplayName(ft->std.hContact));
+		goto LBL_Error;
 	}
 
 	// no cloud services enabled, try to initiate a p2p file transfer

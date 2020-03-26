@@ -91,28 +91,6 @@ static wchar_t* GetQuotedTextW(wchar_t *text)
 	return out;
 }
 
-static void AddToFileList(wchar_t ***pppFiles, int *totalCount, const wchar_t* szFilename)
-{
-	*pppFiles = (wchar_t**)mir_realloc(*pppFiles, (++*totalCount + 1)*sizeof(wchar_t*));
-	(*pppFiles)[*totalCount] = nullptr;
-	(*pppFiles)[*totalCount - 1] = mir_wstrdup(szFilename);
-
-	if (GetFileAttributes(szFilename) & FILE_ATTRIBUTE_DIRECTORY) {
-		WIN32_FIND_DATA fd;
-		wchar_t szPath[MAX_PATH];
-		mir_snwprintf(szPath, L"%s\\*", szFilename);
-		HANDLE hFind = FindFirstFile(szPath, &fd);
-		if (hFind != INVALID_HANDLE_VALUE) {
-			do {
-				if (!mir_wstrcmp(fd.cFileName, L".") || !mir_wstrcmp(fd.cFileName, L"..")) continue;
-				mir_snwprintf(szPath, L"%s\\%s", szFilename, fd.cFileName);
-				AddToFileList(pppFiles, totalCount, szPath);
-			} while (FindNextFile(hFind, &fd));
-			FindClose(hFind);
-		}
-	}
-}
-
 /////////////////////////////////////////////////////////////////////////////////////////
 
 static INT_PTR CALLBACK ConfirmSendAllDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM)
@@ -273,7 +251,6 @@ bool CMsgDialog::OnInitDialog()
 
 	SendMessage(m_hwnd, DM_CHANGEICONS, 0, 0);
 
-	m_message.SetReadOnly(false);
 	m_message.SendMsg(EM_SETLANGOPTIONS, 0, (LPARAM)m_message.SendMsg(EM_GETLANGOPTIONS, 0, 0) & ~IMF_AUTOKEYBOARD);
 	m_message.SendMsg(EM_SETEVENTMASK, 0, ENM_MOUSEEVENTS | ENM_KEYEVENTS | ENM_CHANGE | ENM_REQUESTRESIZE);
 	if (m_hContact && m_szProto) {
@@ -517,16 +494,15 @@ void CMsgDialog::onClick_Ok(CCtrlButton *pButton)
 void CMsgDialog::onClick_UserMenu(CCtrlButton *pButton)
 {
 	if (GetKeyState(VK_SHIFT) & 0x8000) { // copy user name
-		char buf[128];
-		GetContactUniqueId(buf, sizeof(buf));
-		if (!OpenClipboard(m_hwnd) || !mir_strlen(buf))
+		ptrW id(Contact_GetInfo(CNF_UNIQUEID, m_hContact, m_szProto));
+		if (!OpenClipboard(m_hwnd) || !mir_wstrlen(id))
 			return;
 
 		EmptyClipboard();
-		HGLOBAL hData = GlobalAlloc(GMEM_MOVEABLE, mir_strlen(buf) + 1);
-		mir_strcpy((LPSTR)GlobalLock(hData), buf);
+		HGLOBAL hData = GlobalAlloc(GMEM_MOVEABLE, 2*mir_wstrlen(id) + 1);
+		mir_wstrcpy((LPWSTR)GlobalLock(hData), id);
 		GlobalUnlock(hData);
-		SetClipboardData(CF_TEXT, hData);
+		SetClipboardData(CF_UNICODETEXT, hData);
 		CloseClipboard();
 	}
 	else {
@@ -983,7 +959,7 @@ LRESULT CMsgDialog::WndProc_Message(UINT msg, WPARAM wParam, LPARAM lParam)
 			if (OpenClipboard(m_message.GetHwnd())) {
 				HANDLE hDrop = GetClipboardData(CF_HDROP);
 				if (hDrop)
-					SendMessage(m_hwnd, WM_DROPFILES, (WPARAM)hDrop, 0);
+					ProcessFileDrop((HDROP)hDrop, m_hContact);
 				CloseClipboard();
 			}
 			return 0;
@@ -991,7 +967,7 @@ LRESULT CMsgDialog::WndProc_Message(UINT msg, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_DROPFILES:
-		SendMessage(m_hwnd, WM_DROPFILES, wParam, lParam);
+		ProcessFileDrop((HDROP)wParam, m_hContact);
 		return 0;
 
 	case WM_CONTEXTMENU:
@@ -1119,22 +1095,7 @@ INT_PTR CMsgDialog::DlgProc(UINT msg, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_DROPFILES:
-		if (m_szProto == nullptr) break;
-		if (!(CallProtoService(m_szProto, PS_GETCAPS, PFLAGNUM_1, 0)&PF1_FILESEND)) break;
-		if (m_wStatus == ID_STATUS_OFFLINE) break;
-		if (m_hContact != 0) {
-			wchar_t szFilename[MAX_PATH];
-			HDROP hDrop = (HDROP)wParam;
-			int fileCount = DragQueryFile(hDrop, -1, nullptr, 0), totalCount = 0, i;
-			wchar_t** ppFiles = nullptr;
-			for (i = 0; i < fileCount; i++) {
-				DragQueryFile(hDrop, i, szFilename, _countof(szFilename));
-				AddToFileList(&ppFiles, &totalCount, szFilename);
-			}
-			CallServiceSync(MS_FILE_SENDSPECIFICFILEST, m_hContact, (LPARAM)ppFiles);
-			for (i = 0; ppFiles[i]; i++) mir_free(ppFiles[i]);
-			mir_free(ppFiles);
-		}
+		ProcessFileDrop((HDROP)wParam, m_hContact);
 		break;
 
 	case DM_AVATARCHANGED:
@@ -1149,10 +1110,9 @@ INT_PTR CMsgDialog::DlgProc(UINT msg, WPARAM wParam, LPARAM lParam)
 	case DM_CLISTSETTINGSCHANGED:
 		if (wParam == m_hContact && m_hContact && m_szProto) {
 			DBCONTACTWRITESETTING *cws = (DBCONTACTWRITESETTING *)lParam;
-			char idbuf[128], buf[128];
-			GetContactUniqueId(idbuf, sizeof(idbuf));
-			mir_snprintf(buf, Translate("User menu - %s"), idbuf);
-			SendDlgItemMessage(m_hwnd, IDC_USERMENU, BUTTONADDTOOLTIP, (WPARAM)buf, 0);
+			wchar_t buf[128];
+			mir_snwprintf(buf, TranslateT("User menu - %s"), ptrW(Contact_GetInfo(CNF_UNIQUEID, m_hContact, m_szProto)).get());
+			SendDlgItemMessage(m_hwnd, IDC_USERMENU, BUTTONADDTOOLTIP, (WPARAM)buf, BATF_UNICODE);
 
 			if (cws && !mir_strcmp(cws->szModule, m_szProto) && !mir_strcmp(cws->szSetting, "Status"))
 				m_wStatus = cws->value.wVal;

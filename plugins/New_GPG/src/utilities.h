@@ -29,15 +29,16 @@ void send_encrypted_msgs_thread(void*);
 int ComboBoxAddStringUtf(HWND hCombo, const wchar_t *szString, DWORD data);
 bool isContactSecured(MCONTACT hContact);
 bool isContactHaveKey(MCONTACT hContact);
-bool isTabsrmmUsed();
 bool isGPGKeyExist();
 bool isGPGValid();
+
 void ExportGpGKeysFunc(int type);
+void ImportKey(MCONTACT hContact, std::wstring new_key);
+
 const bool StriStr(const char *str, const char *substr);
 string toUTF8(wstring str);
 wstring toUTF16(string str);
 string get_random(int length);
-string time_str();
 
 struct db_event : public DBEVENTINFO
 {
@@ -107,6 +108,6 @@ void strip_tags(std::wstring &s);
 void clean_temp_dir();
 bool gpg_validate_paths(wchar_t *gpg_bin_path, wchar_t *gpg_home_path);
 void gpg_save_paths(wchar_t *gpg_bin_path, wchar_t *gpg_home_path);
-bool gpg_use_new_random_key(char *account_name = Translate("Default"), wchar_t *gpg_bin_path = nullptr, wchar_t *gpg_home_dir = nullptr);
+bool gpg_use_new_random_key(const char *account_name);
 
 #endif

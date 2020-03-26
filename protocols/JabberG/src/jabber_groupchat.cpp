@@ -130,7 +130,7 @@ struct JabberGcRecentInfo
 		m_nick = ppro->getUStringA(setting);
 
 		mir_snprintf(setting, "password_rcMuc_%d", iRecent);
-		m_password = ppro->getUStringA(0, setting);
+		m_password = ppro->getUStringA(setting);
 
 		return m_room || m_server || m_nick || m_password;
 	}
@@ -688,7 +688,7 @@ public:
 			}
 			break;
 
-		case WM_JABBER_CHECK_ONLINE:
+		case WM_PROTO_CHECK_ONLINE:
 			if (!m_proto->m_bJabberOnline)
 				EndDialog(m_hwnd, 0);
 			break;

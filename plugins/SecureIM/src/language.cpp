@@ -34,9 +34,9 @@ LPCSTR sim115 = LPGEN("Can't import RSA public key!");
 
 //Options
 LPCSTR sim201 = LPGEN("General");
-LPCSTR sim202 = LPGEN("Protocols");
+LPCSTR sim202 = LPGEN("Accounts");
 LPCSTR sim203 = LPGEN("Nickname");
-LPCSTR sim204 = "UIN/Email/Jid/...";
+LPCSTR sim204 = LPGEN("User ID");
 LPCSTR sim205 = LPGEN("Status");
 LPCSTR sim206 = "PSK";
 LPCSTR sim210 = LPGEN("Name");
@@ -44,7 +44,7 @@ LPCSTR sim211 = LPGEN("Password is too short!");
 LPCSTR sim212 = LPGEN("ON");
 LPCSTR sim213 = LPGEN("Off");
 LPCSTR sim214 = "PGP";
-LPCSTR sim215 = "Key ID";
+LPCSTR sim215 = LPGEN("Key ID");
 LPCSTR sim216 = LPGEN("Keyrings loaded.");
 LPCSTR sim217 = LPGEN("Keyrings not loaded!");
 LPCSTR sim218 = LPGEN("PGP SDK v%i.%i.%i found.");
@@ -58,12 +58,12 @@ LPCSTR sim225 = LPGEN("Keyrings disabled!");
 LPCSTR sim226 = "GPG";
 LPCSTR sim227 = "CP";
 LPCSTR sim228 = "ANSI";
-LPCSTR sim229 = "UTF8";
+LPCSTR sim229 = "UTF-8";
 LPCSTR sim230 = LPGEN("Mode");
 LPCSTR sim231[] = { LPGEN("Native"), "PGP", "GPG", "RSA/AES", "RSA" };
 LPCSTR sim232[] = { LPGEN("Disabled"), LPGEN("Enabled"), LPGEN("Always try") };
 LPCSTR sim233 = "PUB";
-LPCSTR sim234 = "SHA1";
+LPCSTR sim234 = "SHA-1";
 
 //Context Menu
 LPCWSTR sim301 = LPGENW("Create SecureIM connection");
@@ -95,7 +95,7 @@ LPCSTR sim506 = LPGEN("Error while decoding RSA message");
 LPCSTR sim507 = LPGEN("Session closed on timeout");
 LPCSTR sim508 = LPGEN("Session closed by other side when status \"disabled\"");
 LPCSTR sim510 = LPGEN("Session closed on error: %02x");
-LPCSTR sim520 = LPGEN("SecureIM received RSA Public Key from \"%s\"\n\nSHA1: %s\n\nDo you Accept this Key?");
-LPCSTR sim521 = LPGEN("SecureIM auto accepted RSA Public key from: %s uin: %s SHA1: %s");
-LPCSTR sim522 = LPGEN("SecureIM received NEW RSA Public Key from \"%s\"\n\nNew SHA1: %s\n\nOld SHA1: %s\n\nDo you Replace this Key?");
-LPCSTR sim523 = LPGEN("SecureIM auto accepted NEW RSA Public key from: %s uin: %s New SHA1: %s Old SHA1: %s");
+LPCSTR sim520 = LPGEN("SecureIM received RSA Public Key from \"%s\"\n\nSHA-1: %s\n\nDo you Accept this Key?");
+LPCSTR sim521 = LPGEN("SecureIM auto accepted RSA Public key from: %s uin: %s SHA-1: %s");
+LPCSTR sim522 = LPGEN("SecureIM received NEW RSA Public Key from \"%s\"\n\nNew SHA-1: %s\n\nOld SHA-1: %s\n\nDo you Replace this Key?");
+LPCSTR sim523 = LPGEN("SecureIM auto accepted NEW RSA Public key from: %s uin: %s New SHA-1: %s Old SHA-1: %s");
