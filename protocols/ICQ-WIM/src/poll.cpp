@@ -52,18 +52,17 @@ void CIcqProto::ProcessBuddyList(const JSONNode &ev)
 
 			setWString(hContact, "IcqGroup", pGroup->wszName);
 
+			if (!bCreated) {
+				Clist_GroupCreate(0, pGroup->wszName);
+				bCreated = true;
+			}
+
 			ptrW mirGroup(Clist_GetGroup(hContact));
 			if (mir_wstrcmp(mirGroup, pGroup->wszName))
 				bEnableMenu = true;
 
-			if (!mirGroup) {
-				if (!bCreated) {
-					Clist_GroupCreate(0, pGroup->wszName);
-					bCreated = true;
-				}
-
+			if (!mirGroup)
 				Clist_SetGroup(hContact, pGroup->wszName);
-			}
 		}
 	}
 
@@ -115,15 +114,14 @@ void CIcqProto::ProcessDiff(const JSONNode &ev)
 
 				setWString(hContact, "IcqGroup", pGroup->wszName);
 
-				ptrW wszGroup(Clist_GetGroup(hContact));
-				if (!wszGroup) {
-					if (!bCreated) {
-						Clist_GroupCreate(0, pGroup->wszName);
-						bCreated = true;
-					}
-
-					Clist_SetGroup(hContact, pGroup->wszName);
+				if (!bCreated) {
+					Clist_GroupCreate(0, pGroup->wszName);
+					bCreated = true;
 				}
+
+				ptrW wszGroup(Clist_GetGroup(hContact));
+				if (!wszGroup)
+					Clist_SetGroup(hContact, pGroup->wszName);
 			}
 
 			if (bDeleted)
@@ -204,8 +202,10 @@ void CIcqProto::ProcessHistData(const JSONNode &ev)
 	// we load history in the very beginning or if the previous message 
 	if (m_bFirstBos) {
 		__int64 srvLastId = _wtoi64(ev["lastMsgId"].as_mstring());
-		if (srvLastId > lastMsgId)
+		if (srvLastId > lastMsgId) {
+			debugLogA("We need to retrieve history for %S: %lld > %lld", wszId.c_str(), srvLastId, lastMsgId);
 			RetrieveUserHistory(hContact, lastMsgId, false);
+		}
 	}
 	else {
 		for (auto &it : ev["tail"]["messages"])

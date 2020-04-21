@@ -246,7 +246,7 @@ void PopupSkin::measure(HDC hdc, PopupWnd2 *wnd, int maxw, POPUPOPTIONS *options
 						}
 						break;
 					case PopupWnd2::TT_MTEXT:
-						MText.Measure(hdc, &szNew, wnd->getTextM());
+						MTextMeasure(hdc, &szNew, wnd->getTextM());
 						break;
 					}
 					SelectObject(hdc, hFntSave);
@@ -289,7 +289,7 @@ void PopupSkin::measure(HDC hdc, PopupWnd2 *wnd, int maxw, POPUPOPTIONS *options
 					}
 					break;
 				case PopupWnd2::TT_MTEXT:
-					MText.Measure(hdc, &szNew, wnd->getTitleM());
+					MTextMeasure(hdc, &szNew, wnd->getTitleM());
 					break;
 				}
 
@@ -512,7 +512,7 @@ void PopupSkin::display(MyBitmap *bmp, PopupWnd2 *wnd, POPUPOPTIONS *options, DW
 						}
 						break;
 					case PopupWnd2::TT_MTEXT:
-						MText.Display(hdc, pt, sz, wnd->getTextM());
+						MTextDisplay(hdc, pt, sz, wnd->getTextM());
 						break;
 					}
 					SelectObject(hdc, hFntSave);
@@ -562,7 +562,7 @@ void PopupSkin::display(MyBitmap *bmp, PopupWnd2 *wnd, POPUPOPTIONS *options, DW
 					break;
 				case PopupWnd2::TT_MTEXT:
 					HFONT hFntSave = (HFONT)SelectObject(hdc, fonts.title);
-					MText.Display(hdc, pt, sz, wnd->getTitleM());
+					MTextDisplay(hdc, pt, sz, wnd->getTitleM());
 					SelectObject(hdc, hFntSave);
 					break;
 				}

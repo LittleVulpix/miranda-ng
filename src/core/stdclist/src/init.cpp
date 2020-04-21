@@ -88,9 +88,9 @@ static int OnModulesLoaded(WPARAM, LPARAM)
 
 static int OnOptsInit(WPARAM wParam, LPARAM lParam)
 {
+	CListOptInit(wParam, lParam);
 	ClcOptInit(wParam, lParam);
 	CluiOptInit(wParam, lParam);
-	CListOptInit(wParam, lParam);
 	return 0;
 }
 
@@ -107,8 +107,9 @@ static INT_PTR GetStatusMode(WPARAM, LPARAM)
 
 int CMPlugin::Load()
 {
-	g_bSortByStatus = g_plugin.getByte("SortByStatus", SETTING_SORTBYSTATUS_DEFAULT);
-	g_bSortByProto = g_plugin.getByte("SortByProto", SETTING_SORTBYPROTO_DEFAULT);
+	g_bSortByStatus = g_plugin.getBool("SortByStatus", SETTING_SORTBYSTATUS_DEFAULT);
+	g_bSortByProto = g_plugin.getBool("SortByProto", SETTING_SORTBYPROTO_DEFAULT);
+	g_bNoOfflineBottom = g_plugin.getBool("NoOfflineBottom");
 
 	Clist_GetInterface();
 	coreCli = g_clistApi;

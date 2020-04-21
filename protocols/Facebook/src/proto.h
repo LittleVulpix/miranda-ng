@@ -362,11 +362,13 @@ struct COwnMessage
 {
    __int64 msgId;
    int reqId;
+   MCONTACT hContact;
    CMStringW wszText;
 
-   COwnMessage(__int64 _id, int _reqId) :
+   COwnMessage(__int64 _id, int _reqId, MCONTACT _hContact) :
       msgId(_id),
-      reqId(_reqId)
+      reqId(_reqId),
+      hContact(_hContact)
    {
    }
 };
@@ -431,6 +433,7 @@ class FacebookProto : public PROTO<FacebookProto>
    void MqttQueueConnect();
 
    void OnPublish(const char *str, const uint8_t *payLoad, size_t cbLen);
+   void OnPublishDelivery(FbThriftReader &rdr);
    void OnPublishMessage(FbThriftReader &rdr);
    void OnPublishPresence(FbThriftReader &rdr);
    void OnPublishUtn(FbThriftReader &rdr);
@@ -448,7 +451,6 @@ class FacebookProto : public PROTO<FacebookProto>
    __int64   m_sid;          // stored, Facebook sequence id
 
    int       m_iUnread;
-	bool      m_invisible;
 	bool      m_bOnline;
    bool      m_QueueCreated;
 
@@ -465,6 +467,7 @@ class FacebookProto : public PROTO<FacebookProto>
    FacebookUser* UserFromJson(const JSONNode &root, CMStringW &wszId, bool &bIsChat);
 
    void FetchAttach(const CMStringA &mid, __int64 fbid, CMStringA &szBody);
+   void NotifyDelivery(const CMStringA &msgid);
 
    void OnLoggedIn();
    void OnLoggedOut();
@@ -495,9 +498,10 @@ public:
     // options
 
     CMOption<wchar_t *> m_wszDefaultGroup; // clist group to store contacts
-    CMOption<BYTE>      m_bUseBigAvatars;  // use big or small avatars by default
-    CMOption<BYTE>      m_bUseGroupchats;  // do we need group chats at all?
-    CMOption<BYTE>      m_bHideGroupchats; // do not open chat windows on creation
+    CMOption<bool>      m_bUseBigAvatars;  // use big or small avatars by default
+    CMOption<bool>      m_bUseGroupchats;  // do we need group chats at all?
+    CMOption<bool>      m_bHideGroupchats; // do not open chat windows on creation
+    CMOption<bool>      m_bLoginInvisible; // login in the invisible mode
     CMOption<bool>      m_bKeepUnread;     // do not mark incoming messages as read
 
 	////////////////////////////////////////////////////////////////////////////////////////

@@ -133,8 +133,8 @@ PopupWnd2::~PopupWnd2()
 	delete m_avatar;
 	delete[]m_actions;
 
-	if (m_mtText) MText.Destroy(m_mtText);
-	if (m_mtTitle) MText.Destroy(m_mtTitle);
+	if (m_mtText) MTextDestroy(m_mtText);
+	if (m_mtTitle) MTextDestroy(m_mtTitle);
 }
 
 void PopupWnd2::startThread()
@@ -735,14 +735,14 @@ void PopupWnd2::buildMText()
 	if (!(htuText && htuTitle && PopupOptions.UseMText))
 		return;
 
-	if (m_mtText) MText.Destroy(m_mtText);
-	if (m_mtTitle)MText.Destroy(m_mtTitle);
+	if (m_mtText) MTextDestroy(m_mtText);
+	if (m_mtTitle) MTextDestroy(m_mtTitle);
 	m_mtText = m_mtTitle = nullptr;
 
 	if (m_lptzText && m_lptzTitle) {
 		m_textType = TT_MTEXT;
-		m_mtText = MText.Create(htuText, m_lptzText);
-		m_mtTitle = MText.Create(htuTitle, m_lptzTitle);
+		m_mtText = MTextCreateW(htuText, m_lptzText);
+		m_mtTitle = MTextCreateW(htuTitle, m_lptzTitle);
 	}
 }
 

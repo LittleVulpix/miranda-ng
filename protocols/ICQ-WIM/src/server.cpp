@@ -416,8 +416,10 @@ void CIcqProto::ParseMessage(MCONTACT hContact, __int64 &lastMsgId, const JSONNo
 
 		// ignore duplicates
 		MEVENT hDbEvent = db_event_getById(m_szModuleName, szMsgId);
-		if (hDbEvent != 0)
+		if (hDbEvent != 0) {
+			debugLogA("Message %s already exists", szMsgId.c_str());
 			return;
+		}
 
 		bool bIsOutgoing = it["outgoing"].as_bool();
 		if (!bFromHistory && !bIsOutgoing && wszText.Left(26) == L"https://files.icq.net/get/") {
@@ -437,6 +439,8 @@ void CIcqProto::ParseMessage(MCONTACT hContact, __int64 &lastMsgId, const JSONNo
 			MarkAsRead(hContact);
 			return;
 		}
+
+		debugLogA("Adding message %d:%s (%d)", hContact, szMsgId.c_str(), bFromHistory);
 
 		ptrA szUtf(mir_utf8encodeW(wszText));
 
@@ -558,8 +562,11 @@ void CIcqProto::SetServerStatus(int iStatus)
 	Push(new AsyncHttpRequest(CONN_MAIN, REQUEST_GET, ICQ_API_SERVER "/presence/setState")
 		<< AIMSID(this) << CHAR_PARAM("view", szStatus) << INT_PARAM("invisible", invisible));
 
-	if (iStatus == ID_STATUS_OFFLINE)
-		Push(new AsyncHttpRequest(CONN_MAIN, REQUEST_GET, ICQ_API_SERVER "/aim/endSession") << AIMSID(this));
+	if (iStatus == ID_STATUS_OFFLINE && !getByte(DB_KEY_PHONEREG)) {
+		auto *pReq = new AsyncHttpRequest(CONN_MAIN, REQUEST_GET, ICQ_API_SERVER "/aim/endSession", &CIcqProto::OnSessionEnd);
+		pReq << AIMSID(this) << INT_PARAM("invalidateToken", 1);
+		Push(pReq);
+	}
 
 	int iOldStatus = m_iStatus; m_iStatus = iStatus;
 	ProtoBroadcastAck(0, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE)iOldStatus, m_iStatus);
@@ -1061,4 +1068,16 @@ void CIcqProto::OnSendMessage(NETLIBHTTPREQUEST *pReply, AsyncHttpRequest *pReq)
 	CMStringA msgId(data["histMsgId"].as_mstring());
 	CheckOwnMessage(reqId, msgId, false);
 	CheckLastId(ownMsg->m_hContact, data);
+}
+
+void CIcqProto::OnSessionEnd(NETLIBHTTPREQUEST *pReply, AsyncHttpRequest *)
+{
+	JsonReply root(pReply);
+	if (root.error() == 200) {
+		m_szAToken.Empty();
+		delSetting(DB_KEY_ATOKEN);
+		
+		m_szSessionKey.Empty();
+		delSetting(DB_KEY_SESSIONKEY);
+	}
 }

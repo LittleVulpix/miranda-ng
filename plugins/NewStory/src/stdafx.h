@@ -1,4 +1,4 @@
-/* 
+/*
 Copyright (C) 2012 Mataes
 
 This is free software; you can redistribute it and/or
@@ -14,7 +14,7 @@ Library General Public License for more details.
 You should have received a copy of the GNU Library General Public
 License along with this file; see the file license.txt.  If
 not, write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-Boston, MA 02111-1307, USA.  
+Boston, MA 02111-1307, USA.
 */
 
 #pragma once
@@ -24,16 +24,13 @@ Boston, MA 02111-1307, USA.
 #include <process.h>
 #include <tchar.h>
 #include <commctrl.h>
-//#include <stdio.h>
 #include <time.h>
 
 //Miranda headers
 #include "newpluginapi.h"
 #include "win2k.h"
 #include "m_system.h"
-//#include "m_plugins.h"
 #include "m_clc.h"
-//#include "m_clui.h"
 #include "m_clist.h"
 #include "m_options.h"
 #include "m_skin.h"
@@ -49,11 +46,10 @@ Boston, MA 02111-1307, USA.
 #include "m_icolib.h"
 #include "m_fontservice.h"
 #include "m_text.h"
+#include "m_contacts.h"
+#include "m_srmm_int.h"
 
 #include "m_smileyadd.h"
-//#include "m_nconvers.h"
-//#include "m_MathModule.h"
-//#include "m_Snapping_windows.h"
 #ifndef MTEXT_NOHELPERS
 #define MTEXT_NOHELPERS
 #endif // MTEXT_NOHELPERS
@@ -66,7 +62,6 @@ Boston, MA 02111-1307, USA.
 #define MODULETITLE "NewStory"
 
 #include "utils.h"
-#include "options.h"
 #include "fonts.h"
 #include "calendartool.h"
 #include "history.h"
@@ -74,8 +69,12 @@ Boston, MA 02111-1307, USA.
 #include "history_control.h"
 #include "templates.h"
 
+int OptionsInitialize(WPARAM, LPARAM);
+
 struct CMPlugin : public PLUGIN<CMPlugin>
 {
+	HANDLE m_log;
+
 	CMPlugin();
 
 	int Load() override;

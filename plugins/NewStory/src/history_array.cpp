@@ -17,78 +17,45 @@ bool HistoryArray::ItemData::load(EventLoadMode mode)
 	if ((mode == ELM_DATA) && (!dbeOk || !dbe.cbBlob)) {
 		dbeOk = true;
 		dbe.cbBlob = db_event_getBlobSize(hEvent);
-		dbe.pBlob = (PBYTE)calloc(dbe.cbBlob + 1, 1);
+		dbe.pBlob = (PBYTE)mir_calloc(dbe.cbBlob + 1);
 		db_event_get(hEvent, &dbe);
 
-		int aLength = 0;
-		atext = 0;
 		wtext = 0;
 
 		switch (dbe.eventType) {
 		case EVENTTYPE_STATUSCHANGE:
 		case EVENTTYPE_MESSAGE:
-			{
-				atext = (char *)dbe.pBlob;
-				atext_del = false;
-				aLength = lstrlenA(atext);
-				if (dbe.cbBlob > (DWORD)aLength + 1) {
-					wtext = (WCHAR *)(dbe.pBlob + aLength + 1);
-					wtext_del = false;
-				}
-				break;
-			}
+			wtext = mir_utf8decodeW((char*)dbe.pBlob);
+			wtext_del = false;
+			break;
+
+		case EVENTTYPE_JABBER_PRESENCE:
+			wtext = DbEvent_GetTextW(&dbe, CP_ACP);
+			wtext_del = false;
+			break;
 
 		case EVENTTYPE_AUTHREQUEST:
-			{
-				atext = new char[512];
-				atext_del = true;
-				if ((dbe.cbBlob > 8) && *(dbe.pBlob + 8)) {
-					mir_snprintf(atext, 512, ("%s requested authorization"), dbe.pBlob + 8);
-				}
-				else {
-					mir_snprintf(atext, 512, ("%d requested authorization"), *(DWORD*)(dbe.pBlob));
-				}
-				aLength = lstrlenA(atext);
-				break;
+			wtext = new wchar_t[512];
+			wtext_del = true;
+			if ((dbe.cbBlob > 8) && *(dbe.pBlob + 8)) {
+				mir_snwprintf(wtext, 512, L"%s requested authorization", dbe.pBlob + 8);
 			}
+			else {
+				mir_snwprintf(wtext, 512, L"%d requested authorization", *(DWORD *)(dbe.pBlob));
+			}
+			break;
 
 		case EVENTTYPE_ADDED:
-			{
-				atext = new char[512];
-				atext_del = true;
-				if ((dbe.cbBlob > 8) && *(dbe.pBlob + 8)) {
-					mir_snprintf(atext, 512, ("%s added you to the contact list"), dbe.pBlob + 8);
-				}
-				else {
-					mir_snprintf(atext, 512, ("%d added you to the contact list"), *(DWORD*)(dbe.pBlob));
-				}
-				aLength = lstrlenA(atext);
-				break;
-			}
-		}
-
-		if (atext && !wtext) {
-			#ifdef UNICODE
-			int bufSize = MultiByteToWideChar(CP_ACP, 0, atext, aLength + 1, 0, 0);
-			wtext = new WCHAR[bufSize + 1];
-			MultiByteToWideChar(CP_ACP, 0, atext, aLength + 1, wtext, bufSize);
+			wtext = new wchar_t[512];
 			wtext_del = true;
-			#else
-			this->wtext = 0;
-			wtext_del = false;
-			#endif
-		}
-		else
-			if (!atext && wtext) {
-				// strange situation, really :) I'll fix this later
+			if ((dbe.cbBlob > 8) && *(dbe.pBlob + 8)) {
+				mir_snwprintf(wtext, 512, L"%s added you to the contact list", dbe.pBlob + 8);
 			}
-			else
-				if (!atext && !wtext) {
-					atext = "";
-					atext_del = false;
-					wtext = L"";
-					wtext_del = false;
-				}
+			else {
+				mir_snwprintf(wtext, 512, L"%d added you to the contact list", *(DWORD *)(dbe.pBlob));
+			}
+			break;
+		}
 
 		return true;
 	}
@@ -99,18 +66,16 @@ bool HistoryArray::ItemData::load(EventLoadMode mode)
 HistoryArray::ItemData::~ItemData()
 {
 	if (dbeOk && dbe.pBlob) {
-		free(dbe.pBlob);
+		mir_free(dbe.pBlob);
 		dbe.pBlob = 0;
 	}
 	if (wtext && wtext_del) delete[] wtext;
-	if (atext && atext_del) delete[] atext;
 	if (data) MTextDestroy(data);
 }
 
 // Array
 HistoryArray::HistoryArray()
 {
-	head = tail = 0;
 }
 
 HistoryArray::~HistoryArray()
@@ -164,18 +129,22 @@ bool HistoryArray::addHistory(MCONTACT hContact, EventLoadMode)
 		tail->items[i].hEvent = hEvent;
 
 		++i;
-		hEvent = db_event_next(hEvent, 0);
+		hEvent = db_event_next(hContact, hEvent);
 	}
 	return true;
 }
 
-bool HistoryArray::addEvent(MCONTACT hContact, MEVENT hEvent, EventLoadMode mode)
+bool HistoryArray::addEvent(MCONTACT hContact, MEVENT hEvent, int count, EventLoadMode mode)
 {
-	allocateBlock(1);
-	tail->items[0].hContact = hContact;
-	tail->items[0].hEvent = hEvent;
-	if (mode != ELM_NOTHING)
-		tail->items[0].load(mode);
+	allocateBlock(count);
+
+	for (int i = 0; i < count; i++) {
+		tail->items[i].hContact = hContact;
+		tail->items[i].hEvent = hEvent;
+		if (mode != ELM_NOTHING)
+			tail->items[i].load(mode);
+		hEvent = db_event_next(hContact, hEvent);
+	}
 
 	return true;
 }

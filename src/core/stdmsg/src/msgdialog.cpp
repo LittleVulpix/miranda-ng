@@ -130,7 +130,7 @@ bool CMsgDialog::OnInitDialog()
 	m_iSplitterY = g_plugin.getDword(g_dat.bSavePerContact ? m_hContact : 0, "splitterPos", m_minEditInit.bottom - m_minEditInit.top);
 	UpdateSizeBar();
 
-	m_message.SendMsg(EM_SETEVENTMASK, 0, ENM_CHANGE);
+	m_message.SendMsg(EM_SETEVENTMASK, 0, ENM_MOUSEEVENTS | ENM_CHANGE);
 
 	if (isChat()) {
 		m_avatar.Hide();
@@ -331,6 +331,8 @@ void CMsgDialog::OnActivate()
 		UpdateLastMessage();
 		FixTabIcons();
 	}
+	
+	SetFocus(m_message.GetHwnd());
 }
 
 void CMsgDialog::onClick_Filter(CCtrlButton *pButton)
@@ -876,8 +878,15 @@ INT_PTR CMsgDialog::DlgProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 					if ((si.nPos + (int)si.nPage + 5) >= si.nMax)
 						StopFlash();
 				}
-				break;
 			}
+			break;
+
+		case IDC_SRMM_MESSAGE:
+			if (((LPNMHDR)lParam)->code == EN_MSGFILTER && ((MSGFILTER *)lParam)->msg == WM_RBUTTONUP) {
+				SetWindowLongPtr(m_hwnd, DWLP_MSGRESULT, TRUE);
+				return TRUE;
+			}
+			break;
 		}
 		break;
 
@@ -914,7 +923,6 @@ INT_PTR CMsgDialog::DlgProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		if (LOWORD(wParam) != WA_ACTIVE)
 			break;
 
-		SetFocus(m_message.GetHwnd());
 		__fallthrough;
 
 	case WM_MOUSEACTIVATE:
@@ -1673,6 +1681,28 @@ void CMsgDialog::UpdateTitle()
 		GetWindowText(m_pOwner->GetHwnd(), oldtitle, _countof(oldtitle));
 		if (mir_wstrcmp(newtitle, oldtitle)) //swt() flickers even if the title hasn't actually changed
 			SetWindowText(m_pOwner->GetHwnd(), newtitle);
+	}
+
+	if (!isChat()) {
+		int idx = m_pOwner->m_tab.GetDlgIndex(this);
+		if (idx == -1)
+			return;
+
+		auto *pwszName = Clist_GetContactDisplayName(m_hContact);
+		wchar_t oldtitle[256];
+
+		TCITEM ti;
+		ti.mask = TCIF_TEXT;
+		ti.pszText = oldtitle;
+		ti.cchTextMax = _countof(oldtitle);
+		TabCtrl_GetItem(m_pOwner->m_tab.GetHwnd(), idx, &ti);
+
+		// change text only if it was changed
+		if (mir_wstrcmp(pwszName, oldtitle)) {
+			ti.pszText = pwszName;
+			ti.cchTextMax = 0;
+			TabCtrl_SetItem(m_pOwner->m_tab.GetHwnd(), idx, &ti);
+		}
 	}
 }
 

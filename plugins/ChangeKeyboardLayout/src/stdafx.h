@@ -31,6 +31,8 @@
 
 struct CMPlugin : public PLUGIN<CMPlugin>
 {
+	HKL hklEng = (HKL)0x04090409;
+
 	CMPlugin();
 
 	int Load() override;
@@ -98,10 +100,7 @@ typedef struct
 
 extern HICON hPopupIcon, hCopyIcon;
 
-extern LPCTSTR ptszKeybEng;
-extern HKL hklEng;
-
-extern BYTE bLayNum;
+extern int bLayNum;
 extern HKL hklLayouts[20];
 extern wchar_t *ptszLayStrings[20];
 

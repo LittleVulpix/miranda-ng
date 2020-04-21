@@ -1,128 +1,27 @@
 #include "stdafx.h"
 
-void TplInitVars(TemplateVars *vars);
-void TplCleanVars(TemplateVars *vars);
-__forceinline TCHAR *TplGetVar(TemplateVars *vars, char id);
-__forceinline void TplSetVar(TemplateVars *vars, char id, TCHAR *v, bool d);
-int TplMeasureVars(TemplateVars *vars, TCHAR *str);
+int TplMeasureVars(TemplateVars* vars, wchar_t* str);
 
-void vfGlobal(int mode, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData *item);
-void vfContact(int mode, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData *item);
-void vfSystem(int mode, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData *item);
-void vfEvent(int mode, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData *item);
-void vfMessage(int mode, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData *item);
-void vfFile(int mode, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData *item);
-void vfUrl(int mode, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData *item);
-void vfSign(int mode, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData *item);
-void vfAuth(int mode, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData *item);
-void vfAdded(int mode, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData *item);
-void vfDeleted(int mode, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData *item);
-void vfOther(int mode, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData *item);
-
-TemplateInfo templates[TPL_COUNT] =
-{
-	{ "tpl/interface/title", _T("Interface"), ICO_NEWSTORY, _T("Window Title"),
-		_T("%N's Newstory [%c messages total]"), 0, 0,
-		{ vfGlobal, vfContact, 0, 0, 0 } },
-
-	{ "tpl/msglog/msg", _T("Message Log"), ICO_SENDMSG, _T("Messages"),
-		_T("%I%i[b]%N, %t:[/b]\x0d\x0a%M"), 0, 0,
-		{ vfGlobal, vfContact, vfEvent, vfMessage, 0 } },
-	{ "tpl/msglog/file", _T("Message Log"), ICO_FILE, _T("Files"),
-		_T("%I%i[b]%N, %t:[/b]%n%M"), 0, 0,
-		{ vfGlobal, vfContact, vfEvent, vfFile, 0 } },
-	{ "tpl/msglog/status", _T("Message Log"), ICO_SIGNIN, _T("Status Changes"),
-		_T("%I%i[b]%N, %t:[/b]%n%M"), 0, 0,
-		{ vfGlobal, vfContact, vfEvent, vfSign, 0 } },
-	{ "tpl/msglog/other", _T("Message Log"), ICO_UNKNOWN, _T("Other Events"),
-		_T("%I%i[b]%N, %t:[/b]%n%M"), 0, 0,
-		{ vfGlobal, vfContact, vfEvent, vfOther, 0 } },
-
-	{ "tpl/msglog/authrq", _T("Message Log"), ICO_UNKNOWN, _T("Authorization Requests"),
-		_T("%I%i[b]%N, %t:[/b]%n%M"), 0, 0,
-		{ vfGlobal, vfEvent, vfSystem, vfAuth, 0 } },
-	{ "tpl/msglog/added", _T("Message Log"), ICO_UNKNOWN, _T("'You were added' events"),
-		_T("%I%i[b]%N, %t:[/b]%n%M"), 0, 0,
-		{ vfGlobal, vfEvent, vfSystem, vfAdded, 0 } },
-	{ "tpl/msglog/deleted", _T("Message Log"), ICO_UNKNOWN, _T("'You were deleted' events"),
-		_T("%I%i[b]%N, %t:[/b]%n%M"), 0, 0,
-		{ vfGlobal, vfEvent, vfSystem, vfDeleted, 0 } },
-
-	{ "tpl/copy/msg", _T("Clipboard"), ICO_SENDMSG, _T("Messages"),
-		_T("%N, %t:\x0d\x0a%M%n"), 0, 0,
-		{ vfGlobal, vfContact, vfEvent, vfMessage, 0 } },
-	{ "tpl/copy/file", _T("Clipboard"), ICO_FILE, _T("Files"),
-		_T("%N, %t:\x0d\x0a%M%n"), 0, 0,
-		{ vfGlobal, vfContact, vfEvent, vfFile, 0 } },
-	{ "tpl/copy/url", _T("Clipboard"), ICO_URL, _T("URLs"),
-		_T("%N, %t:\x0d\x0a%M%n"), 0, 0,
-		{ vfGlobal, vfContact, vfEvent, vfUrl, 0 } },
-	{ "tpl/copy/status", _T("Clipboard"), ICO_SIGNIN, _T("Status Changes"),
-		_T("%N, %t:\x0d\x0a%M%n"), 0, 0,
-		{ vfGlobal, vfContact, vfEvent, vfSign, 0 } },
-	{ "tpl/copy/other", _T("Clipboard"), ICO_UNKNOWN, _T("Other Events"),
-		_T("%N, %t:\x0d\x0a%M%n"), 0, 0,
-		{ vfGlobal, vfContact, vfEvent, vfOther, 0 } },
-
-	{ "tpl/copy/authrq", _T("Clipboard"), ICO_UNKNOWN, _T("Authorization Requests"),
-		_T("%N, %t:\x0d\x0a%M%n"), 0, 0,
-		{ vfGlobal, vfEvent, vfSystem, vfAuth, 0 } },
-	{ "tpl/copy/added", _T("Clipboard"), ICO_UNKNOWN, _T("'You were added' events"),
-		_T("%N, %t:\x0d\x0a%M%n"), 0, 0,
-		{ vfGlobal, vfEvent, vfSystem, vfAdded, 0 } },
-	{ "tpl/copy/deleted", _T("Clipboard"), ICO_UNKNOWN, _T("'You were deleted' events"),
-		_T("%N, %t:\x0d\x0a%M%n"), 0, 0,
-		{ vfGlobal, vfEvent, vfSystem, vfDeleted, 0 } }
-};
-
-void LoadTemplates()
-{
-	for (int i = 0; i < TPL_COUNT; i++) {
-		DBVARIANT dbv = { 0 };
-		db_get_ws(0, MODULENAME, templates[i].setting, &dbv);
-		if (templates[i].value)
-			free(templates[i].value);
-		if (dbv.pwszVal) {
-			templates[i].value = _tcsdup(dbv.pwszVal);
-		}
-		else {
-			templates[i].value = 0;
-		}
-		db_free(&dbv);
-	}
-}
-
-void SaveTemplates()
-{
-	for (int i = 0; i < TPL_COUNT; i++)
-		if (templates[i].value)
-			db_set_ws(0, MODULENAME, templates[i].setting, templates[i].value);
-}
-
-TCHAR *TplFormatStringEx(int tpl, TCHAR *sztpl, MCONTACT hContact, HistoryArray::ItemData *item)
+wchar_t *TplFormatStringEx(int tpl, wchar_t *sztpl, MCONTACT hContact, HistoryArray::ItemData *item)
 {
 	if ((tpl < 0) || (tpl >= TPL_COUNT) || !sztpl)
-		return _tcsdup(_T(""));
+		return mir_wstrdup(L"");
 
-	int i;
 	TemplateVars vars;
-	for (i = 0; i < 256; i++) {
-		vars.del[i] = false;
-		vars.val[i] = 0;
-	}
-	
-	for (i = 0; i < TemplateInfo::VF_COUNT; i++)
+	memset(&vars, 0, sizeof(vars));
+
+	for (int i = 0; i < TemplateInfo::VF_COUNT; i++)
 		if (templates[tpl].vf[i])
 			templates[tpl].vf[i](VFM_VARS, &vars, hContact, item);
 
-	TCHAR *buf = (TCHAR *)malloc(sizeof(TCHAR)*(TplMeasureVars(&vars, sztpl) + 1));
-	TCHAR *bufptr = buf;
-	for (TCHAR *p = sztpl; *p; p++) {
+	wchar_t *buf = (wchar_t *)mir_alloc(sizeof(wchar_t) * (TplMeasureVars(&vars, sztpl) + 1));
+	wchar_t *bufptr = buf;
+	for (wchar_t *p = sztpl; *p; p++) {
 		if (*p == '%') {
-			TCHAR *var = TplGetVar(&vars, (char)(p[1] & 0xff));
+			wchar_t *var = vars.GetVar((p[1] & 0xff));
 			if (var) {
-				lstrcpy(bufptr, var);
-				bufptr += lstrlen(var);
+				mir_wstrcpy(bufptr, var);
+				bufptr += mir_wstrlen(var);
 			}
 			p++;
 		}
@@ -132,13 +31,13 @@ TCHAR *TplFormatStringEx(int tpl, TCHAR *sztpl, MCONTACT hContact, HistoryArray:
 	return buf;
 }
 
-TCHAR *TplFormatString(int tpl, MCONTACT hContact, HistoryArray::ItemData *item)
+wchar_t *TplFormatString(int tpl, MCONTACT hContact, HistoryArray::ItemData *item)
 {
 	if ((tpl < 0) || (tpl >= TPL_COUNT))
-		return _tcsdup(_T(""));
+		return mir_wstrdup(L"");
 
 	if (!templates[tpl].value)
-		templates[tpl].value = _tcsdup(templates[tpl].defvalue);
+		templates[tpl].value = mir_wstrdup(templates[tpl].defvalue);
 
 	int i;
 	TemplateVars vars;
@@ -151,14 +50,14 @@ TCHAR *TplFormatString(int tpl, MCONTACT hContact, HistoryArray::ItemData *item)
 		if (templates[tpl].vf[i])
 			templates[tpl].vf[i](VFM_VARS, &vars, hContact, item);
 
-	TCHAR *buf = (TCHAR *)malloc(sizeof(TCHAR)*(TplMeasureVars(&vars, templates[tpl].value) + 1));
-	TCHAR *bufptr = buf;
-	for (TCHAR *p = templates[tpl].value; *p; p++) {
+	wchar_t *buf = (wchar_t *)mir_alloc(sizeof(wchar_t) * (TplMeasureVars(&vars, templates[tpl].value) + 1));
+	wchar_t *bufptr = buf;
+	for (wchar_t *p = templates[tpl].value; *p; p++) {
 		if (*p == '%') {
-			TCHAR *var = TplGetVar(&vars, (char)(p[1] & 0xff));
+			wchar_t *var = vars.GetVar((p[1] & 0xff));
 			if (var) {
-				lstrcpy(bufptr, var);
-				bufptr += lstrlen(var);
+				mir_wstrcpy(bufptr, var);
+				bufptr += mir_wstrlen(var);
 			}
 			p++;
 		}
@@ -181,32 +80,20 @@ void TplCleanVars(TemplateVars *vars)
 {
 	for (int i = 0; i < 256; i++)
 		if (vars->val[i] && vars->del[i]) {
-			free(vars->val[i]);
+			mir_free(vars->val[i]);
 			vars->val[i] = 0;
 			vars->del[i] = false;
 		}
 }
 
-__forceinline TCHAR *TplGetVar(TemplateVars *vars, char id)
-{
-	return vars->val[id];
-}
-
-__forceinline void TplSetVar(TemplateVars *vars, char id, TCHAR *v, bool d)
-{
-	if (vars->val[id] && vars->del[id])
-		free(vars->val[id]);
-	vars->val[id] = v;
-	vars->del[id] = d;
-}
-
-int TplMeasureVars(TemplateVars *vars, TCHAR *str)
+int TplMeasureVars(TemplateVars *vars, wchar_t *str)
 {
 	int res = 0;
-	for (TCHAR *p = str; *p; p++) {
+	for (wchar_t *p = str; *p; p++) {
 		if (*p == '%') {
-			TCHAR *var = TplGetVar(vars, (char)(p[1] & 0xff));
-			if (var) res += lstrlen(var);
+			wchar_t *var = vars->GetVar(p[1] & 0xff);
+			if (var)
+				res += (int)mir_wstrlen(var);
 			p++;
 		}
 		else res++;
@@ -215,52 +102,58 @@ int TplMeasureVars(TemplateVars *vars, TCHAR *str)
 }
 
 // Loading variables
-void vfGlobal(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData*)
+void vfGlobal(int, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData *)
 {
 	//  %%: simply % character
-	TplSetVar(vars, '%', _T("%"), false);
+	vars->SetVar('%', L"%", false);
 
 	//  %n: line break
-	TplSetVar(vars, 'n', _T("\x0d\x0a"), false);
+	vars->SetVar('n', L"\x0d\x0a", false);
 
-	// %M: my nick (not for messages)
-	wchar_t *buf = Clist_GetContactDisplayName(0, 0);
-	TplSetVar(vars, 'M', buf, false);
+	// %S: my nick (not for messages)
+	char* proto = Proto_GetBaseAccountName(hContact);
+	ptrW nick(Contact_GetInfo(CNF_DISPLAY, 0, proto));
+	vars->SetVar('S', nick, false);
 }
 
-void vfContact(int, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData*)
+void vfContact(int, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData *)
 {
 	// %N: buddy's nick (not for messages)
-	wchar_t *buff = Clist_GetContactDisplayName(hContact, 0);
-	TplSetVar(vars, 'N', buff, false);
+	wchar_t *nick = Clist_GetContactDisplayName(hContact, 0);
+	vars->SetVar('N', nick, false);
 
+	wchar_t buf[20];
 	// %c: event count
-	TCHAR *buf = new TCHAR[20];
-	wsprintf(buf, _T("%d"), db_event_count(hContact));
-	TplSetVar(vars, 'c', buf, false);
+	mir_snwprintf(buf, L"%d", db_event_count(hContact));
+	vars->SetVar('c', buf, false);
 }
 
-void vfSystem(int, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData*)
+void vfSystem(int, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData *)
 {
 	// %N: buddy's nick (not for messages)
-	TplSetVar(vars, 'N', /*TranslateTS*/_T("System Event"), false);
+	vars->SetVar('N', LPGENW("System event"), false);
 
 	// %c: event count
-	TCHAR *buf = new TCHAR[20];
-	wsprintf(buf, _T("%d"), db_event_count(hContact));
-	TplSetVar(vars, 'c', buf, false);
+	wchar_t  buf[20];
+	mir_snwprintf(buf, L"%d", db_event_count(hContact));
+	vars->SetVar('c', buf, false);
 }
 
 void vfEvent(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *item)
 {
 	HICON hIcon;
-	TCHAR *s;
-
-	//  %U: UIN (contextual, own uin for sent, buddys UIN for received messages)
+	wchar_t buf[100];
 
 	//  %N: Nickname
-	wchar_t *buff = Clist_GetContactDisplayName(item->dbe.flags&DBEF_SENT ? 0 : (WPARAM)item->hContact, 0);
-	TplSetVar(vars, 'N', buff, false);
+	if (item->dbe.flags & DBEF_SENT) {
+		char *proto = Proto_GetBaseAccountName(item->hContact);
+		ptrW nick(Contact_GetInfo(CNF_DISPLAY, 0, proto));
+		vars->SetVar('N', nick, false);
+	}
+	else {
+		wchar_t *nick = Clist_GetContactDisplayName(item->hContact, 0);
+		vars->SetVar('N', nick, false);
+	}
 
 	//  %I: Icon
 	switch (item->dbe.eventType) {
@@ -277,9 +170,8 @@ void vfEvent(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *item)
 		hIcon = g_plugin.getIcon(ICO_UNKNOWN);
 		break;
 	}
-	s = (TCHAR *)calloc(64, sizeof(TCHAR));
-	wsprintf(s, _T("[$hicon=%d$]"), hIcon);
-	TplSetVar(vars, 'I', s, true);
+	mir_snwprintf(buf, L"[$hicon=%d$]", hIcon);
+	vars->SetVar('I', buf, true);
 
 	//  %i: Direction icon
 	if (item->dbe.flags & DBEF_SENT)
@@ -287,128 +179,193 @@ void vfEvent(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *item)
 	else
 		hIcon = g_plugin.getIcon(ICO_MSGIN);
 
-	s = (TCHAR *)calloc(64, sizeof(TCHAR));
-	wsprintf(s, _T("[$hicon=%d$]"), hIcon);
-	TplSetVar(vars, 'i', s, true);
+	mir_snwprintf(buf, L"[$hicon=%d$]", hIcon);
+	vars->SetVar('i', buf, true);
 
 	// %D: direction symbol
 	if (item->dbe.flags & DBEF_SENT)
-		TplSetVar(vars, 'D', _T("<<"), false);
+		vars->SetVar('D', L"<<", false);
 	else
-		TplSetVar(vars, 'D', _T(">>"), false);
+		vars->SetVar('D', L">>", false);
 
 	//  %t: timestamp
-	TCHAR *buf = (TCHAR *)calloc(100, sizeof(TCHAR));
-	_tcsftime(buf, 100, _T("%d.%m.%Y, %H:%M"), localtime((time_t *)&item->dbe.timestamp));
-	TplSetVar(vars, 't', buf, true);
-
-	//	DBTIMETOSTRING tts;
-	//	tts.cbDest = 100;
-	//	tts.szFormat = "d, t";
-	//	tts.szDest = (char *)calloc(100, 1);
-	//	CallService(MS_DB_TIME_TIMESTAMPTOSTRING, item->dbe.timestamp, (LPARAM)&tts);
-	//	TplSetVar(vars, 't', tts.szDest, true);
-
-	//	tts.szFormat = "";
-	//	tts.szDest = (char *)calloc(100, 1);
-	//	CallService(MS_DB_TIME_TIMESTAMPTOSTRING, item->dbe.timestamp, (LPARAM)&tts);
-	//	TplSetVar(vars, 't', tts.szDest, true);
+	_tcsftime(buf, _countof(buf), L"%d.%m.%Y, %H:%M", _localtime32((__time32_t *)&item->dbe.timestamp));
+	vars->SetVar('t', buf, true);
 
 	//  %h: hour (24 hour format, 0-23)
-	buf = (TCHAR *)calloc(5, sizeof(TCHAR));
-	_tcsftime(buf, 5, _T("%H"), localtime((time_t *)&item->dbe.timestamp));
-	TplSetVar(vars, 'h', buf, true);
+	_tcsftime(buf, _countof(buf), L"%H", _localtime32((__time32_t *)&item->dbe.timestamp));
+	vars->SetVar('h', buf, true);
 
 	//  %a: hour (12 hour format)
-	buf = (TCHAR *)calloc(5, sizeof(TCHAR));
-	_tcsftime(buf, 5, _T("%h"), localtime((time_t *)&item->dbe.timestamp));
-	TplSetVar(vars, 'a', buf, true);
+	_tcsftime(buf, _countof(buf), L"%h", _localtime32((__time32_t *)&item->dbe.timestamp));
+	vars->SetVar('a', buf, true);
 
 	//  %m: minute
-	buf = (TCHAR *)calloc(5, sizeof(TCHAR));
-	_tcsftime(buf, 5, _T("%M"), localtime((time_t *)&item->dbe.timestamp));
-	TplSetVar(vars, 'm', buf, true);
+	_tcsftime(buf, _countof(buf), L"%M", _localtime32((__time32_t *)&item->dbe.timestamp));
+	vars->SetVar('m', buf, true);
 
 	//  %s: second
-	buf = (TCHAR *)calloc(5, sizeof(TCHAR));
-	_tcsftime(buf, 5, _T("%S"), localtime((time_t *)&item->dbe.timestamp));
-	TplSetVar(vars, 's', buf, true);
+	_tcsftime(buf, _countof(buf), L"%S", _localtime32((__time32_t *)&item->dbe.timestamp));
+	vars->SetVar('s', buf, true);
 
 	//  %o: month
-	buf = (TCHAR *)calloc(5, sizeof(TCHAR));
-	_tcsftime(buf, 5, _T("%m"), localtime((time_t *)&item->dbe.timestamp));
-	TplSetVar(vars, 'o', buf, true);
+	_tcsftime(buf, _countof(buf), L"%m", _localtime32((__time32_t *)&item->dbe.timestamp));
+	vars->SetVar('o', buf, true);
 
 	//  %d: day of month
-	buf = (TCHAR *)calloc(5, sizeof(TCHAR));
-	_tcsftime(buf, 5, _T("%d"), localtime((time_t *)&item->dbe.timestamp));
-	TplSetVar(vars, 'd', buf, true);
+	_tcsftime(buf, _countof(buf), L"%d", _localtime32((__time32_t *)&item->dbe.timestamp));
+	vars->SetVar('d', buf, true);
 
 	//  %y: year
-	buf = (TCHAR *)calloc(5, sizeof(TCHAR));
-	_tcsftime(buf, 5, _T("%Y"), localtime((time_t *)&item->dbe.timestamp));
-	TplSetVar(vars, 'y', buf, true);
+	_tcsftime(buf, _countof(buf), L"%Y", _localtime32((__time32_t *)&item->dbe.timestamp));
+	vars->SetVar('y', buf, true);
 
-	//  %w: day of week (Sunday, Monday.. translateable)
-	buf = (TCHAR *)calloc(25, sizeof(TCHAR));
-	_tcsftime(buf, 25, _T("%A"), localtime((time_t *)&item->dbe.timestamp));
-	TplSetVar(vars, 'w', TranslateW(buf), false);
+	//  %w: day of week (Sunday, Monday... translatable)
+	_tcsftime(buf, _countof(buf), L"%A", _localtime32((__time32_t *)&item->dbe.timestamp));
+	vars->SetVar('w', TranslateW(buf), false);
 
 	//  %p: AM/PM symbol
-	buf = (TCHAR *)calloc(5, sizeof(TCHAR));
-	_tcsftime(buf, 5, _T("%p"), localtime((time_t *)&item->dbe.timestamp));
-	TplSetVar(vars, 'p', buf, true);
+	_tcsftime(buf, _countof(buf), L"%p", _localtime32((__time32_t *)&item->dbe.timestamp));
+	vars->SetVar('p', buf, true);
 
-	//  %O: Name of month, translateable
-	buf = (TCHAR *)calloc(25, sizeof(TCHAR));
-	_tcsftime(buf, 25, _T("%B"), localtime((time_t *)&item->dbe.timestamp));
-	TplSetVar(vars, 'O', TranslateW(buf), false);
+	//  %O: Name of month, translatable
+	_tcsftime(buf, _countof(buf), L"%B", _localtime32((__time32_t *)&item->dbe.timestamp));
+	vars->SetVar('O', TranslateW(buf), false);
 }
 
 void vfMessage(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *item)
 {
 	//  %M: the message string itself
-	TplSetVar(vars, 'M', item->getTBuf(), false);
+	vars->SetVar('M', item->getWBuf(), false);
 }
 
 void vfFile(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *item)
 {
 	//  %M: the message string itself
-	TplSetVar(vars, 'M', item->getTBuf(), false);
+	vars->SetVar('M', item->getWBuf(), false);
 }
 
 void vfUrl(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *item)
 {
 	//  %M: the message string itself
-	TplSetVar(vars, 'M', item->getTBuf(), false);
+	vars->SetVar('M', item->getWBuf(), false);
 }
 
 void vfSign(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *item)
 {
 	//  %M: the message string itself
-	TplSetVar(vars, 'M', item->getTBuf(), false);
+	vars->SetVar('M', item->getWBuf(), false);
 }
 
 void vfAuth(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *item)
 {
 	//  %M: the message string itself
-	TplSetVar(vars, 'M', item->getTBuf(), false);
+	vars->SetVar('M', item->getWBuf(), false);
 }
 
 void vfAdded(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *item)
 {
 	//  %M: the message string itself
-	TplSetVar(vars, 'M', item->getTBuf(), false);
+	vars->SetVar('M', item->getWBuf(), false);
+}
+
+void vfPresence(int, TemplateVars* vars, MCONTACT, HistoryArray::ItemData* item)
+{
+	//  %M: the message string itself
+	vars->SetVar('M', item->getWBuf(), false);
 }
 
 void vfDeleted(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *item)
 {
 	//  %M: the message string itself
-	TplSetVar(vars, 'M', item->getTBuf(), false);
+	vars->SetVar('M', item->getWBuf(), false);
 }
 
-void vfOther(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData*)
+void vfOther(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *)
 {
 	//  %M: the message string itself
-	TplSetVar(vars, 'M', _T("Unknown Event"), false);
+	vars->SetVar('M', LPGENW("Unknown event"), false);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+TemplateInfo templates[TPL_COUNT] =
+{
+	{ "tpl/interface/title", LPGENW("Interface"), ICO_NEWSTORY, LPGENW("Window title"),
+		L"%N - History [%c messages total]", 0, 0,
+		{ vfGlobal, vfContact, 0, 0, 0 } },
+
+	{ "tpl/msglog/msg", LPGENW("Message log"), ICO_SENDMSG, LPGENW("Messages"),
+		L"%I%i[b]%N, %t:[/b]\x0d\x0a%M", 0, 0,
+		{ vfGlobal, vfContact, vfEvent, vfMessage, 0 } },
+	{ "tpl/msglog/file", LPGENW("Message log"), ICO_FILE, LPGENW("Files"),
+		L"%I%i[b]%N, %t:[/b]%n%M", 0, 0,
+		{ vfGlobal, vfContact, vfEvent, vfFile, 0 } },
+	{ "tpl/msglog/status", LPGENW("Message log"), ICO_SIGNIN, LPGENW("Status changes"),
+		L"%I%i[b]%N, %t:[/b]%n%M", 0, 0,
+		{ vfGlobal, vfContact, vfEvent, vfSign, 0 } },
+	{ "tpl/msglog/presense", LPGENW("Message log"), ICO_UNKNOWN, LPGENW("Presence requests"),
+		L"%I%i[b]%N, %t:[/b]%n%M", 0, 0,
+		{ vfGlobal, vfContact, vfEvent, vfPresence, 0 } },
+	{ "tpl/msglog/other", LPGENW("Message log"), ICO_UNKNOWN, LPGENW("Other events"),
+		L"%I%i[b]%N, %t:[/b]%n%M", 0, 0,
+		{ vfGlobal, vfContact, vfEvent, vfOther, 0 } },
+
+	{ "tpl/msglog/authrq", LPGENW("Message log"), ICO_UNKNOWN, LPGENW("Authorization requests"),
+		L"%I%i[b]%N, %t:[/b]%n%M", 0, 0,
+		{ vfGlobal, vfEvent, vfSystem, vfAuth, 0 } },
+	{ "tpl/msglog/added", LPGENW("Message log"), ICO_UNKNOWN, LPGENW("'You were added' events"),
+		L"%I%i[b]%N, %t:[/b]%n%M", 0, 0,
+		{ vfGlobal, vfEvent, vfSystem, vfAdded, 0 } },
+	{ "tpl/msglog/deleted", LPGENW("Message log"), ICO_UNKNOWN, LPGENW("'You were deleted' events"),
+		L"%I%i[b]%N, %t:[/b]%n%M", 0, 0,
+		{ vfGlobal, vfEvent, vfSystem, vfDeleted, 0 } },
+
+	{ "tpl/copy/msg", LPGENW("Clipboard"), ICO_SENDMSG, LPGENW("Messages"),
+		L"%N, %t:\x0d\x0a%M%n", 0, 0,
+		{ vfGlobal, vfContact, vfEvent, vfMessage, 0 } },
+	{ "tpl/copy/file", LPGENW("Clipboard"), ICO_FILE, LPGENW("Files"),
+		L"%N, %t:\x0d\x0a%M%n", 0, 0,
+		{ vfGlobal, vfContact, vfEvent, vfFile, 0 } },
+	{ "tpl/copy/url", LPGENW("Clipboard"), ICO_URL, LPGENW("URLs"),
+		L"%N, %t:\x0d\x0a%M%n", 0, 0,
+		{ vfGlobal, vfContact, vfEvent, vfUrl, 0 } },
+	{ "tpl/copy/status", LPGENW("Clipboard"), ICO_SIGNIN, LPGENW("Status changes"),
+		L"%N, %t:\x0d\x0a%M%n", 0, 0,
+		{ vfGlobal, vfContact, vfEvent, vfSign, 0 } },
+	{ "tpl/copy/presence", LPGENW("Clipboard"), ICO_UNKNOWN, LPGENW("Presence requests"),
+		L"%N, %t:\x0d\x0a%M%n", 0, 0,
+		{ vfGlobal, vfContact, vfEvent, vfPresence, 0 } },
+	{ "tpl/copy/other", LPGENW("Clipboard"), ICO_UNKNOWN, LPGENW("Other events"),
+		L"%N, %t:\x0d\x0a%M%n", 0, 0,
+		{ vfGlobal, vfContact, vfEvent, vfOther, 0 } },
+
+	{ "tpl/copy/authrq", LPGENW("Clipboard"), ICO_UNKNOWN, LPGENW("Authorization requests"),
+		L"%N, %t:\x0d\x0a%M%n", 0, 0,
+		{ vfGlobal, vfEvent, vfSystem, vfAuth, 0 } },
+	{ "tpl/copy/added", LPGENW("Clipboard"), ICO_UNKNOWN, LPGENW("'You were added' events"),
+		L"%N, %t:\x0d\x0a%M%n", 0, 0,
+		{ vfGlobal, vfEvent, vfSystem, vfAdded, 0 } },
+	{ "tpl/copy/deleted", LPGENW("Clipboard"), ICO_UNKNOWN, LPGENW("'You were deleted' events"),
+		L"%N, %t:\x0d\x0a%M%n", 0, 0,
+		{ vfGlobal, vfEvent, vfSystem, vfDeleted, 0 } }
+};
+
+void LoadTemplates()
+{
+	for (auto &it : templates)
+		replaceStrW(it.value, g_plugin.getWStringA(it.setting));
+}
+
+void SaveTemplates()
+{
+	for (auto &it : templates) {
+		if (it.value) {
+			if (mir_wstrcmp(it.value, it.defvalue))
+				g_plugin.setWString(it.setting, it.value);
+			else
+				g_plugin.delSetting(it.setting);
+		}
+		else g_plugin.delSetting(it.setting);
+	}
 }

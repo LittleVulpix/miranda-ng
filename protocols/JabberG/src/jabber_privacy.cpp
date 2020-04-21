@@ -933,15 +933,8 @@ class CJabberDlgPrivacyLists : public CJabberDlgBase
 
 	void CListResetOptions()
 	{
-		m_clcClist.SetBkBitmap(0, nullptr);
-		m_clcClist.SetBkColor(GetSysColor(COLOR_WINDOW));
-		m_clcClist.SetGreyoutFlags(0);
-		m_clcClist.SetLeftMargin(4);
-		m_clcClist.SetIndent(10);
 		m_clcClist.SetHideEmptyGroups(false);
 		m_clcClist.SetHideOfflineRoot(false);
-		for (int i = 0; i <= FONTID_MAX; i++)
-			m_clcClist.SetTextColor(i, GetSysColor(COLOR_WINDOWTEXT));
 	}
 
 	void CListFilter()
@@ -1105,10 +1098,9 @@ lbl_return:
 		for (auto &hContact : Contacts()) {
 			hItem = m_clcClist.FindContact(hContact);
 
-			ptrW jid(m_proto->getWStringA(hContact, "jid"));
+			ptrA jid(m_proto->ContactToJID(hContact));
 			if (jid == nullptr)
-				if ((jid = m_proto->getWStringA(hContact, "ChatRoomID")) == nullptr)
-					continue;
+				continue;
 
 			if (dwPackets = CListGetPackets(hItem, true))
 				pList->AddRule(Jid, szJid, TRUE, dwOrder++, dwPackets);

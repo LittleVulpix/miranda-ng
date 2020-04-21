@@ -114,8 +114,8 @@ static INT_PTR HideGroupsHelper(WPARAM, LPARAM)
 static INT_PTR UseGroupsHelper(WPARAM, LPARAM)
 {
 	int newVal = !(GetWindowLongPtr(g_clistApi.hwndContactTree, GWL_STYLE) & CLS_USEGROUPS);
-	db_set_b(0, "CList", "UseGroups", (BYTE)newVal);
-	SendMessage(g_clistApi.hwndContactTree, CLM_SETUSEGROUPS, newVal,0);
+	Clist::UseGroups = newVal;
+	SendMessage(g_clistApi.hwndContactTree, CLM_SETUSEGROUPS, newVal, 0);
 	return newVal;
 }
 
@@ -141,7 +141,7 @@ static INT_PTR CreateGroupHelper(WPARAM, LPARAM)
 
 static int OnBuildGroupMenu(WPARAM, LPARAM)
 {
-	bool bChecked = db_get_b(0, "CList", "HideOffline", SETTING_HIDEOFFLINE_DEFAULT) != 0;
+	bool bChecked = Clist::HideOffline;
 	Menu_SetChecked(hHideOfflineUsersMenuItem, bChecked);
 
 	bChecked = SendMessage(g_clistApi.hwndContactTree, CLM_GETHIDEOFFLINEROOT, 0, 0) != 0;
@@ -182,7 +182,7 @@ HMENU cliBuildGroupPopupMenu(ClcGroup *group)
 
 MIR_APP_DLL(HGENMENU) Menu_AddSubGroupMenuItem(TMO_MenuItem *pmi, GroupMenuParam *gmp)
 {
-	SubGroupMenuExecParam *mmep = (SubGroupMenuExecParam*)mir_calloc(sizeof(SubGroupMenuExecParam));
+	SubGroupMenuExecParam *mmep = (SubGroupMenuExecParam *)mir_calloc(sizeof(SubGroupMenuExecParam));
 	if (mmep == nullptr)
 		return nullptr;
 
@@ -192,7 +192,7 @@ MIR_APP_DLL(HGENMENU) Menu_AddSubGroupMenuItem(TMO_MenuItem *pmi, GroupMenuParam
 		mmep->Param1 = gmp->wParam;
 		mmep->Param2 = gmp->lParam;
 	}
-	
+
 	HGENMENU hNewItem = Menu_AddItem(hSubGroupMenuObject, pmi, mmep);
 
 	char buf[1024];
@@ -205,7 +205,7 @@ MIR_APP_DLL(HGENMENU) Menu_AddSubGroupMenuItem(TMO_MenuItem *pmi, GroupMenuParam
 
 static INT_PTR SubGroupMenuCheckService(WPARAM wParam, LPARAM)
 {
-	TCheckProcParam * CParam = (TCheckProcParam*)wParam;
+	TCheckProcParam *CParam = (TCheckProcParam *)wParam;
 	if (CParam) {
 		SubGroupMenuExecParam *mmep = (SubGroupMenuExecParam *)(CParam->MenuItemOwnerData);
 		if (mmep)

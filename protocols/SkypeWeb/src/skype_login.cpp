@@ -17,8 +17,6 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "stdafx.h"
 
-UINT_PTR CSkypeProto::m_timer;
-
 void CSkypeProto::Login()
 {
 	// login
@@ -113,12 +111,15 @@ void CSkypeProto::OnLoginSuccess()
 
 	m_szApiToken = getStringA("TokenSecret");
 
+	m_impl.m_heartBeat.StartSafe(600 * 1000);
+
 	SendRequest(new CreateEndpointRequest(this), &CSkypeProto::OnEndpointCreated);
 }
 
 void CSkypeProto::OnEndpointCreated(const NETLIBHTTPREQUEST *response)
 {
-	if (!IsStatusConnecting(m_iStatus)) return;
+	if (!IsStatusConnecting(m_iStatus))
+		return;
 
 	m_iStatus++;
 
@@ -129,29 +130,30 @@ void CSkypeProto::OnEndpointCreated(const NETLIBHTTPREQUEST *response)
 		return;
 	}
 
-	for (int i = 0; i < response->headersCount; i++) {
-		if (!mir_strcmpi(response->headers[i].szName, "Set-RegistrationToken")) {
-			CMStringA szValue = response->headers[i].szValue, szCookieName, szCookieVal;
-			int iStart = 0;
-			while (true) {
-				CMStringA szToken = szValue.Tokenize(";", iStart).Trim();
-				if (iStart == -1)
-					break;
-				int iStart2 = 0;
-				szCookieName = szToken.Tokenize("=", iStart2);
-				szCookieVal = szToken.Mid(iStart2);
-				setString(szCookieName, szCookieVal);
+	switch (response->resultCode) {
+	case 200:
+	case 201: // ok, endpoint created
+	case 301:
+	case 302: // redirect
+		break;
 
-				if (szCookieName == "registrationToken")
-					m_szToken = szCookieVal.Detach();
-				else if (szCookieName == "endpointId")
-					m_szId = szCookieVal.Detach();
-			}
-		}
-		else if (!mir_strcmpi(response->headers[i].szName, "Location")) {
-			CMStringA szValue = response->headers[i].szValue;
-			m_szServer = GetServerFromUrl(szValue).Detach();
-		}
+	case 401: // unauthorized
+		if (auto *szStatus = Netlib_GetHeader(response, "StatusText"))
+			if (!strstr(szStatus, "SkypeTokenExpired"))
+				delSetting("TokenSecret");
+		delSetting("TokenExpiresIn");
+		SendRequest(new LoginOAuthRequest(m_szSkypename, pass_ptrA(getStringA(SKYPE_SETTINGS_PASSWORD))), &CSkypeProto::OnLoginOAuth);
+		return;
+
+	case 400:
+		delSetting("TokenExpiresIn");
+		ProtoBroadcastAck(NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGIN_ERROR_UNKNOWN);
+		SetStatus(ID_STATUS_OFFLINE);
+		return;
+
+	default: // it should be rewritten
+		SendRequest(new CreateEndpointRequest(this), &CSkypeProto::OnEndpointCreated);
+		return;
 	}
 
 	if (m_iStatus++ > SKYPE_MAX_CONNECT_RETRIES) {
@@ -161,22 +163,30 @@ void CSkypeProto::OnEndpointCreated(const NETLIBHTTPREQUEST *response)
 		return;
 	}
 
-	if (response->resultCode != 201) {
-		if (response->resultCode == 401) {
-			delSetting("TokenExpiresIn");
-			SendRequest(new LoginOAuthRequest(m_szSkypename, pass_ptrA(getStringA(SKYPE_SETTINGS_PASSWORD))), &CSkypeProto::OnLoginOAuth);
-			return;
+	if (auto *hdr = Netlib_GetHeader(response, "Set-RegistrationToken")) {
+		CMStringA szValue = hdr;
+		int iStart = 0;
+		while (true) {
+			CMStringA szToken = szValue.Tokenize(";", iStart).Trim();
+			if (iStart == -1)
+				break;
+			
+			int iStart2 = 0;
+			CMStringA name = szToken.Tokenize("=", iStart2);
+			CMStringA val = szToken.Mid(iStart2);
+			setString(name, val);
+
+			if (name == "registrationToken")
+				m_szToken = val.Detach();
+			else if (name == "endpointId")
+				m_szId = val.Detach();
 		}
-		if (response->resultCode == 400) {
-			delSetting("TokenExpiresIn");
-			ProtoBroadcastAck(NULL, ACKTYPE_LOGIN, ACKRESULT_FAILED, NULL, LOGIN_ERROR_UNKNOWN);
-			SetStatus(ID_STATUS_OFFLINE);
-			return;
-		}
-		// it should be rewritten
-		SendRequest(new CreateEndpointRequest(this), &CSkypeProto::OnEndpointCreated);
-		return;
 	}
+	
+	if (auto *hdr = Netlib_GetHeader(response, "Location"))
+		m_szServer = GetServerFromUrl(hdr).Detach();
+	
+	RefreshStatuses();
 
 	SendRequest(new CreateSubscriptionsRequest(this), &CSkypeProto::OnSubscriptionsCreated);
 }

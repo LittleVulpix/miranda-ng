@@ -129,7 +129,6 @@ extern HANDLE hSemaphore;
 extern BOOL closing;
 extern HANDLE folderId;
 
-extern MTEXT_INTERFACE MText;
 extern HANDLE htuText;
 extern HANDLE htuTitle;
 

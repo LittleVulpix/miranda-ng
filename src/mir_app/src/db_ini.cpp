@@ -343,7 +343,7 @@ LBL_NewLine:
 				}
 				if (secFN) warnThisSection = 0;
 			}
-			if (szLine[1] == '?') {
+			if (szLine[1] == '?' || szLine[1] == '-') {
 				mir_strncpy(szSection, szLine + 2, min(sizeof(szSection), (int)(szEnd - szLine - 1)));
 				db_enum_settings(0, SettingsEnumProc, szSection);
 				while (setting_items) {
@@ -501,7 +501,7 @@ static void DoAutoExec(void)
 	Profile_GetSetting(L"AutoExec/Safe", buf, L"CLC Icons CLUI CList SkinSounds");
 	ptrA szSafeSections(mir_u2a(buf));
 
-	Profile_GetSetting(L"AutoExec/Unsafe", buf, L"Facebook GG ICQ IRC JABBER MSN SKYPE TWITTER VKontakte");
+	Profile_GetSetting(L"AutoExec/Unsafe", buf, L"Facebook GG ICQ IRC JABBER SKYPE TWITTER VKontakte");
 	ptrA szUnsafeSections(mir_u2a(buf));
 
 	Profile_GetSetting(L"AutoExec/Warn", szSecurity, L"notsafe");

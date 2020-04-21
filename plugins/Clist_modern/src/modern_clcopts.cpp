@@ -30,25 +30,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 INT_PTR CALLBACK DlgProcSBarOpts(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define FONTF_NORMAL	0
-#define FONTF_BOLD		1
-#define FONTF_ITALIC	2
-#define FONTF_UNDERLINE	4
-
-#define CLCGROUP			LPGENW("Contact list") L"/" LPGENW("Contact names")
-#define CLCLINESGROUP		LPGENW("Contact list") L"/" LPGENW("Row items")
-#define CLCFRAMESGROUP		LPGENW("Contact list") L"/" LPGENW("Frame texts")
-#define CLCCOLOURSGROUP		LPGENW("Contact list") L"/" LPGENW("Special colors")
+#define FONTF_NORMAL       0
+#define FONTF_BOLD         1
+#define FONTF_ITALIC       2
+#define FONTF_UNDERLINE    4
+							      
+#define CLCGROUP           LPGENW("Contact list") L"/" LPGENW("Contact names")
+#define CLCLINESGROUP      LPGENW("Contact list") L"/" LPGENW("Row items")
+#define CLCFRAMESGROUP     LPGENW("Contact list") L"/" LPGENW("Frame texts")
+#define CLCCOLOURSGROUP    LPGENW("Contact list") L"/" LPGENW("Special colors")
 
 #define DEFAULT_COLOUR		RGB(0, 0, 0)
 #define DEFAULT_GREYCOLOUR	RGB(128, 128, 128)
 #define DEFAULT_BACKCOLOUR	RGB(255, 255, 255)
 
-#define DEFAULT_FAMILY		L"Arial"
-#define DEFAULT_EFFECT		{ 0, 0x00000000, 0x00000000 }
+#define DEFAULT_FAMILY     L"Arial"
+#define DEFAULT_EFFECT     { 0, 0x00000000, 0x00000000 }
 
-#define DEFAULT_SIZE		-11
-#define DEFAULT_SMALLSIZE	-8
+#define DEFAULT_SIZE       -11
+#define DEFAULT_SMALLSIZE  -8
 
 struct
 {
@@ -244,21 +244,9 @@ struct CheckBoxValues_t
 {
 	DWORD style;
 	wchar_t *szDescr;
-};
-
-static const struct CheckBoxValues_t greyoutValues[] = {
+}
+static const greyoutValues[] = {
 	{ GREYF_UNFOCUS, LPGENW("Not focused") },
-	{ MODEF_OFFLINE, LPGENW("Offline") },
-	{ PF2_ONLINE, LPGENW("Online") },
-	{ PF2_SHORTAWAY, LPGENW("Away") },
-	{ PF2_LONGAWAY, LPGENW("Not available") },
-	{ PF2_LIGHTDND, LPGENW("Occupied") },
-	{ PF2_HEAVYDND, LPGENW("Do not disturb") },
-	{ PF2_FREECHAT, LPGENW("Free for chat") },
-	{ PF2_INVISIBLE, LPGENW("Invisible") }
-};
-
-static const struct CheckBoxValues_t offlineValues[] = {
 	{ MODEF_OFFLINE, LPGENW("Offline") },
 	{ PF2_ONLINE, LPGENW("Online") },
 	{ PF2_SHORTAWAY, LPGENW("Away") },
@@ -373,7 +361,6 @@ static INT_PTR CALLBACK DlgProcClistListOpts(HWND hwndDlg, UINT msg, WPARAM wPar
 	case WM_INITDIALOG:
 		TranslateDialogDefault(hwndDlg);
 		SetWindowLongPtr(GetDlgItem(hwndDlg, IDC_GREYOUTOPTS), GWL_STYLE, GetWindowLongPtr(GetDlgItem(hwndDlg, IDC_GREYOUTOPTS), GWL_STYLE) | TVS_NOHSCROLL | TVS_CHECKBOXES);
-		SetWindowLongPtr(GetDlgItem(hwndDlg, IDC_HIDEOFFLINEOPTS), GWL_STYLE, GetWindowLongPtr(GetDlgItem(hwndDlg, IDC_HIDEOFFLINEOPTS), GWL_STYLE) | TVS_NOHSCROLL | TVS_CHECKBOXES);
 		{
 			DWORD exStyle = db_get_dw(0, "CLC", "ExStyle", GetDefaultExStyle());
 			for (auto &it : checkBoxToStyleEx)
@@ -393,7 +380,6 @@ static INT_PTR CALLBACK DlgProcClistListOpts(HWND hwndDlg, UINT msg, WPARAM wPar
 		EnableWindow(GetDlgItem(hwndDlg, IDC_SMOOTHTIME), IsDlgButtonChecked(hwndDlg, IDC_NOTNOSMOOTHSCROLLING));
 		EnableWindow(GetDlgItem(hwndDlg, IDC_GREYOUTOPTS), IsDlgButtonChecked(hwndDlg, IDC_GREYOUT));
 		FillCheckBoxTree(GetDlgItem(hwndDlg, IDC_GREYOUTOPTS), greyoutValues, _countof(greyoutValues), db_get_dw(0, "CLC", "FullGreyoutFlags", CLCDEFAULT_FULLGREYOUTFLAGS));
-		FillCheckBoxTree(GetDlgItem(hwndDlg, IDC_HIDEOFFLINEOPTS), offlineValues, _countof(offlineValues), db_get_dw(0, "CLC", "OfflineModes", CLCDEFAULT_OFFLINEMODES));
 		CheckDlgButton(hwndDlg, IDC_NOSCROLLBAR, db_get_b(0, "CLC", "NoVScrollBar", CLCDEFAULT_NOVSCROLL) ? BST_CHECKED : BST_UNCHECKED);
 		return TRUE;
 
@@ -413,7 +399,6 @@ static INT_PTR CALLBACK DlgProcClistListOpts(HWND hwndDlg, UINT msg, WPARAM wPar
 	case WM_NOTIFY:
 		switch (((LPNMHDR)lParam)->idFrom) {
 		case IDC_GREYOUTOPTS:
-		case IDC_HIDEOFFLINEOPTS:
 			if (((LPNMHDR)lParam)->code == NM_CLICK) {
 				TVHITTESTINFO hti;
 				hti.pt.x = (short)LOWORD(GetMessagePos());
@@ -450,7 +435,6 @@ static INT_PTR CALLBACK DlgProcClistListOpts(HWND hwndDlg, UINT msg, WPARAM wPar
 					db_set_dw(0, "CLC", "GreyoutFlags", 0);
 
 				db_set_b(0, "CLC", "ShowIdle", (BYTE)(IsDlgButtonChecked(hwndDlg, IDC_IDLE) ? 1 : 0));
-				db_set_dw(0, "CLC", "OfflineModes", MakeCheckBoxTreeFlags(GetDlgItem(hwndDlg, IDC_HIDEOFFLINEOPTS)));
 				db_set_w(0, "CLC", "ScrollTime", (WORD)SendDlgItemMessage(hwndDlg, IDC_SMOOTHTIMESPIN, UDM_GETPOS, 0, 0));
 				db_set_b(0, "CLC", "GroupIndent", (BYTE)SendDlgItemMessage(hwndDlg, IDC_GROUPINDENTSPIN, UDM_GETPOS, 0, 0));
 				db_set_b(0, "CLC", "NoVScrollBar", (BYTE)(IsDlgButtonChecked(hwndDlg, IDC_NOSCROLLBAR) ? 1 : 0));
@@ -476,7 +460,18 @@ static int _GetNetVisibleProtoCount()
 	return netProtoCount;
 }
 
-static wchar_t* sortby[] = { LPGENW("Name"), LPGENW("Name (use locale settings)"), LPGENW("Status"), LPGENW("Last message time"), LPGENW("Account name"), LPGENW("Rate"), LPGENW("Last online"), LPGENW("-Nothing-") };
+static wchar_t* sortby[] = 
+{
+	LPGENW("Name"), 
+	LPGENW("Name (use locale settings)"), 
+	LPGENW("Status"), 
+	LPGENW("Last message time"), 
+	LPGENW("Account name"), 
+	LPGENW("Rate"), 
+	LPGENW("Last online"), 
+	LPGENW("-Nothing-")
+};
+
 static int sortbyValue[] = { SORTBY_NAME, SORTBY_NAME_LOCALE, SORTBY_STATUS, SORTBY_LASTMSG, SORTBY_PROTO, SORTBY_RATE, SORTBY_LAST_ONLINE, SORTBY_NOTHING };
 
 static INT_PTR CALLBACK DlgProcClistOpts(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -484,11 +479,6 @@ static INT_PTR CALLBACK DlgProcClistOpts(HWND hwndDlg, UINT msg, WPARAM wParam, 
 	switch (msg) {
 	case WM_INITDIALOG:
 		TranslateDialogDefault(hwndDlg);
-
-		CheckDlgButton(hwndDlg, IDC_HIDEOFFLINE, g_plugin.getByte("HideOffline", SETTING_HIDEOFFLINE_DEFAULT) ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(hwndDlg, IDC_HIDEEMPTYGROUPS, g_plugin.getByte("HideEmptyGroups", SETTING_HIDEEMPTYGROUPS_DEFAULT) ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(hwndDlg, IDC_DISABLEGROUPS, g_plugin.getByte("UseGroups", SETTING_USEGROUPS_DEFAULT) ? BST_UNCHECKED : BST_CHECKED);
-		CheckDlgButton(hwndDlg, IDC_CONFIRMDELETE, g_plugin.getByte("ConfirmDelete", SETTING_CONFIRMDELETE_DEFAULT) ? BST_CHECKED : BST_UNCHECKED);
 
 		CheckDlgButton(hwndDlg, IDC_GAMMACORRECT, db_get_b(0, "CLC", "GammaCorrect", CLCDEFAULT_GAMMACORRECT) ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hwndDlg, IDC_HILIGHTMODE4, db_get_b(0, "CLC", "HiLightMode", SETTING_HILIGHTMODE_DEFAULT) == 0 ? BST_CHECKED : BST_UNCHECKED);
@@ -534,11 +524,6 @@ static INT_PTR CALLBACK DlgProcClistOpts(HWND hwndDlg, UINT msg, WPARAM wParam, 
 		case 0:
 			switch (((LPNMHDR)lParam)->code) {
 			case PSN_APPLY:
-				g_plugin.setByte("HideOffline", (BYTE)IsDlgButtonChecked(hwndDlg, IDC_HIDEOFFLINE));
-				g_plugin.setByte("HideEmptyGroups", (BYTE)IsDlgButtonChecked(hwndDlg, IDC_HIDEEMPTYGROUPS));
-				g_plugin.setByte("UseGroups", (BYTE)BST_UNCHECKED == IsDlgButtonChecked(hwndDlg, IDC_DISABLEGROUPS));
-				g_plugin.setByte("ConfirmDelete", (BYTE)IsDlgButtonChecked(hwndDlg, IDC_CONFIRMDELETE));
-
 				db_set_b(0, "CLC", "GammaCorrect", (BYTE)IsDlgButtonChecked(hwndDlg, IDC_GAMMACORRECT));
 				int hil = 0;
 				if (IsDlgButtonChecked(hwndDlg, IDC_HILIGHTMODE1))  hil = 1;

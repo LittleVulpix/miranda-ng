@@ -2,16 +2,16 @@
 #define __history_h__
 
 #define EVENTTYPE_STATUSCHANGE 25368
+#define EVENTTYPE_JABBER_PRESENCE 2001
 
 enum
 {
-	UM_LOADCONTACT = WM_USER+1,
+	UM_LOADCONTACT = WM_USER + 1,
 
 	UM_REBUILDLIST,
 	UM_FILTERLIST,
 	UM_REDRAWLIST,
 	UM_REDRAWLISTH,
-	UM_UPDATEICONS,
 
 	UM_ADDEVENT,
 	UM_ADDEVENTFILTER,
@@ -24,18 +24,16 @@ enum
 	UM_GETEVENT,
 	UM_GETEVENTTEXT,
 	UM_GETEVENTCONTACT,
-	UM_GETEVENTHANDLE,
-//	UM_GETEVENTDATA,
-
-	UM_JUMP2TIME
+	UM_GETEVENTHANDLE
 };
 
 extern MWindowList hNewstoryWindows;
 
 void InitHistory();
-void FreeHistory();
 
 INT_PTR svcShowNewstory(WPARAM wParam, LPARAM lParam);
 INT_PTR svcShowSystemNewstory(WPARAM wParam, LPARAM lParam);
+
+CSrmmLogWindow* __cdecl NewStory_Stub(CMsgDialog &pDlg);
 
 #endif // __history_h__

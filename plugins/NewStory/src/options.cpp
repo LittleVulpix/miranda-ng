@@ -1,235 +1,221 @@
 #include "stdafx.h"
 
-Options options;
-
 // Option dialog
 
-static INT_PTR CALLBACK OptTemplatesDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+class COptionsDlg : public CDlgBase
 {
-	static int CurrentTemplate;
-	switch (msg) {
-	case WM_INITDIALOG:
-		CurrentTemplate = -1;
-		{
-			HTREEITEM hGroup = 0;
-			HTREEITEM hFirst = 0;
+	TemplateInfo *m_curr = 0;
 
-			HIMAGELIST himgTree = ImageList_Create(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), ILC_COLOR32 | ILC_MASK, 1, 1);
-			TreeView_SetImageList(GetDlgItem(hwnd, IDC_TEMPLATES), himgTree, TVSIL_NORMAL);
+	void UpdatePreview(CCtrlButton*)
+	{
+		replaceStrW(m_curr->tmpValue, m_edit.GetText());
 
-			ImageList_AddIcon(himgTree, g_plugin.getIcon(ICO_TPLGROUP));
-
-			for (int i = 0; i < TPL_COUNT; i++) {
-				if (!i || lstrcmp(templates[i].group, templates[i - 1].group)) {
-					if (hGroup)
-						TreeView_Expand(GetDlgItem(hwnd, IDC_TEMPLATES), hGroup, TVE_EXPAND);
-
-					TVINSERTSTRUCT tvis;
-					tvis.hParent = 0;
-					tvis.hInsertAfter = TVI_LAST;
-					tvis.item.mask = TVIF_TEXT | TVIF_STATE | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE;
-					tvis.item.state = tvis.item.stateMask = TVIS_BOLD;
-					tvis.item.iSelectedImage = tvis.item.iImage = 0;
-					tvis.item.pszText = templates[i].group;
-					tvis.item.lParam = -1;
-					hGroup = TreeView_InsertItem(GetDlgItem(hwnd, IDC_TEMPLATES), &tvis);
-
-					if (!hFirst) hFirst = hGroup;
-				}
-
-				TVINSERTSTRUCT tvis;
-				tvis.hParent = hGroup;
-				tvis.hInsertAfter = TVI_LAST;
-				tvis.item.mask = TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE;
-				tvis.item.pszText = templates[i].title;
-				tvis.item.iSelectedImage = tvis.item.iImage =
-					ImageList_AddIcon(himgTree, g_plugin.getIcon(templates[i].icon));
-				tvis.item.lParam = i;
-				TreeView_InsertItem(GetDlgItem(hwnd, IDC_TEMPLATES), &tvis);
-			}
-
-			if (hGroup)
-				TreeView_Expand(GetDlgItem(hwnd, IDC_TEMPLATES), hGroup, TVE_EXPAND);
-
-			TreeView_SelectItem(GetDlgItem(hwnd, IDC_TEMPLATES), hFirst);
-			TreeView_EnsureVisible(GetDlgItem(hwnd, IDC_TEMPLATES), hFirst);
+		HistoryArray::ItemData item;
+		item.hContact = db_find_first();
+		while (item.hContact && !item.hEvent) {
+			item.hEvent = db_event_first(item.hContact);
+			if (!item.hEvent)
+				item.hContact = db_find_next(item.hContact);
 		}
-		SendMessage(GetDlgItem(hwnd, IDC_DISCARD), BUTTONSETASFLATBTN, 0, 0);
-		SendMessage(GetDlgItem(hwnd, IDC_UPDATEPREVIEW), BUTTONSETASFLATBTN, 0, 0);
-		SendMessage(GetDlgItem(hwnd, IDC_VARHELP), BUTTONSETASFLATBTN, 0, 0);
 
-		SendMessage(GetDlgItem(hwnd, IDC_DISCARD), BUTTONADDTOOLTIP, (WPARAM)Translate("Cancel Edit"), 0);
-		SendMessage(GetDlgItem(hwnd, IDC_UPDATEPREVIEW), BUTTONADDTOOLTIP, (WPARAM)Translate("Update Preview"), 0);
-		SendMessage(GetDlgItem(hwnd, IDC_VARHELP), BUTTONADDTOOLTIP, (WPARAM)Translate("Help on Variables"), 0);
-
-		SendMessage(GetDlgItem(hwnd, IDC_DISCARD), BM_SETIMAGE, IMAGE_ICON, (LPARAM)g_plugin.getIcon(ICO_RESET));
-		SendMessage(GetDlgItem(hwnd, IDC_UPDATEPREVIEW), BM_SETIMAGE, IMAGE_ICON, (LPARAM)g_plugin.getIcon(ICO_PREVIEW));
-		SendMessage(GetDlgItem(hwnd, IDC_VARHELP), BM_SETIMAGE, IMAGE_ICON, (LPARAM)g_plugin.getIcon(ICO_VARHELP));
-
-		return TRUE;
-
-	case WM_COMMAND:
-		switch (LOWORD(wParam)) {
-		case IDC_EDITTEMPLATE:
-			SendMessage(GetParent(GetParent(hwnd)), PSM_CHANGED, 0, 0);
-
-		case IDC_UPDATEPREVIEW:
-			if (templates[CurrentTemplate].tmpValue)
-				free(templates[CurrentTemplate].tmpValue);
-			{
-				int length = GetWindowTextLength(GetDlgItem(hwnd, IDC_EDITTEMPLATE)) + 1;
-				templates[CurrentTemplate].tmpValue = (TCHAR *)malloc(length * sizeof(TCHAR));
-				GetWindowText(GetDlgItem(hwnd, IDC_EDITTEMPLATE), templates[CurrentTemplate].tmpValue, length);
-
-				HistoryArray::ItemData item;
-				item.hContact = db_find_first();
-				while (item.hContact && !item.hEvent) {
-					item.hEvent = db_event_first(item.hContact);
-					if (!item.hEvent)
-						item.hContact = db_find_next(item.hContact);
-				}
-
-				if (item.hContact && item.hEvent) {
-					item.load(ELM_DATA);
-					TCHAR *preview = TplFormatStringEx(CurrentTemplate, templates[CurrentTemplate].tmpValue, item.hContact, &item);
-					SetWindowText(GetDlgItem(hwnd, IDC_PREVIEW), preview);
-					//						SetWindowText(GetDlgItem(hwnd, IDC_GPREVIEW), preview);
-					SetWindowText(GetDlgItem(hwnd, IDC_GPREVIEW), _T("$hit :)"));
-					free(preview);
-				}
-				else {
-					SetWindowText(GetDlgItem(hwnd, IDC_PREVIEW), _T(""));
-					SetWindowText(GetDlgItem(hwnd, IDC_GPREVIEW), _T(""));
-				}
-			}
-			break;
-
-		case IDC_DISCARD:
-			if (templates[CurrentTemplate].tmpValue)
-				free(templates[CurrentTemplate].tmpValue);
-			templates[CurrentTemplate].tmpValue = 0;
-			if (templates[CurrentTemplate].value)
-				SetWindowText(GetDlgItem(hwnd, IDC_EDITTEMPLATE), templates[CurrentTemplate].value);
-			else
-				SetWindowText(GetDlgItem(hwnd, IDC_EDITTEMPLATE), templates[CurrentTemplate].defvalue);
-
-			PostMessage(hwnd, WM_COMMAND, MAKEWPARAM(IDC_UPDATEPREVIEW, 0), 0);
-			break;
+		if (item.hContact && item.hEvent) {
+			item.load(ELM_DATA);
+			
+			ptrW wszText(TplFormatStringEx(int(m_curr-templates), m_curr->tmpValue, item.hContact, &item));
+			preview.SetText(wszText);
+			gpreview.SetText(wszText);
 		}
-		break;
-
-	case WM_NOTIFY:
-		switch (((LPNMHDR)lParam)->idFrom) {
-		case 0:
-			switch (((LPNMHDR)lParam)->code) {
-			case PSN_RESET:
-				for (int i = 0; i < TPL_COUNT; i++) {
-					if (templates[i].tmpValue) {
-						if (templates[i].tmpValue)
-							free(templates[i].tmpValue);
-					}
-				}
-				return TRUE;
-
-			case PSN_APPLY:
-				for (int i = 0; i < TPL_COUNT; i++) {
-					if (templates[i].tmpValue) {
-						if (templates[i].value)
-							free(templates[i].value);
-						templates[i].value = templates[i].tmpValue;
-						templates[i].tmpValue = 0;
-					}
-				}
-				SaveTemplates();
-				return TRUE;
-			}
-			break;
-
-		case IDC_TEMPLATES:
-			switch (((LPNMHDR)lParam)->code) {
-			case TVN_SELCHANGED:
-			case TVN_SELCHANGING:
-				{
-					LPNMTREEVIEW lpnmtv = (LPNMTREEVIEW)lParam;
-
-					TVITEM tvi;
-					tvi.hItem = TreeView_GetSelection(GetDlgItem(hwnd, IDC_TEMPLATES));
-					tvi.mask = TVIF_PARAM;
-					TreeView_GetItem(GetDlgItem(hwnd, IDC_TEMPLATES), &tvi);
-
-					if ((tvi.lParam < 0) || (tvi.lParam >= TPL_COUNT)) {
-						EnableWindow(GetDlgItem(hwnd, IDC_EDITTEMPLATE), FALSE);
-						EnableWindow(GetDlgItem(hwnd, IDC_GPREVIEW), FALSE);
-						EnableWindow(GetDlgItem(hwnd, IDC_PREVIEW), FALSE);
-						EnableWindow(GetDlgItem(hwnd, IDC_DISCARD), FALSE);
-						EnableWindow(GetDlgItem(hwnd, IDC_UPDATEPREVIEW), FALSE);
-						EnableWindow(GetDlgItem(hwnd, IDC_VARHELP), FALSE);
-						/*								HTREEITEM hItem = TreeView_GetChild(GetDlgItem(hwnd, IDC_TEMPLATES), tvi.hItem);
-														if (hItem)
-														{
-															TreeView_Expand(GetDlgItem(hwnd, IDC_TEMPLATES), tvi.hItem, TVE_EXPAND);
-															TreeView_SelectItem(GetDlgItem(hwnd, IDC_TEMPLATES), hItem);
-														}*/
-						break;
-					}
-					else {
-						EnableWindow(GetDlgItem(hwnd, IDC_EDITTEMPLATE), TRUE);
-						EnableWindow(GetDlgItem(hwnd, IDC_GPREVIEW), TRUE);
-						EnableWindow(GetDlgItem(hwnd, IDC_PREVIEW), TRUE);
-						EnableWindow(GetDlgItem(hwnd, IDC_DISCARD), TRUE);
-						EnableWindow(GetDlgItem(hwnd, IDC_UPDATEPREVIEW), TRUE);
-						EnableWindow(GetDlgItem(hwnd, IDC_VARHELP), TRUE);
-					}
-
-					if ((lpnmtv->itemOld.mask & TVIF_HANDLE) && lpnmtv->itemOld.hItem && (lpnmtv->itemOld.hItem != lpnmtv->itemNew.hItem) && (lpnmtv->itemOld.lParam >= 0) && (lpnmtv->itemOld.lParam < TPL_COUNT)) {
-						if (templates[lpnmtv->itemOld.lParam].tmpValue)
-							free(templates[lpnmtv->itemOld.lParam].tmpValue);
-						int length = GetWindowTextLength(GetDlgItem(hwnd, IDC_EDITTEMPLATE)) + 1;
-						templates[lpnmtv->itemOld.lParam].tmpValue = (TCHAR *)malloc(length * sizeof(TCHAR));
-						GetWindowText(GetDlgItem(hwnd, IDC_EDITTEMPLATE), templates[lpnmtv->itemOld.lParam].tmpValue, length);
-					}
-
-					CurrentTemplate = tvi.lParam;
-
-					if (templates[CurrentTemplate].tmpValue)
-						SetWindowText(GetDlgItem(hwnd, IDC_EDITTEMPLATE), templates[CurrentTemplate].tmpValue);
-					else if (templates[CurrentTemplate].value)
-						SetWindowText(GetDlgItem(hwnd, IDC_EDITTEMPLATE), templates[CurrentTemplate].value);
-					else
-						SetWindowText(GetDlgItem(hwnd, IDC_EDITTEMPLATE), templates[CurrentTemplate].defvalue);
-
-					PostMessage(hwnd, WM_COMMAND, MAKEWPARAM(IDC_UPDATEPREVIEW, 0), 0);
-				}
-				break;
-
-			case TVN_KEYDOWN:
-			case NM_CLICK:
-				SendMessage(GetParent(hwnd), PSM_CHANGED, 0, 0);
-				break;
-			}
-			break;
+		else {
+			preview.SetText(L"");
+			gpreview.SetText(L"");
 		}
-		break;
 	}
-	return FALSE;
-}
 
-static int OptionsInitialize(WPARAM wParam, LPARAM)
+	CCtrlBase preview, gpreview;
+	CCtrlEdit m_edit;
+	CCtrlMButton btnDiscard, btnPreview, bthVarHelp;
+	CCtrlTreeView m_tree;
+
+public:
+	COptionsDlg() :
+		CDlgBase(g_plugin, IDD_OPT_TEMPLATES),
+		m_edit(this, IDC_EDITTEMPLATE),
+		m_tree(this, IDC_TEMPLATES),
+		preview(this, IDC_PREVIEW),
+		gpreview(this, IDC_GPREVIEW),
+		btnDiscard(this, IDC_DISCARD, g_plugin.getIcon(ICO_RESET), LPGEN("Cancel edit")),
+		bthVarHelp(this, IDC_VARHELP, g_plugin.getIcon(ICO_VARHELP), LPGEN("Help on variables")),
+		btnPreview(this, IDC_UPDATEPREVIEW, g_plugin.getIcon(ICO_PREVIEW), LPGEN("Update preview"))
+	{
+		btnDiscard.OnClick = Callback(this, &COptionsDlg::onClick_Discard);
+		btnPreview.OnClick = Callback(this, &COptionsDlg::UpdatePreview);
+		bthVarHelp.OnClick = Callback(this, &COptionsDlg::onVarHelp);
+
+		m_tree.OnSelChanged = Callback(this, &COptionsDlg::onSelChanged);
+	}
+
+	bool OnInitDialog() override
+	{
+		HIMAGELIST himgTree = ImageList_Create(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), ILC_COLOR32 | ILC_MASK, 1, 1);
+		m_tree.SetImageList(himgTree, TVSIL_NORMAL);
+
+		ImageList_AddIcon(himgTree, g_plugin.getIcon(ICO_TPLGROUP));
+
+		HTREEITEM hGroup = 0, hFirst = 0;
+		const wchar_t *pwszPrevGroup = nullptr;
+		for (auto &it : templates) {
+			if (mir_wstrcmp(it.group, pwszPrevGroup)) {
+				if (hGroup)
+					m_tree.Expand(hGroup, TVE_EXPAND);
+
+				TVINSERTSTRUCT tvis = {};
+				tvis.hInsertAfter = TVI_LAST;
+				tvis.item.mask = TVIF_TEXT | TVIF_STATE | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE;
+				tvis.item.state = tvis.item.stateMask = TVIS_BOLD;
+				tvis.item.pszText = it.group;
+				tvis.item.lParam = 0;
+				hGroup = m_tree.InsertItem(&tvis);
+
+				if (!hFirst)
+					hFirst = hGroup;
+			}
+
+			TVINSERTSTRUCT tvis;
+			tvis.hParent = hGroup;
+			tvis.hInsertAfter = TVI_LAST;
+			tvis.item.mask = TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE;
+			tvis.item.pszText = it.title;
+			tvis.item.iSelectedImage = tvis.item.iImage = ImageList_AddIcon(himgTree, g_plugin.getIcon(it.icon));
+			tvis.item.lParam = (LPARAM)&it;
+			m_tree.InsertItem(&tvis);
+
+			pwszPrevGroup = it.group;
+		}
+
+		if (hGroup)
+			m_tree.Expand(hGroup, TVE_EXPAND);
+
+		m_tree.SelectItem(hFirst);
+		m_tree.EnsureVisible(hFirst);
+		return true;
+	}
+
+	bool OnApply() override
+	{
+		if (m_curr != nullptr)
+			replaceStrW(m_curr->tmpValue, m_edit.GetText());
+
+		for (auto &it : templates) {
+			if (it.tmpValue) {
+				replaceStrW(it.value, it.tmpValue);
+				it.tmpValue = nullptr;
+			}
+		}
+		SaveTemplates();
+		return true;
+	}
+
+	void OnDestroy() override
+	{
+		for (auto &it : templates)
+			replaceStrW(it.tmpValue, nullptr);
+	}
+
+	void onClick_Discard(CCtrlButton *)
+	{
+		replaceStrW(m_curr->tmpValue, 0);
+
+		if (m_curr->value)
+			m_edit.SetText(m_curr->value);
+		else
+			m_edit.SetText(m_curr->defvalue);
+
+		UpdatePreview(0);
+	}
+
+	void onVarHelp(CCtrlButton*)
+	{
+		CMStringW wszVarHelp;
+		wszVarHelp.Format(L"%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s",
+			L"%", TranslateT("simply % character"),
+			L"%n", TranslateT("line break"),
+			L"%S", TranslateT("my nick"),
+			L"%N", TranslateT("buddy\'s nick"),
+			L"%c", TranslateT("event count"),
+			L"%I", TranslateT("icon"),
+			L"%i", TranslateT("direction icon"),
+			L"%D", TranslateT("direction symbol"),
+			L"%t", TranslateT("timestamp"),
+			L"%h", TranslateT("hour (24 hour format, 0-23)"),
+			L"%a", TranslateT("hour (12 hour format)"),
+			L"%m", TranslateT("minute"),
+			L"%s", TranslateT("second"),
+			L"%o", TranslateT("month"),
+			L"%d", TranslateT("day of month"),
+			L"%y", TranslateT("year"),
+			L"%w", TranslateT("day of week (Sunday, Monday... translatable)"),
+			L"%p", TranslateT("am/pm symbol"),
+			L"%O", TranslateT("name of month, translatable"),
+			L"%M", TranslateT("the message string itself"));
+		MessageBox(m_hwnd, wszVarHelp, TranslateT("Variables help"), MB_OK);
+	}
+
+	void onSelChanged(CCtrlTreeView::TEventInfo*)
+	{
+		TVITEMEX tvi;
+		tvi.hItem = m_tree.GetSelection();
+		tvi.mask = TVIF_PARAM;
+		m_tree.GetItem(&tvi);
+
+		if (tvi.lParam == 0) {
+			m_edit.Disable();
+			preview.Disable();
+			gpreview.Disable();
+			btnDiscard.Disable();
+			btnPreview.Disable();
+			bthVarHelp.Disable();
+
+			HTREEITEM hItem = m_tree.GetChild(tvi.hItem);
+			if (hItem) {
+				m_tree.Expand(tvi.hItem, TVE_EXPAND);
+				m_tree.SelectItem(hItem);
+			}
+			return;
+		}
+
+		m_edit.Enable();
+		preview.Enable();
+		gpreview.Enable();
+		btnDiscard.Enable();
+		btnPreview.Enable();
+		bthVarHelp.Enable();
+
+		if (m_curr != nullptr)
+			replaceStrW(m_curr->tmpValue, m_edit.GetText());
+
+		m_curr = (TemplateInfo*)tvi.lParam;
+
+		if (m_curr->tmpValue)
+			m_edit.SetText(m_curr->tmpValue);
+		else if (m_curr->value)
+			m_edit.SetText(m_curr->value);
+		else
+			m_edit.SetText(m_curr->defvalue);
+
+		UpdatePreview(0);
+	}
+};
+
+int OptionsInitialize(WPARAM wParam, LPARAM)
 {
-	OPTIONSDIALOGPAGE odp = { 0 };
+	OPTIONSDIALOGPAGE odp = {};
 	odp.position = 100000000;
 	odp.szGroup.a = LPGEN("History");
-	odp.szTitle.a = LPGEN("Newstory");
+	odp.szTitle.a = LPGEN("NewStory");
 	odp.flags = ODPF_BOLDGROUPS;
 
 	odp.szTab.a = LPGEN("Templates");
-	odp.pfnDlgProc = OptTemplatesDlgProc;
-	odp.pszTemplate = MAKEINTRESOURCEA(IDD_OPT_TEMPLATES);
+	odp.pDialog = new COptionsDlg();
 	g_plugin.addOptions(wParam, &odp);
 	return 0;
-}
-
-void InitOptions()
-{
-	HookEvent(ME_OPT_INITIALISE, OptionsInitialize);
 }

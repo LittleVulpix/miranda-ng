@@ -78,15 +78,10 @@ bool CSkypeGCCreateDlg::OnInitDialog()
 void CSkypeGCCreateDlg::btnOk_OnOk(CCtrlButton*)
 {
 	for (auto &hContact : m_proto->AccContacts()) {
-		if (!m_proto->isChatRoom(hContact)) {
-			if (HANDLE hItem = m_clc.FindContact(hContact)) {
-				if (m_clc.GetCheck(hItem)) {
-					char *szName = mir_strdup(m_proto->Contacts[hContact]);
-					if (szName != nullptr)
-						m_ContactsList.insert(szName);
-				}
-			}
-		}
+		if (!m_proto->isChatRoom(hContact))
+			if (HANDLE hItem = m_clc.FindContact(hContact))
+				if (m_clc.GetCheck(hItem)) 
+					m_ContactsList.insert(m_proto->getId(hContact).Detach());
 	}
 	
 	m_ContactsList.insert(m_proto->m_szSkypename.GetBuffer());
@@ -105,13 +100,6 @@ void CSkypeGCCreateDlg::FilterList(CCtrlClc *)
 
 void CSkypeGCCreateDlg::ResetListOptions(CCtrlClc *)
 {
-	m_clc.SetBkBitmap(0, nullptr);
-	m_clc.SetBkColor(GetSysColor(COLOR_WINDOW));
-	m_clc.SetGreyoutFlags(0);
-	m_clc.SetLeftMargin(4);
-	m_clc.SetIndent(10);
 	m_clc.SetHideEmptyGroups(true);
 	m_clc.SetHideOfflineRoot(true);
-	for (int i = 0; i <= FONTID_MAX; i++)
-		m_clc.SetTextColor(i, GetSysColor(COLOR_WINDOWTEXT));
 }
