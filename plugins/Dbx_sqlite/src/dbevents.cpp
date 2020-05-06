@@ -123,7 +123,7 @@ LONG CDbxSQLite::GetEventCount(MCONTACT hContact)
 	return cc->m_count;
 }
 
-MEVENT CDbxSQLite::AddEvent(MCONTACT hContact, DBEVENTINFO *dbei)
+MEVENT CDbxSQLite::AddEvent(MCONTACT hContact, const DBEVENTINFO *dbei)
 {
 	if (dbei == nullptr)
 		return 0;
@@ -201,7 +201,7 @@ MEVENT CDbxSQLite::AddEvent(MCONTACT hContact, DBEVENTINFO *dbei)
 			m_modules.insert(mir_strdup(dbei->szModule));
 	}
 
-	if (m_safetyMode)
+	if (m_safetyMode && !(dbei->flags & DBEF_TEMPORARY))
 		NotifyEventHooks(g_hevEventAdded, hNotifyContact, (LPARAM)hDbEvent);
 
 	return hDbEvent;
@@ -245,7 +245,7 @@ BOOL CDbxSQLite::DeleteEvent(MEVENT hDbEvent)
 	return 0;
 }
 
-BOOL CDbxSQLite::EditEvent(MCONTACT hContact, MEVENT hDbEvent, DBEVENTINFO *dbei)
+BOOL CDbxSQLite::EditEvent(MCONTACT hContact, MEVENT hDbEvent, const DBEVENTINFO *dbei)
 {
 	if (dbei == nullptr)
 		return 1;

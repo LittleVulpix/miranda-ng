@@ -1,57 +1,92 @@
 #include "stdafx.h"
 
-// Option dialog
+/////////////////////////////////////////////////////////////////////////////////////////
+// General options dialog
 
-class COptionsDlg : public CDlgBase
+class CGeneralOptsDlg : public CDlgBase
 {
+	CCtrlCheck chkGrouping, chkVScroll, chkDrawEdge;
+
+public:
+	CGeneralOptsDlg() :
+		CDlgBase(g_plugin, IDD_OPT_ADVANCED),
+		chkVScroll(this, IDC_VSCROLL),
+		chkDrawEdge(this, IDC_DRAWEDGE),
+		chkGrouping(this, IDC_GROUPING)
+	{
+		CreateLink(chkVScroll, g_plugin.bOptVScroll);
+		CreateLink(chkGrouping, g_bOptGrouping);
+		CreateLink(chkDrawEdge, g_bOptDrawEdge);
+	}
+
+	bool OnApply() override
+	{
+		g_plugin.bDrawEdge = g_bOptDrawEdge;
+		g_plugin.bMsgGrouping = g_bOptGrouping;
+		return true;
+	}
+};
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// Template options dialog
+
+class CTemplateOptsDlg : public CDlgBase
+{
+	MCONTACT m_hContact;
+	MEVENT m_hDbEVent;
 	TemplateInfo *m_curr = 0;
 
 	void UpdatePreview(CCtrlButton*)
 	{
 		replaceStrW(m_curr->tmpValue, m_edit.GetText());
 
-		HistoryArray::ItemData item;
-		item.hContact = db_find_first();
-		while (item.hContact && !item.hEvent) {
-			item.hEvent = db_event_first(item.hContact);
-			if (!item.hEvent)
-				item.hContact = db_find_next(item.hContact);
-		}
-
-		if (item.hContact && item.hEvent) {
-			item.load(ELM_DATA);
+		ItemData item;
+		item.hContact = m_hContact;
+		item.hEvent = m_hDbEVent;
+		item.load(true);
 			
-			ptrW wszText(TplFormatStringEx(int(m_curr-templates), m_curr->tmpValue, item.hContact, &item));
-			preview.SetText(wszText);
-			gpreview.SetText(wszText);
-		}
-		else {
-			preview.SetText(L"");
-			gpreview.SetText(L"");
-		}
+		ptrW wszText(TplFormatStringEx(int(m_curr-templates), m_curr->tmpValue, item.hContact, &item));
+		preview.SetText(wszText);
+		gpreview.SetText(wszText);
 	}
 
 	CCtrlBase preview, gpreview;
 	CCtrlEdit m_edit;
-	CCtrlMButton btnDiscard, btnPreview, bthVarHelp;
+	CCtrlMButton btnDiscard, btnPreview, bthVarHelp, btnReset;
 	CCtrlTreeView m_tree;
 
 public:
-	COptionsDlg() :
+	CTemplateOptsDlg() :
 		CDlgBase(g_plugin, IDD_OPT_TEMPLATES),
 		m_edit(this, IDC_EDITTEMPLATE),
 		m_tree(this, IDC_TEMPLATES),
 		preview(this, IDC_PREVIEW),
 		gpreview(this, IDC_GPREVIEW),
+		btnReset(this, IDC_RESET, Skin_LoadIcon(SKINICON_OTHER_UNDO), LPGEN("Reset to default")),
 		btnDiscard(this, IDC_DISCARD, g_plugin.getIcon(ICO_RESET), LPGEN("Cancel edit")),
-		bthVarHelp(this, IDC_VARHELP, g_plugin.getIcon(ICO_VARHELP), LPGEN("Help on variables")),
+		bthVarHelp(this, IDC_VARHELP, g_plugin.getIcon(ICO_VARHELP), LPGEN("Variables help")),
 		btnPreview(this, IDC_UPDATEPREVIEW, g_plugin.getIcon(ICO_PREVIEW), LPGEN("Update preview"))
 	{
-		btnDiscard.OnClick = Callback(this, &COptionsDlg::onClick_Discard);
-		btnPreview.OnClick = Callback(this, &COptionsDlg::UpdatePreview);
-		bthVarHelp.OnClick = Callback(this, &COptionsDlg::onVarHelp);
+		btnReset.OnClick = Callback(this, &CTemplateOptsDlg::onClick_Reset);
+		btnDiscard.OnClick = Callback(this, &CTemplateOptsDlg::onClick_Discard);
+		btnPreview.OnClick = Callback(this, &CTemplateOptsDlg::UpdatePreview);
+		bthVarHelp.OnClick = Callback(this, &CTemplateOptsDlg::onVarHelp);
 
-		m_tree.OnSelChanged = Callback(this, &COptionsDlg::onSelChanged);
+		m_tree.OnSelChanged = Callback(this, &CTemplateOptsDlg::onSelChanged);
+
+		m_hContact = db_add_contact();
+		Proto_AddToContact(m_hContact, META_PROTO);
+		Contact_Hide(m_hContact);
+		Contact_RemoveFromList(m_hContact);
+		db_set_ws(m_hContact, META_PROTO, "Nick", TranslateT("Test contact"));
+
+		DBEVENTINFO dbei = {};
+		dbei.pBlob = (BYTE *)"The quick brown fox jumps over the lazy dog";
+		dbei.cbBlob = (DWORD)strlen((char*)dbei.pBlob);
+		dbei.flags = DBEF_TEMPORARY;
+		dbei.eventType = EVENTTYPE_MESSAGE;
+		dbei.timestamp = time(0);
+		m_hDbEVent = db_event_add(m_hContact, &dbei);
 	}
 
 	bool OnInitDialog() override
@@ -72,7 +107,7 @@ public:
 				tvis.hInsertAfter = TVI_LAST;
 				tvis.item.mask = TVIF_TEXT | TVIF_STATE | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE;
 				tvis.item.state = tvis.item.stateMask = TVIS_BOLD;
-				tvis.item.pszText = it.group;
+				tvis.item.pszText = TranslateW(it.group);
 				tvis.item.lParam = 0;
 				hGroup = m_tree.InsertItem(&tvis);
 
@@ -84,7 +119,7 @@ public:
 			tvis.hParent = hGroup;
 			tvis.hInsertAfter = TVI_LAST;
 			tvis.item.mask = TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE;
-			tvis.item.pszText = it.title;
+			tvis.item.pszText = TranslateW(it.title);
 			tvis.item.iSelectedImage = tvis.item.iImage = ImageList_AddIcon(himgTree, g_plugin.getIcon(it.icon));
 			tvis.item.lParam = (LPARAM)&it;
 			m_tree.InsertItem(&tvis);
@@ -117,8 +152,23 @@ public:
 
 	void OnDestroy() override
 	{
+		db_event_delete(m_hDbEVent);
+		db_delete_contact(m_hContact);
+
 		for (auto &it : templates)
 			replaceStrW(it.tmpValue, nullptr);
+	}
+
+	void onClick_Reset(CCtrlButton *)
+	{
+		if (m_curr) {
+			replaceStrW(m_curr->tmpValue, nullptr);
+			replaceStrW(m_curr->value, nullptr);
+			m_edit.SetText(m_curr->defvalue);
+		}
+
+		UpdatePreview(0);
+		NotifyChange();
 	}
 
 	void onClick_Discard(CCtrlButton *)
@@ -137,10 +187,10 @@ public:
 	{
 		CMStringW wszVarHelp;
 		wszVarHelp.Format(L"%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s\n%s - %s",
-			L"%", TranslateT("simply % character"),
-			L"%n", TranslateT("line break"),
-			L"%S", TranslateT("my nick"),
-			L"%N", TranslateT("buddy\'s nick"),
+			L"%%", TranslateT("simply % character"),
+			L"%n", TranslateT("a \"hard\" line break (cr/lf - will break indent)"),
+			L"%S", TranslateT("my nickname"),
+			L"%N", TranslateT("buddy\'s nickname"),
 			L"%c", TranslateT("event count"),
 			L"%I", TranslateT("icon"),
 			L"%i", TranslateT("direction icon"),
@@ -152,9 +202,9 @@ public:
 			L"%s", TranslateT("second"),
 			L"%o", TranslateT("month"),
 			L"%d", TranslateT("day of month"),
-			L"%y", TranslateT("year"),
+			L"%y", TranslateT("year (4 digits)"),
 			L"%w", TranslateT("day of week (Sunday, Monday... translatable)"),
-			L"%p", TranslateT("am/pm symbol"),
+			L"%p", TranslateT("AM/PM symbol"),
 			L"%O", TranslateT("name of month, translatable"),
 			L"%M", TranslateT("the message string itself"));
 		MessageBox(m_hwnd, wszVarHelp, TranslateT("Variables help"), MB_OK);
@@ -215,7 +265,11 @@ int OptionsInitialize(WPARAM wParam, LPARAM)
 	odp.flags = ODPF_BOLDGROUPS;
 
 	odp.szTab.a = LPGEN("Templates");
-	odp.pDialog = new COptionsDlg();
+	odp.pDialog = new CTemplateOptsDlg();
+	g_plugin.addOptions(wParam, &odp);
+
+	odp.szTab.a = LPGEN("Advanced");
+	odp.pDialog = new CGeneralOptsDlg();
 	g_plugin.addOptions(wParam, &odp);
 	return 0;
 }

@@ -16,7 +16,7 @@ struct TemplateVars
 		return val[id];
 	}
 
-	__forceinline void SetVar(uint8_t id, wchar_t *v, bool d) {
+	__forceinline void SetVar(uint8_t id, const wchar_t *v, bool d) {
 		if (val[id] && del[id])
 			mir_free(val[id]);
 		val[id] = mir_wstrdup(v);
@@ -24,7 +24,7 @@ struct TemplateVars
 	}
 };
 
-typedef void(*VarFunc)(int mode, TemplateVars* vars, MCONTACT hContact, HistoryArray::ItemData* item);
+typedef void(*VarFunc)(int mode, TemplateVars* vars, MCONTACT hContact, ItemData* item);
 
 struct TemplateInfo
 {
@@ -45,6 +45,7 @@ enum
 	TPL_TITLE,
 
 	TPL_MESSAGE,
+	TPL_MSG_GRP,
 	TPL_FILE,
 	TPL_SIGN,
 	TPL_PRESENCE,
@@ -73,7 +74,7 @@ extern TemplateInfo templates[TPL_COUNT];
 void LoadTemplates();
 void SaveTemplates();
 
-wchar_t* TplFormatString(int tpl, MCONTACT hContact, HistoryArray::ItemData* args);
-wchar_t* TplFormatStringEx(int tpl, wchar_t* sztpl, MCONTACT hContact, HistoryArray::ItemData* args);
+wchar_t* TplFormatString(int tpl, MCONTACT hContact, ItemData *args);
+wchar_t* TplFormatStringEx(int tpl, wchar_t *sztpl, MCONTACT hContact, ItemData *args);
 
 #endif // __templates_h__

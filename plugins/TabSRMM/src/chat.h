@@ -102,8 +102,7 @@ char* Log_CreateRTF(LOGSTREAMDATA *streamData);
 
 // options.c
 enum { FONTSECTION_AUTO, FONTSECTION_IM, FONTSECTION_IP };
-void  LoadMsgDlgFont(int section, int i, LOGFONT *lf, COLORREF *colour, char *szModule);
-void  LoadLogfont(int section, int i, LOGFONTA *lf, COLORREF *colour, char *szModule);
+void  LoadMsgDlgFont(int section, int i, LOGFONTW *lf, COLORREF *colour = nullptr);
 
 void  AddIcons(void);
 HICON LoadIconEx(char *pszIcoLibName);
@@ -117,6 +116,8 @@ SESSION_INFO* SM_FindSessionByHCONTACT(MCONTACT h);
 SESSION_INFO* SM_FindSessionAutoComplete(const char* pszModule, SESSION_INFO* currSession, SESSION_INFO* prevSession, const wchar_t* pszOriginal, const wchar_t* pszCurrent);
 
 BOOL SM_ReconfigureFilters();
+
+void OnCreateNick(const SESSION_INFO *si, const LOGINFO *lin, CMStringW &wszNick);
 
 int UM_CompareItem(const USERINFO *u1, const USERINFO *u2);
 

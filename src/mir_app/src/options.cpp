@@ -948,10 +948,14 @@ public:
 			return;
 		}
 
-		tvi.mask = TVIF_HANDLE | TVIF_PARAM;
-		m_pageTree.GetItem(&tvi);
-		m_currentPage = tvi.lParam;
 		ShowWindow(GetDlgItem(m_hwnd, IDC_TAB), SW_HIDE);
+
+		// if called inside OnInitDialog, we do not update current page
+		if (IsInitialized()) {
+			tvi.mask = TVIF_HANDLE | TVIF_PARAM;
+			m_pageTree.GetItem(&tvi);
+			m_currentPage = tvi.lParam;
+		}
 
 		opd = getCurrent();
 		if (opd == nullptr) {

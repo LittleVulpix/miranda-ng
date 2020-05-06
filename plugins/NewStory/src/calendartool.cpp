@@ -14,22 +14,10 @@ INT_PTR CALLBACK CalendarToolDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			PostMessage(hwnd, WM_CLOSE, 0, 0);
 		break;
 
-	case WM_COMMAND:
-		switch (LOWORD(wParam)) {
-		case IDOK:
-			EndDialog(hwnd, 0);
-			return TRUE;
-
-		case IDCANCEL:
-			EndDialog(hwnd, 0);
-			return TRUE;
-		}
-		break;
-
 	case WM_NOTIFY:
 		{
 			LPNMHDR hdr = (LPNMHDR)lParam;
-			if ((hdr->idFrom == IDC_MONTHCALENDAR1) && (hdr->code == MCN_SELECT)) {
+			if ((hdr->idFrom == IDC_MONTHCALENDAR) && (hdr->code == MCN_SELECT)) {
 				LPNMSELCHANGE lpnmsc = (LPNMSELCHANGE)lParam;
 				struct tm tm_sel;
 				tm_sel.tm_hour = tm_sel.tm_min = tm_sel.tm_sec = 0;
@@ -37,7 +25,8 @@ INT_PTR CALLBACK CalendarToolDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 				tm_sel.tm_mday = lpnmsc->stSelStart.wDay;
 				tm_sel.tm_mon = lpnmsc->stSelStart.wMonth - 1;
 				tm_sel.tm_year = lpnmsc->stSelStart.wYear - 1900;
-				EndDialog(hwnd, mktime(&tm_sel));
+				PostMessage(GetParent(hwnd), WM_USER + 0x600, mktime(&tm_sel), 0);
+				EndDialog(hwnd, 0);
 			}
 		}
 		return TRUE;
@@ -51,5 +40,7 @@ INT_PTR CALLBACK CalendarToolDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 
 time_t CalendarTool_Show(HWND hwnd, int x, int y)
 {
-	return DialogBoxParam(g_plugin.getInst(), MAKEINTRESOURCE(IDD_CALENDARTOOL), hwnd, CalendarToolDlgProc, MAKELONG(x, y));
+	HWND hwndCalendar = CreateDialogParam(g_plugin.getInst(), MAKEINTRESOURCE(IDD_CALENDARTOOL), hwnd, CalendarToolDlgProc, MAKELONG(x, y));
+	ShowWindow(hwndCalendar, SW_SHOW);
+	return 0;
 }

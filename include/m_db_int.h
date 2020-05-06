@@ -95,9 +95,9 @@ interface MIR_APP_EXPORT MIDatabase
 	STDMETHOD_(LONG, GetContactSize)(void) PURE;
 
 	STDMETHOD_(LONG, GetEventCount)(MCONTACT contactID) PURE;
-	STDMETHOD_(MEVENT, AddEvent)(MCONTACT contactID, DBEVENTINFO *dbe) PURE;
+	STDMETHOD_(MEVENT, AddEvent)(MCONTACT contactID, const DBEVENTINFO *dbe) PURE;
 	STDMETHOD_(BOOL, DeleteEvent)(MEVENT hDbEvent) PURE;
-	STDMETHOD_(BOOL, EditEvent)(MCONTACT contactID, MEVENT hDbEvent, DBEVENTINFO *dbe) PURE;
+	STDMETHOD_(BOOL, EditEvent)(MCONTACT contactID, MEVENT hDbEvent, const DBEVENTINFO *dbe) PURE;
 	STDMETHOD_(LONG, GetBlobSize)(MEVENT hDbEvent) PURE;
 	STDMETHOD_(BOOL, GetEvent)(MEVENT hDbEvent, DBEVENTINFO *dbe) PURE;
 	STDMETHOD_(BOOL, MarkEventRead)(MCONTACT contactID, MEVENT hDbEvent) PURE;
@@ -133,6 +133,9 @@ interface MIR_APP_EXPORT MIDatabase
 
 	STDMETHOD_(MEVENT, GetEventById)(LPCSTR szModule, LPCSTR szId) PURE;
 	STDMETHOD_(BOOL, SetEventId)(LPCSTR szModule, MEVENT, LPCSTR szId) PURE;
+
+	STDMETHOD_(DB::EventCursor*, EventCursor)(MCONTACT hContact, DBEVENTINFO &dbei) PURE;
+	STDMETHOD_(DB::EventCursor*, EventCursorRev)(MCONTACT hContact, DBEVENTINFO &dbei) PURE;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -184,6 +187,9 @@ public:
 	
 	STDMETHODIMP_(BOOL) Compact(void) override;
 	STDMETHODIMP_(BOOL) Backup(LPCWSTR) override;
+
+	STDMETHODIMP_(DB::EventCursor*) EventCursor(MCONTACT hContact, DBEVENTINFO &dbei) override;
+	STDMETHODIMP_(DB::EventCursor*) EventCursorRev(MCONTACT hContact, DBEVENTINFO &dbei) override;
 };
 
 #pragma warning(pop)
@@ -209,9 +215,9 @@ public:
 	STDMETHODIMP_(LONG) GetContactSize(void) override;
 
 	////////////////////////////////////////////////////////////////////////////////////////
-	STDMETHODIMP_(MEVENT) AddEvent(MCONTACT, DBEVENTINFO*) override;
+	STDMETHODIMP_(MEVENT) AddEvent(MCONTACT, const DBEVENTINFO*) override;
 	STDMETHODIMP_(BOOL) DeleteEvent(MEVENT) override;
-	STDMETHODIMP_(BOOL) EditEvent(MCONTACT contactID, MEVENT hDbEvent, DBEVENTINFO *dbe);
+	STDMETHODIMP_(BOOL) EditEvent(MCONTACT contactID, MEVENT hDbEvent, const DBEVENTINFO *dbe) override;
 	STDMETHODIMP_(LONG) GetBlobSize(MEVENT) override;
 	STDMETHODIMP_(BOOL) MarkEventRead(MCONTACT, MEVENT) override;
 	STDMETHODIMP_(MCONTACT) GetEventContact(MEVENT) override;

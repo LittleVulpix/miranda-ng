@@ -34,7 +34,7 @@ LONG CDbxMDBX::GetEventCount(MCONTACT contactID)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-MEVENT CDbxMDBX::AddEvent(MCONTACT contactID, DBEVENTINFO *dbei)
+MEVENT CDbxMDBX::AddEvent(MCONTACT contactID, const DBEVENTINFO *dbei)
 {
 	if (dbei == nullptr) return 0;
 	if (dbei->timestamp == 0) return 0;
@@ -127,11 +127,12 @@ BOOL CDbxMDBX::DeleteEvent(MEVENT hDbEvent)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-BOOL CDbxMDBX::EditEvent(MCONTACT contactID, MEVENT hDbEvent, DBEVENTINFO *dbei)
+BOOL CDbxMDBX::EditEvent(MCONTACT contactID, MEVENT hDbEvent, const DBEVENTINFO *dbei)
 {
 	if (dbei == nullptr) return 1;
 	if (dbei->timestamp == 0) return 1;
 
+	DBEVENTINFO tmp = *dbei;
 	{
 		txn_ptr_ro txn(m_txn_ro);
 		MDBX_val key = { &hDbEvent, sizeof(MEVENT) }, data;
@@ -139,13 +140,13 @@ BOOL CDbxMDBX::EditEvent(MCONTACT contactID, MEVENT hDbEvent, DBEVENTINFO *dbei)
 			return 1;
 
 		DBEvent *dbe = (DBEvent*)data.iov_base;
-		dbei->timestamp = dbe->timestamp;
+		tmp.timestamp = dbe->timestamp;
 	}
 
-	return !EditEvent(contactID, hDbEvent, dbei, false);
+	return !EditEvent(contactID, hDbEvent, &tmp, false);
 }
 
-bool CDbxMDBX::EditEvent(MCONTACT contactID, MEVENT hDbEvent, DBEVENTINFO *dbei, bool bNew)
+bool CDbxMDBX::EditEvent(MCONTACT contactID, MEVENT hDbEvent, const DBEVENTINFO *dbei, bool bNew)
 {
 	DBEvent dbe;
 	dbe.dwContactID = contactID; // store native or subcontact's id
@@ -244,7 +245,7 @@ bool CDbxMDBX::EditEvent(MCONTACT contactID, MEVENT hDbEvent, DBEVENTINFO *dbei,
 	DBFlush();
 
 	// Notify only in safe mode or on really new events
-	if (m_safetyMode)
+	if (m_safetyMode && !(dbei->flags & DBEF_TEMPORARY))
 		NotifyEventHooks(bNew ? g_hevEventAdded : g_hevEventEdited, contactNotifyID, hDbEvent);
 
 	return true;
@@ -332,15 +333,9 @@ void CDbxMDBX::FindNextUnread(const txn_ptr &txn, DBCachedContact *cc, DBEventSo
 
 bool CDbxMDBX::CheckEvent(DBCachedContact *cc, const DBEvent *cdbe, DBCachedContact *&cc2)
 {
-	// event's owner matches contactID passed? ok, nothing to care about
-	if (cdbe->dwContactID == cc->contactID) {
-		cc2 = nullptr;
-		return true;
-	}
-
-	// if cc is a sub, cdbe should be its meta
+	// if cc is a sub, cdbe should contain its id
 	if (cc->IsSub()) {
-		if (cc->parentID != cdbe->dwContactID)
+		if (cc->contactID != cdbe->dwContactID)
 			return false;
 		
 		cc2 = m_cache->GetCachedContact(cc->parentID);
@@ -356,8 +351,9 @@ bool CDbxMDBX::CheckEvent(DBCachedContact *cc, const DBEvent *cdbe, DBCachedCont
 		return (cc2->parentID == cc->contactID);
 	}
 
-	// the contactID is invalid 
-	return false;
+	// neither a sub, nor a meta. a usual contact. Contact IDs must match one another
+	cc2 = nullptr;
+	return cc->contactID == cdbe->dwContactID;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

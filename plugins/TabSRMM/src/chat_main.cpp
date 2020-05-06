@@ -224,7 +224,7 @@ void ShowRoom(TContainerData *pContainer, SESSION_INFO *si)
 	if (pContainer == nullptr) {
 		GetContainerNameForContact(si->hContact, szName, CONTAINER_NAMELEN);
 		if (!g_Settings.bOpenInDefault && !mir_wstrcmp(szName, L"default"))
-			wcsncpy(szName, L"Chat Rooms", CONTAINER_NAMELEN);
+			wcsncpy_s(szName, L"Chat Rooms", _TRUNCATE);
 		szName[CONTAINER_NAMELEN] = 0;
 		pContainer = FindContainerByName(szName);
 	}
@@ -353,7 +353,8 @@ int Chat_Load()
 
 	CHAT_MANAGER_INITDATA data = { &g_Settings, sizeof(MODULEINFO), sizeof(SESSION_INFO), LPGENW("Message sessions") L"/" LPGENW("Group chats"), FONTMODE_ALTER, &g_plugin };
 	Chat_CustomizeApi(&data);
-	
+
+	g_chatApi.CreateNick = OnCreateNick;
 	g_chatApi.MM_CreateModule = MM_CreateModule;
 	g_chatApi.OnCreateModule = OnCreateModule;
 	g_chatApi.OnNewUser = OnNewUser;

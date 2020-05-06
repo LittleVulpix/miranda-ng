@@ -97,7 +97,7 @@ static _extSettings_v5[] =
  * *lf = pointer to a LOGFONT structure which will receive the font definition
  * *colour = pointer to a COLORREF which will receive the color of the font definition
  */
-static void TSAPI LoadLogfontFromINI(int i, char *szKey, LOGFONTA *lf, COLORREF *colour, const char *szIniFilename)
+static void TSAPI LoadLogfontFromINI(int i, char *szKey, LOGFONTW *lf, COLORREF *colour, const char *szIniFilename)
 {
 	int style;
 	char bSize;
@@ -136,11 +136,10 @@ static void TSAPI LoadLogfontFromINI(int i, char *szKey, LOGFONTA *lf, COLORREF 
 		lf->lfQuality = DEFAULT_QUALITY;
 		lf->lfPitchAndFamily = DEFAULT_PITCH | FF_DONTCARE;
 		if (i == MSGFONTID_SYMBOLS_IN || i == MSGFONTID_SYMBOLS_OUT) {
-			strncpy_s(lf->lfFaceName, "Webdings", _TRUNCATE);
+			wcsncpy_s(lf->lfFaceName, L"Webdings", _TRUNCATE);
 			lf->lfCharSet = SYMBOL_CHARSET;
 		}
-		else
-			GetPrivateProfileStringA(szKey, "Face", "Tahoma", lf->lfFaceName, LF_FACESIZE - 1, szIniFilename);
+		else GetPrivateProfileStringW(_A2T(szKey), L"Face", L"Tahoma", lf->lfFaceName, _countof(lf->lfFaceName), _A2T(szIniFilename));
 
 		/*
 		 * filter out font attributes from the message input area font
@@ -222,7 +221,7 @@ void TSAPI WriteThemeToINI(const wchar_t *szIniFilenameT, CMsgDialog *dat)
 	WritePrivateProfileStringA("Message Log", "VGrid", _itoa(M.GetByte("wantvgrid", 0), szBuf, 10), szIniFilename);
 	WritePrivateProfileStringA("Message Log", "ExtraMicroLF", _itoa(M.GetByte("extramicrolf", 0), szBuf, 10), szIniFilename);
 
-	for (i = 0; i <= TMPL_ERRMSG; i++) {
+	for (i = 0; i < TMPL_MAX; i++) {
 		T2Utf szLTR((dat == nullptr) ? LTR_Active.szTemplates[i] : dat->m_pContainer->m_ltr_templates->szTemplates[i]);
 		WritePrivateProfileStringA("Templates", TemplateNames[i], szLTR, szIniFilename);
 
@@ -368,7 +367,7 @@ void TSAPI ReadThemeFromINI(const wchar_t *szIniFilenameT, TContainerData *dat, 
 
 	if (version >= 3) {
 		if (!noAdvanced && dwFlags & THEME_READ_TEMPLATES) {
-			for (i = 0; i <= TMPL_ERRMSG; i++) {
+			for (i = 0; i < TMPL_MAX; i++) {
 				wchar_t *decoded = nullptr;
 
 				GetPrivateProfileStringA("Templates", TemplateNames[i], "[undef]", szTemplateBuffer, TEMPLATE_LENGTH * 3, szIniFilename);

@@ -2,7 +2,15 @@
 
 int TplMeasureVars(TemplateVars* vars, wchar_t* str);
 
-wchar_t *TplFormatStringEx(int tpl, wchar_t *sztpl, MCONTACT hContact, HistoryArray::ItemData *item)
+wchar_t *weekDays[7] = { LPGENW("Sunday"), LPGENW("Monday"), LPGENW("Tuesday"), LPGENW("Wednesday"), LPGENW("Thursday"), LPGENW("Friday"), LPGENW("Saturday") };
+
+wchar_t *months[12] =
+{
+	LPGENW("January"), LPGENW("February"), LPGENW("March"), LPGENW("April"), LPGENW("May"), LPGENW("June"),
+	LPGENW("July"), LPGENW("August"), LPGENW("September"), LPGENW("October"), LPGENW("November"), LPGENW("December")
+};
+
+wchar_t *TplFormatStringEx(int tpl, wchar_t *sztpl, MCONTACT hContact, ItemData *item)
 {
 	if ((tpl < 0) || (tpl >= TPL_COUNT) || !sztpl)
 		return mir_wstrdup(L"");
@@ -31,7 +39,7 @@ wchar_t *TplFormatStringEx(int tpl, wchar_t *sztpl, MCONTACT hContact, HistoryAr
 	return buf;
 }
 
-wchar_t *TplFormatString(int tpl, MCONTACT hContact, HistoryArray::ItemData *item)
+wchar_t *TplFormatString(int tpl, MCONTACT hContact, ItemData *item)
 {
 	if ((tpl < 0) || (tpl >= TPL_COUNT))
 		return mir_wstrdup(L"");
@@ -102,7 +110,7 @@ int TplMeasureVars(TemplateVars *vars, wchar_t *str)
 }
 
 // Loading variables
-void vfGlobal(int, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData *)
+void vfGlobal(int, TemplateVars *vars, MCONTACT hContact, ItemData *)
 {
 	//  %%: simply % character
 	vars->SetVar('%', L"%", false);
@@ -116,7 +124,7 @@ void vfGlobal(int, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData
 	vars->SetVar('S', nick, false);
 }
 
-void vfContact(int, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData *)
+void vfContact(int, TemplateVars *vars, MCONTACT hContact, ItemData *)
 {
 	// %N: buddy's nick (not for messages)
 	wchar_t *nick = Clist_GetContactDisplayName(hContact, 0);
@@ -128,7 +136,7 @@ void vfContact(int, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemDat
 	vars->SetVar('c', buf, false);
 }
 
-void vfSystem(int, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData *)
+void vfSystem(int, TemplateVars *vars, MCONTACT hContact, ItemData *)
 {
 	// %N: buddy's nick (not for messages)
 	vars->SetVar('N', LPGENW("System event"), false);
@@ -139,7 +147,7 @@ void vfSystem(int, TemplateVars *vars, MCONTACT hContact, HistoryArray::ItemData
 	vars->SetVar('c', buf, false);
 }
 
-void vfEvent(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *item)
+void vfEvent(int, TemplateVars *vars, MCONTACT, ItemData *item)
 {
 	HICON hIcon;
 	wchar_t buf[100];
@@ -151,7 +159,7 @@ void vfEvent(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *item)
 		vars->SetVar('N', nick, false);
 	}
 	else {
-		wchar_t *nick = Clist_GetContactDisplayName(item->hContact, 0);
+		wchar_t *nick = (item->wszNick) ? item->wszNick : Clist_GetContactDisplayName(item->hContact, 0);
 		vars->SetVar('N', nick, false);
 	}
 
@@ -189,102 +197,106 @@ void vfEvent(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *item)
 		vars->SetVar('D', L">>", false);
 
 	//  %t: timestamp
-	_tcsftime(buf, _countof(buf), L"%d.%m.%Y, %H:%M", _localtime32((__time32_t *)&item->dbe.timestamp));
-	vars->SetVar('t', buf, true);
+	SYSTEMTIME st;
+	if (!TimeZone_GetSystemTime(nullptr, item->dbe.timestamp, &st, 0)) {
+		int iLocale = Langpack_GetDefaultLocale();
 
-	//  %h: hour (24 hour format, 0-23)
-	_tcsftime(buf, _countof(buf), L"%H", _localtime32((__time32_t *)&item->dbe.timestamp));
-	vars->SetVar('h', buf, true);
+		CMStringW tmp;
+		GetDateFormatW(iLocale, 0, &st, L"dd.MM.yyyy, ", buf, _countof(buf)); tmp += buf;
+		GetTimeFormatW(iLocale, 0, &st, L"HH:mm", buf, _countof(buf)); tmp += buf;
+		vars->SetVar('t', tmp, true);
 
-	//  %a: hour (12 hour format)
-	_tcsftime(buf, _countof(buf), L"%h", _localtime32((__time32_t *)&item->dbe.timestamp));
-	vars->SetVar('a', buf, true);
+		//  %h: hour (24 hour format, 0-23)
+		GetTimeFormatW(iLocale, 0, &st, L"HH", buf, _countof(buf));
+		vars->SetVar('h', buf, true);
 
-	//  %m: minute
-	_tcsftime(buf, _countof(buf), L"%M", _localtime32((__time32_t *)&item->dbe.timestamp));
-	vars->SetVar('m', buf, true);
+		//  %a: hour (12 hour format)
+		GetTimeFormatW(iLocale, 0, &st, L"hh", buf, _countof(buf));
+		vars->SetVar('a', buf, true);
 
-	//  %s: second
-	_tcsftime(buf, _countof(buf), L"%S", _localtime32((__time32_t *)&item->dbe.timestamp));
-	vars->SetVar('s', buf, true);
+		//  %m: minute
+		GetTimeFormatW(iLocale, 0, &st, L"mm", buf, _countof(buf));
+		vars->SetVar('m', buf, true);
 
-	//  %o: month
-	_tcsftime(buf, _countof(buf), L"%m", _localtime32((__time32_t *)&item->dbe.timestamp));
-	vars->SetVar('o', buf, true);
+		//  %s: second
+		GetTimeFormatW(iLocale, 0, &st, L"ss", buf, _countof(buf));
+		vars->SetVar('s', buf, true);
 
-	//  %d: day of month
-	_tcsftime(buf, _countof(buf), L"%d", _localtime32((__time32_t *)&item->dbe.timestamp));
-	vars->SetVar('d', buf, true);
+		//  %o: month
+		GetDateFormatW(iLocale, 0, &st, L"MM", buf, _countof(buf));
+		vars->SetVar('o', buf, true);
 
-	//  %y: year
-	_tcsftime(buf, _countof(buf), L"%Y", _localtime32((__time32_t *)&item->dbe.timestamp));
-	vars->SetVar('y', buf, true);
+		//  %d: day of month
+		GetDateFormatW(iLocale, 0, &st, L"dd", buf, _countof(buf));
+		vars->SetVar('d', buf, true);
 
-	//  %w: day of week (Sunday, Monday... translatable)
-	_tcsftime(buf, _countof(buf), L"%A", _localtime32((__time32_t *)&item->dbe.timestamp));
-	vars->SetVar('w', TranslateW(buf), false);
+		//  %y: year
+		GetDateFormatW(iLocale, 0, &st, L"yyyy", buf, _countof(buf));
+		vars->SetVar('y', buf, true);
 
-	//  %p: AM/PM symbol
-	_tcsftime(buf, _countof(buf), L"%p", _localtime32((__time32_t *)&item->dbe.timestamp));
-	vars->SetVar('p', buf, true);
+		//  %w: day of week (Sunday, Monday... translatable)
+		vars->SetVar('w', TranslateW(weekDays[st.wDayOfWeek]), false);
 
-	//  %O: Name of month, translatable
-	_tcsftime(buf, _countof(buf), L"%B", _localtime32((__time32_t *)&item->dbe.timestamp));
-	vars->SetVar('O', TranslateW(buf), false);
+		//  %p: AM/PM symbol
+		vars->SetVar('p', (st.wHour > 11) ? L"PM" : L"AM", true);
+
+		//  %O: Name of month, translatable
+		vars->SetVar('O', TranslateW(months[st.wMonth-1]), false);
+	}
 }
 
-void vfMessage(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *item)
+void vfMessage(int, TemplateVars *vars, MCONTACT, ItemData *item)
 {
 	//  %M: the message string itself
 	vars->SetVar('M', item->getWBuf(), false);
 }
 
-void vfFile(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *item)
+void vfFile(int, TemplateVars *vars, MCONTACT, ItemData *item)
 {
 	//  %M: the message string itself
 	vars->SetVar('M', item->getWBuf(), false);
 }
 
-void vfUrl(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *item)
+void vfUrl(int, TemplateVars *vars, MCONTACT, ItemData *item)
 {
 	//  %M: the message string itself
 	vars->SetVar('M', item->getWBuf(), false);
 }
 
-void vfSign(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *item)
+void vfSign(int, TemplateVars *vars, MCONTACT, ItemData *item)
 {
 	//  %M: the message string itself
 	vars->SetVar('M', item->getWBuf(), false);
 }
 
-void vfAuth(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *item)
+void vfAuth(int, TemplateVars *vars, MCONTACT, ItemData *item)
 {
 	//  %M: the message string itself
 	vars->SetVar('M', item->getWBuf(), false);
 }
 
-void vfAdded(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *item)
+void vfAdded(int, TemplateVars *vars, MCONTACT, ItemData *item)
 {
 	//  %M: the message string itself
 	vars->SetVar('M', item->getWBuf(), false);
 }
 
-void vfPresence(int, TemplateVars* vars, MCONTACT, HistoryArray::ItemData* item)
+void vfPresence(int, TemplateVars* vars, MCONTACT, ItemData* item)
 {
 	//  %M: the message string itself
 	vars->SetVar('M', item->getWBuf(), false);
 }
 
-void vfDeleted(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *item)
+void vfDeleted(int, TemplateVars *vars, MCONTACT, ItemData *item)
 {
 	//  %M: the message string itself
 	vars->SetVar('M', item->getWBuf(), false);
 }
 
-void vfOther(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *)
+void vfOther(int, TemplateVars *vars, MCONTACT, ItemData *)
 {
 	//  %M: the message string itself
-	vars->SetVar('M', LPGENW("Unknown event"), false);
+	vars->SetVar('M', TranslateT("Unknown event"), false);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -292,11 +304,14 @@ void vfOther(int, TemplateVars *vars, MCONTACT, HistoryArray::ItemData *)
 TemplateInfo templates[TPL_COUNT] =
 {
 	{ "tpl/interface/title", LPGENW("Interface"), ICO_NEWSTORY, LPGENW("Window title"),
-		L"%N - History [%c messages total]", 0, 0,
+		L"%N - history [%c messages total]", 0, 0,
 		{ vfGlobal, vfContact, 0, 0, 0 } },
 
 	{ "tpl/msglog/msg", LPGENW("Message log"), ICO_SENDMSG, LPGENW("Messages"),
-		L"%I%i[b]%N, %t:[/b]\x0d\x0a%M", 0, 0,
+	L"%I%i[b][color=red]%N[/color], %t:[/b]\x0d\x0a%M", 0, 0,
+		{ vfGlobal, vfContact, vfEvent, vfMessage, 0 } },
+	{ "tpl/msglog/msg_grp", LPGENW("Message log"), ICO_SENDMSG, LPGENW("Grouped messages"),
+		L"%I%i[b]%t:[/b] %M", 0, 0,
 		{ vfGlobal, vfContact, vfEvent, vfMessage, 0 } },
 	{ "tpl/msglog/file", LPGENW("Message log"), ICO_FILE, LPGENW("Files"),
 		L"%I%i[b]%N, %t:[/b]%n%M", 0, 0,

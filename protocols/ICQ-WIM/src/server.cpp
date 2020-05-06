@@ -521,7 +521,7 @@ AsyncHttpRequest* CIcqProto::UserInfoRequest(MCONTACT hContact)
 	return pReq;
 }
 
-void CIcqProto::RetrieveUserHistory(MCONTACT hContact, __int64 startMsgId, bool bFromHistory)
+void CIcqProto::RetrieveUserHistory(MCONTACT hContact, __int64 startMsgId)
 {
 	if (startMsgId == 0)
 		startMsgId = -1;
@@ -531,7 +531,6 @@ void CIcqProto::RetrieveUserHistory(MCONTACT hContact, __int64 startMsgId, bool 
 		pReq->flags |= NLHRF_NODUMPSEND;
 	#endif
 	pReq->hContact = hContact;
-	pReq->pUserInfo = (bFromHistory) ? pReq : nullptr;
 
 	__int64 patchVer = getId(hContact, DB_KEY_PATCHVER);
 	if (patchVer == 0)
@@ -866,9 +865,10 @@ LBL_Error:
 		return;
 	}
 
-	ft->pfts.totalProgress += pReply->dataLength;
-	ft->pfts.currentFileProgress += pReply->dataLength;
-	ProtoBroadcastAck(ft->pfts.hContact, ACKTYPE_FILE, ACKRESULT_DATA, ft, (LPARAM)&ft->pfts);
+	ft->hWaitEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+	if (ProtoBroadcastAck(ft->pfts.hContact, ACKTYPE_FILE, ACKRESULT_FILERESUME, ft, (LPARAM)&ft->pfts))
+		WaitForSingleObject(ft->hWaitEvent, INFINITE);
+	CloseHandle(ft->hWaitEvent);
 
 	debugLogW(L"Saving to [%s]", ft->pfts.szCurrentFile.w);
 	int fileId = _wopen(ft->pfts.szCurrentFile.w, _O_BINARY | _O_CREAT | _O_TRUNC | _O_WRONLY, _S_IREAD | _S_IWRITE);
@@ -883,6 +883,10 @@ LBL_Error:
 		debugLogW(L"Error writing data into [%s]", ft->pfts.szCurrentFile.w);
 		goto LBL_Error;
 	}
+
+	ft->pfts.totalProgress += pReply->dataLength;
+	ft->pfts.currentFileProgress += pReply->dataLength;
+	ProtoBroadcastAck(ft->pfts.hContact, ACKTYPE_FILE, ACKRESULT_DATA, ft, (LPARAM)&ft->pfts);
 
 	ProtoBroadcastAck(ft->pfts.hContact, ACKTYPE_FILE, ACKRESULT_SUCCESS, ft, 0);
 	delete ft;
@@ -910,7 +914,7 @@ void CIcqProto::OnGetUserHistory(NETLIBHTTPREQUEST *pReply, AsyncHttpRequest *pR
 
 	auto &results = root.results();
 	for (auto &it : results["messages"])
-		ParseMessage(pReq->hContact, lastMsgId, it, pReq->pUserInfo != nullptr);
+		ParseMessage(pReq->hContact, lastMsgId, it, true);
 
 	setId(pReq->hContact, DB_KEY_LASTMSGID, lastMsgId);
 }

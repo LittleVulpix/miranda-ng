@@ -156,7 +156,7 @@ INT_PTR CIcqProto::OnMenuLoadHistory(WPARAM hContact, LPARAM)
 {
 	delSetting(hContact, DB_KEY_LASTMSGID);
 
-	RetrieveUserHistory(hContact, 1, true);
+	RetrieveUserHistory(hContact, 1);
 	return 0;
 }
 
@@ -428,6 +428,19 @@ int CIcqProto::FileCancel(MCONTACT hContact, HANDLE hTransfer)
 
 	auto *ft = (IcqFileTransfer *)hTransfer;
 	delete ft;
+	return 0;
+}
+
+int CIcqProto::FileResume(HANDLE hTransfer, int *action, const wchar_t **szFilename)
+{
+	auto *ft = (IcqFileTransfer *)hTransfer;
+	if (!m_bOnline || ft == nullptr)
+		return 1;
+
+	if (*action == FILERESUME_RENAME) {
+		ft->m_wszFileName = *szFilename;
+		ft->pfts.szCurrentFile.w = ft->m_wszFileName.GetBuffer();
+	}
 	return 0;
 }
 

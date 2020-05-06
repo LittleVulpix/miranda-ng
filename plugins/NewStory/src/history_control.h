@@ -43,11 +43,9 @@ enum
 	// result = id
 	NSM_GETITEMFROMPIXEL,
 
-	// add history for a contact
-	NSM_ADDHISTORY,
-
 	// add one or more events
 	NSM_ADDEVENTS,
+	NSM_ADDCHATEVENT,
 
 	// wParam = id
 	NSM_SETCARET,
@@ -65,13 +63,19 @@ enum
 
 	//
 	NSM_COPY,
+	NSM_DELETE,
 	NSM_EXPORT,
 
 	//
 	NSM_GETCOUNT,
+	NSM_GETARRAY,
 
 	//
+	NSM_SEEKEND,
 	NSM_SEEKTIME,
+
+	// 
+	NSM_SET_SRMM, // act inside SRMM dialog
 
 	NSM_LAST
 };
