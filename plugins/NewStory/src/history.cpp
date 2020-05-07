@@ -341,6 +341,7 @@ class CHistoryDlg : public CDlgBase
 		if (!(m_dwOptions & WND_OPT_TIMETREE))
 			return;
 
+		m_timeTree.DeleteAllItems();
 		auto *pArray = (HistoryArray *)m_histControl.SendMsg(NSM_GETARRAY, 0, 0);
 		int numItems = pArray->getCount();
 
@@ -611,6 +612,7 @@ public:
 	{
 		m_histControl.SendMsg(NSM_DELETE, 0, 0);
 		UpdateTitle();
+		TimeTreeBuild();
 	}
 
 	void onClick_TimeTree(CCtrlButton*)
