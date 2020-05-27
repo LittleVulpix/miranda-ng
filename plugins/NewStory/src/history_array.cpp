@@ -1,5 +1,10 @@
 #include "stdafx.h"
 
+extern HANDLE htuLog;
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// Filters
+
 bool Filter::check(ItemData *item)
 {
 	if (!item) return false;
@@ -38,7 +43,33 @@ bool Filter::check(ItemData *item)
 	return true;
 };
 
+/////////////////////////////////////////////////////////////////////////////////////////
 // Event
+
+void ItemData::checkCreate(HWND hwnd)
+{
+	if (data == nullptr) {
+		data = MTextCreateW(htuLog, ptrW(TplFormatString(getTemplate(), hContact, this)));
+		MTextSetParent(data, hwnd);
+	}
+}
+
+bool ItemData::isLink(POINT pt) const
+{
+	int cp = MTextSendMessage(0, data, EM_CHARFROMPOS, 0, LPARAM(&pt));
+	if (cp == -1)
+		return false;
+	
+	CHARRANGE cr = { cp, cp + 1 };
+	MTextSendMessage(0, data, EM_EXSETSEL, 0, LPARAM(&cr));
+	
+	CHARFORMAT2 cf = {};
+	cf.cbSize = sizeof(cf);
+	cf.dwMask = CFM_LINK;
+	DWORD res = MTextSendMessage(0, data, EM_GETCHARFORMAT, SCF_SELECTION, LPARAM(&cf));
+	return ((res & CFM_LINK) && (cf.dwEffects & CFE_LINK)) || ((res & CFM_REVISED) && (cf.dwEffects & CFE_REVISED));
+}
+
 void ItemData::load(bool bFullLoad)
 {
 	if (!bFullLoad || bLoaded)
@@ -91,12 +122,79 @@ ItemData::~ItemData()
 		MTextDestroy(data);
 }
 
+int ItemData::getTemplate() const
+{
+	switch (dbe.eventType) {
+	case EVENTTYPE_MESSAGE:         return isGrouped() ? TPL_MSG_GRP : TPL_MESSAGE;
+	case EVENTTYPE_FILE:            return TPL_FILE;
+	case EVENTTYPE_STATUSCHANGE:    return TPL_SIGN;
+	case EVENTTYPE_AUTHREQUEST:     return TPL_AUTH;
+	case EVENTTYPE_ADDED:           return TPL_ADDED;
+	case EVENTTYPE_JABBER_PRESENCE: return TPL_PRESENCE;
+	default:
+		return TPL_OTHER;
+	}
+}
+
+int ItemData::getCopyTemplate() const
+{
+	switch (dbe.eventType) {
+	case EVENTTYPE_MESSAGE:         return TPL_COPY_MESSAGE;
+	case EVENTTYPE_FILE:            return TPL_COPY_FILE;
+	case EVENTTYPE_STATUSCHANGE:    return TPL_COPY_SIGN;
+	case EVENTTYPE_AUTHREQUEST:     return TPL_COPY_AUTH;
+	case EVENTTYPE_ADDED:           return TPL_COPY_ADDED;
+	case EVENTTYPE_JABBER_PRESENCE: return TPL_COPY_PRESENCE;
+	default:
+		return TPL_COPY_OTHER;
+	}
+}
+
+void ItemData::getFontColor(int &fontId, int &colorId) const
+{
+	switch (dbe.eventType) {
+	case EVENTTYPE_MESSAGE:
+		fontId = !(dbe.flags & DBEF_SENT) ? FONT_INMSG : FONT_OUTMSG;
+		colorId = !(dbe.flags & DBEF_SENT) ? COLOR_INMSG : COLOR_OUTMSG;
+		break;
+
+	case EVENTTYPE_FILE:
+		fontId = !(dbe.flags & DBEF_SENT) ? FONT_INFILE : FONT_OUTFILE;
+		colorId = !(dbe.flags & DBEF_SENT) ? COLOR_INFILE : COLOR_OUTFILE;
+		break;
+
+	case EVENTTYPE_STATUSCHANGE:
+		fontId = FONT_STATUS;
+		colorId = COLOR_STATUS;
+		break;
+
+	case EVENTTYPE_AUTHREQUEST:
+		fontId = FONT_INOTHER;
+		colorId = COLOR_INOTHER;
+		break;
+
+	case EVENTTYPE_ADDED:
+		fontId = FONT_INOTHER;
+		colorId = COLOR_INOTHER;
+		break;
+
+	case EVENTTYPE_JABBER_PRESENCE:
+		fontId = !(dbe.flags & DBEF_SENT) ? FONT_INOTHER : FONT_OUTOTHER;
+		colorId = !(dbe.flags & DBEF_SENT) ? COLOR_INOTHER : COLOR_OUTOTHER;
+		break;
+
+	default:
+		fontId = !(dbe.flags & DBEF_SENT) ? FONT_INOTHER : FONT_OUTOTHER;
+		colorId = !(dbe.flags & DBEF_SENT) ? COLOR_INOTHER : COLOR_OUTOTHER;
+		break;
+	}
+}
+
 // Array
 HistoryArray::HistoryArray() :
 	pages(50),
 	strings(50, wcscmp)
 {
-	pages.insert(new ItemBlock());
 }
 
 HistoryArray::~HistoryArray()
@@ -169,6 +267,8 @@ ItemData& HistoryArray::allocateItem()
 		pages.insert(new ItemBlock());
 		iLastPageCounter = 0;
 	}
+	else if (pages.getCount() == 0)
+		pages.insert(new ItemBlock);
 
 	auto &p = pages[pages.getCount() - 1];
 	return p.data[iLastPageCounter++];
@@ -188,5 +288,6 @@ ItemData* HistoryArray::get(int id, bool bLoad)
 
 int HistoryArray::getCount() const
 {
-	return (pages.getCount() - 1) * HIST_BLOCK_SIZE + iLastPageCounter;
+	int nPages = pages.getCount();
+	return (nPages == 0) ? 0 : (nPages - 1) * HIST_BLOCK_SIZE + iLastPageCounter;
 }

@@ -138,7 +138,7 @@ struct EventItem
 
 class CDbxMDBX : public MDatabaseCommon, public MZeroedObject
 {
-	friend class MDBXEventCursor;
+	friend class CMdbxEventCursor;
 
 	struct Impl {
 		CDbxMDBX &pro;
@@ -297,6 +297,9 @@ public:
 
 	STDMETHODIMP_(MEVENT)   GetEventById(LPCSTR szModule, LPCSTR szId) override;
 	STDMETHODIMP_(BOOL)     SetEventId(LPCSTR szModule, MEVENT, LPCSTR szId) override;
+
+	STDMETHODIMP_(DB::EventCursor *) EventCursor(MCONTACT hContact, MEVENT hDbEvent) override;
+	STDMETHODIMP_(DB::EventCursor *) EventCursorRev(MCONTACT hContact, MEVENT hDbEvent) override;
 
 public:
 	MICryptoEngine *m_crypto;

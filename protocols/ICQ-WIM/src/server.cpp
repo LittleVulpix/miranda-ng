@@ -367,7 +367,7 @@ MCONTACT CIcqProto::ParseBuddyInfo(const JSONNode &buddy, MCONTACT hContact)
 	return hContact;
 }
 
-void CIcqProto::ParseMessage(MCONTACT hContact, __int64 &lastMsgId, const JSONNode &it, bool bFromHistory)
+void CIcqProto::ParseMessage(MCONTACT hContact, __int64 &lastMsgId, const JSONNode &it, bool bCreateRead, bool bLocalTime)
 {
 	CMStringA szMsgId(it["msgId"].as_mstring());
 	__int64 msgId = _atoi64(szMsgId);
@@ -388,9 +388,25 @@ void CIcqProto::ParseMessage(MCONTACT hContact, __int64 &lastMsgId, const JSONNo
 	else {
 		wszText = it["text"].as_mstring();
 		wszText.TrimRight();
+
+		// user added you
+		if (it["class"].as_mstring() == L"event" && it["eventTypeId"].as_mstring() == L"27:33000") {
+			CMStringA id = getMStringA(hContact, DB_KEY_ID);
+			int pos = id.Find('@');
+			CMStringA nick = (pos == -1) ? id : id.Left(pos);
+
+			DB::AUTH_BLOB blob(hContact, nick, nullptr, nullptr, id, nullptr);
+
+			PROTORECVEVENT pre = {};
+			pre.timestamp = (DWORD)time(0);
+			pre.lParam = blob.size();
+			pre.szMessage = blob;
+			ProtoChainRecv(hContact, PSR_AUTH, 0, (LPARAM)&pre);
+			return;
+		}
 	}
 
-	int iMsgTime = (bFromHistory) ? it["time"].as_int() : time(0);
+	int iMsgTime = (bLocalTime) ? time(0) : it["time"].as_int();
 
 	if (isChatRoom(hContact)) {
 		CMStringA reqId(it["reqId"].as_mstring());
@@ -422,7 +438,7 @@ void CIcqProto::ParseMessage(MCONTACT hContact, __int64 &lastMsgId, const JSONNo
 		}
 
 		bool bIsOutgoing = it["outgoing"].as_bool();
-		if (!bFromHistory && !bIsOutgoing && wszText.Left(26) == L"https://files.icq.net/get/") {
+		if (!bCreateRead && !bIsOutgoing && wszText.Left(26) == L"https://files.icq.net/get/") {
 			CMStringW wszUrl(wszText.Mid(26));
 			int idx = wszUrl.Find(' ');
 			if (idx != -1)
@@ -440,13 +456,13 @@ void CIcqProto::ParseMessage(MCONTACT hContact, __int64 &lastMsgId, const JSONNo
 			return;
 		}
 
-		debugLogA("Adding message %d:%s (%d)", hContact, szMsgId.c_str(), bFromHistory);
+		debugLogA("Adding message %d:%s (CR=%d)", hContact, szMsgId.c_str(), bCreateRead);
 
 		ptrA szUtf(mir_utf8encodeW(wszText));
 
 		PROTORECVEVENT pre = {};
 		if (bIsOutgoing) pre.flags |= PREF_SENT;
-		if (bFromHistory) pre.flags |= PREF_CREATEREAD;
+		if (bCreateRead) pre.flags |= PREF_CREATEREAD;
 		pre.szMsgId = szMsgId;
 		pre.timestamp = iMsgTime;
 		pre.szMessage = szUtf;
@@ -521,7 +537,7 @@ AsyncHttpRequest* CIcqProto::UserInfoRequest(MCONTACT hContact)
 	return pReq;
 }
 
-void CIcqProto::RetrieveUserHistory(MCONTACT hContact, __int64 startMsgId)
+void CIcqProto::RetrieveUserHistory(MCONTACT hContact, __int64 startMsgId, bool bCreateRead)
 {
 	if (startMsgId == 0)
 		startMsgId = -1;
@@ -531,6 +547,7 @@ void CIcqProto::RetrieveUserHistory(MCONTACT hContact, __int64 startMsgId)
 		pReq->flags |= NLHRF_NODUMPSEND;
 	#endif
 	pReq->hContact = hContact;
+	pReq->pUserInfo = (bCreateRead) ? pReq : 0;
 
 	__int64 patchVer = getId(hContact, DB_KEY_PATCHVER);
 	if (patchVer == 0)
@@ -579,8 +596,7 @@ void CIcqProto::ShutdownSession()
 	debugLogA("CIcqProto::ShutdownSession");
 
 	// shutdown all resources
-	while (!IsQueueEmpty())
-		Sleep(50);
+	DropQueue();
 
 	if (m_hWorkerThread)
 		SetEvent(m_evRequestsQueue);
@@ -914,7 +930,7 @@ void CIcqProto::OnGetUserHistory(NETLIBHTTPREQUEST *pReply, AsyncHttpRequest *pR
 
 	auto &results = root.results();
 	for (auto &it : results["messages"])
-		ParseMessage(pReq->hContact, lastMsgId, it, true);
+		ParseMessage(pReq->hContact, lastMsgId, it, pReq->pUserInfo != nullptr, false);
 
 	setId(pReq->hContact, DB_KEY_LASTMSGID, lastMsgId);
 }
@@ -1083,5 +1099,7 @@ void CIcqProto::OnSessionEnd(NETLIBHTTPREQUEST *pReply, AsyncHttpRequest *)
 		
 		m_szSessionKey.Empty();
 		delSetting(DB_KEY_SESSIONKEY);
+
+		ShutdownSession();
 	}
 }

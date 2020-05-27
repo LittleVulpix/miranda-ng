@@ -1,5 +1,6 @@
 hashes.txt
 fixme.cmd
+libmdbx.mir
 mdbx_chk.exe
 mdbx_load.exe
 mdbx_dump.exe
@@ -7,7 +8,6 @@ miranda32.exe
 pu_stub.exe
 sendlog.exe
 sendlogwin.exe
-
 
 Plugins\actman.dll
 Plugins\addcontactplus.dll
@@ -188,7 +188,6 @@ Libs\hunspell.mir
 Libs\libeay32.mir
 Libs\libcurl.mir
 Libs\libjson.mir
-Libs\libmdbx.mir
 Libs\libsignal.mir
 Libs\libssh2.mir
 Libs\mir_app.mir

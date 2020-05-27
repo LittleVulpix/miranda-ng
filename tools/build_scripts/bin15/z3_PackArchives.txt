@@ -42,6 +42,7 @@ Libs\msvcp140.dll
 Libs\ucrtbase.dll
 Libs\vcruntime140.dll
 fixme.cmd
+libmdbx.mir
 mirandaboot.ini
 mdbx_chk.exe
 mdbx_load.exe
@@ -63,7 +64,6 @@ Core\StdUserOnline.dll
 Libs\freeimage.mir
 Libs\libeay32.mir
 Libs\libjson.mir
-Libs\libmdbx.mir
 Libs\libsignal.mir
 Libs\mir_app.mir
 Libs\mir_core.mir

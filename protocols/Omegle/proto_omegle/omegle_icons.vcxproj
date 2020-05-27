@@ -25,4 +25,10 @@
   <ImportGroup Label="PropertySheets">
     <Import Project="$(ProjectDir)..\..\..\build\vc.common\icons.props" />
   </ImportGroup>
+  <ItemGroup>
+    <ClInclude Include="src\resource_icons.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="res\omegle_icons.rc" />
+  </ItemGroup>
 </Project>

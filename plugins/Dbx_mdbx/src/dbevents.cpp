@@ -32,7 +32,7 @@ LONG CDbxMDBX::GetEventCount(MCONTACT contactID)
 	return (cc == nullptr) ? 0 : cc->dbc.dwEventCount;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 MEVENT CDbxMDBX::AddEvent(MCONTACT contactID, const DBEVENTINFO *dbei)
 {
@@ -46,7 +46,7 @@ MEVENT CDbxMDBX::AddEvent(MCONTACT contactID, const DBEVENTINFO *dbei)
 	return dwEventId;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 BOOL CDbxMDBX::DeleteEvent(MEVENT hDbEvent)
 {
@@ -125,7 +125,7 @@ BOOL CDbxMDBX::DeleteEvent(MEVENT hDbEvent)
 	return 0;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 BOOL CDbxMDBX::EditEvent(MCONTACT contactID, MEVENT hDbEvent, const DBEVENTINFO *dbei)
 {
@@ -251,7 +251,7 @@ bool CDbxMDBX::EditEvent(MCONTACT contactID, MEVENT hDbEvent, const DBEVENTINFO 
 	return true;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 LONG CDbxMDBX::GetBlobSize(MEVENT hDbEvent)
 {
@@ -263,7 +263,7 @@ LONG CDbxMDBX::GetBlobSize(MEVENT hDbEvent)
 	return ((const DBEvent*)data.iov_base)->cbBlob;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 BOOL CDbxMDBX::GetEvent(MEVENT hDbEvent, DBEVENTINFO *dbei)
 {
@@ -309,7 +309,7 @@ BOOL CDbxMDBX::GetEvent(MEVENT hDbEvent, DBEVENTINFO *dbei)
 	return 0;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 void CDbxMDBX::FindNextUnread(const txn_ptr &txn, DBCachedContact *cc, DBEventSortingKey &key2)
 {
@@ -356,7 +356,7 @@ bool CDbxMDBX::CheckEvent(DBCachedContact *cc, const DBEvent *cdbe, DBCachedCont
 	return cc->contactID == cdbe->dwContactID;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 BOOL CDbxMDBX::MarkEventRead(MCONTACT contactID, MEVENT hDbEvent)
 {
@@ -415,7 +415,7 @@ BOOL CDbxMDBX::MarkEventRead(MCONTACT contactID, MEVENT hDbEvent)
 	return wRetVal;
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 MEVENT CDbxMDBX::GetEventById(LPCSTR szModule, LPCSTR szId)
 {
@@ -458,7 +458,7 @@ BOOL CDbxMDBX::SetEventId(LPCSTR szModule, MEVENT hDbEvent, LPCSTR szId)
 	return 0;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 MCONTACT CDbxMDBX::GetEventContact(MEVENT hDbEvent)
 {
@@ -474,7 +474,7 @@ MCONTACT CDbxMDBX::GetEventContact(MEVENT hDbEvent)
 	return ((const DBEvent*)data.iov_base)->dwContactID;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 MEVENT CDbxMDBX::FindFirstEvent(MCONTACT contactID)
 {
@@ -500,7 +500,7 @@ MEVENT CDbxMDBX::FindFirstEvent(MCONTACT contactID)
 	return cc->t_evLast = (pKey->hContact == contactID) ? pKey->hEvent : 0;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 MEVENT CDbxMDBX::FindFirstUnreadEvent(MCONTACT contactID)
 {
@@ -508,7 +508,7 @@ MEVENT CDbxMDBX::FindFirstUnreadEvent(MCONTACT contactID)
 	return (cc == nullptr) ? 0 : cc->dbc.evFirstUnread;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 MEVENT CDbxMDBX::FindLastEvent(MCONTACT contactID)
 {
@@ -540,7 +540,7 @@ MEVENT CDbxMDBX::FindLastEvent(MCONTACT contactID)
 	return cc->t_evLast = (pKey->hContact == contactID) ? pKey->hEvent : 0;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 MEVENT CDbxMDBX::FindNextEvent(MCONTACT contactID, MEVENT hDbEvent)
 {
@@ -579,7 +579,7 @@ MEVENT CDbxMDBX::FindNextEvent(MCONTACT contactID, MEVENT hDbEvent)
 	return cc->t_evLast = (pKey->hContact == contactID) ? pKey->hEvent : 0;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////
 
 MEVENT CDbxMDBX::FindPrevEvent(MCONTACT contactID, MEVENT hDbEvent)
 {
@@ -618,4 +618,92 @@ MEVENT CDbxMDBX::FindPrevEvent(MCONTACT contactID, MEVENT hDbEvent)
 	const DBEventSortingKey *pKey = (const DBEventSortingKey*)key.iov_base;
 	cc->t_tsLast = pKey->ts;
 	return cc->t_evLast = (pKey->hContact == contactID) ? pKey->hEvent : 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// Event cursors
+
+class CMdbxEventCursor : public DB::EventCursor
+{
+	friend class CDbxMDBX;
+	CDbxMDBX *m_pOwner;
+
+	bool m_bForward, m_bFirst = true;
+	DBCachedContact *m_cc;
+	DBEventSortingKey m_key;
+
+public:
+	CMdbxEventCursor(class CDbxMDBX *pDb, DBCachedContact *cc, bool bForward) :
+		EventCursor(cc->contactID),
+		m_pOwner(pDb),
+		m_bForward(bForward),
+		m_cc(cc)
+	{
+		m_key.hContact = hContact;
+		if (bForward) {
+			m_key.hEvent = 0;
+			m_key.ts = 0;
+		}
+		else {
+			m_key.hEvent = 0xFFFFFFFF;
+			m_key.ts = 0xFFFFFFFFFFFFFFFF;
+		}
+	}
+
+	MEVENT FetchNext() override
+	{
+		MDBX_cursor_op op;
+		if (m_bFirst) {
+			op = MDBX_SET_RANGE;
+			m_bFirst = false;
+		}
+		else {
+			op = (m_bForward) ? MDBX_NEXT : MDBX_PREV;
+			if (m_key.hEvent != m_cc->t_evLast)
+				return 0;
+		}
+
+		txn_ptr_ro txn(m_pOwner->m_txn_ro);
+
+		MDBX_val key = { &m_key, sizeof(m_key) }, data;
+		if (mdbx_cursor_get(m_pOwner->m_curEventsSort, &key, &data, op) != MDBX_SUCCESS)
+			return 0;
+
+		const DBEventSortingKey *pKey = (const DBEventSortingKey *)key.iov_base;
+		if (pKey->hContact != hContact) {
+			m_cc->t_tsLast = 0;
+			return m_cc->t_evLast = 0;
+		}
+		
+		m_key = *pKey;
+		m_cc->t_evLast = pKey->hEvent;
+		m_cc->t_tsLast = pKey->ts;
+		return pKey->hEvent;
+	}
+};
+
+DB::EventCursor* CDbxMDBX::EventCursor(MCONTACT hContact, MEVENT)
+{
+	DBCachedContact *cc;
+	if (hContact != 0) {
+		cc = m_cache->GetCachedContact(hContact);
+		if (cc == nullptr)
+			return nullptr;
+	}
+	else cc = &m_ccDummy;
+
+	return new CMdbxEventCursor(this, cc, true);
+}
+
+DB::EventCursor* CDbxMDBX::EventCursorRev(MCONTACT hContact, MEVENT)
+{
+	DBCachedContact *cc;
+	if (hContact != 0) {
+		cc = m_cache->GetCachedContact(hContact);
+		if (cc == nullptr)
+			return nullptr;
+	}
+	else cc = &m_ccDummy;
+
+	return new CMdbxEventCursor(this, cc, false);
 }

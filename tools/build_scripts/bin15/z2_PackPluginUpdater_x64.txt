@@ -1,5 +1,6 @@
 hashes.txt
 fixme.cmd
+libmdbx.mir
 mdbx_chk.exe
 mdbx_dump.exe
 mdbx_load.exe
@@ -187,7 +188,6 @@ Libs\hunspell.mir
 Libs\libeay32.mir
 Libs\libcurl.mir
 Libs\libjson.mir
-Libs\libmdbx.mir
 Libs\libsignal.mir
 Libs\libssh2.mir
 Libs\mir_app.mir

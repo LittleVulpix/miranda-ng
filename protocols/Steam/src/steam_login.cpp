@@ -38,6 +38,8 @@ void CSteamProto::Logout()
 		ptrA umqid(getStringA("UMQID"));
 		SendRequest(new LogoffRequest(token, umqid));
 	}
+
+	ProtoBroadcastAck(NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE)m_iStatus, m_iStatus);
 }
 
 void CSteamProto::OnGotRsaKey(const JSONNode &root, void *)
@@ -217,6 +219,9 @@ void CSteamProto::OnAuthorizationError(const JSONNode &root)
 		if (domain.find("://") == std::string::npos)
 			domain = "http://" + domain;
 
+		if (m_hwndGuard != nullptr)
+			return;
+
 		CSteamGuardDialog guardDialog(this, domain.c_str());
 		if (guardDialog.DoModal() != DIALOG_RESULT_OK) {
 			DeleteAuthSettings();
@@ -312,7 +317,6 @@ void CSteamProto::HandleTokenExpired()
 	isLoginAgain = true;
 
 	Login();
-	return;
 }
 
 void CSteamProto::OnLoggedOn(const HttpResponse &response, void *)

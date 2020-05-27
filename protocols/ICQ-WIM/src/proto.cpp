@@ -156,7 +156,7 @@ INT_PTR CIcqProto::OnMenuLoadHistory(WPARAM hContact, LPARAM)
 {
 	delSetting(hContact, DB_KEY_LASTMSGID);
 
-	RetrieveUserHistory(hContact, 1);
+	RetrieveUserHistory(hContact, 1, true);
 	return 0;
 }
 
@@ -389,6 +389,14 @@ MCONTACT CIcqProto::AddToList(int, PROTOSEARCHRESULT *psr)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
+// PSR_AUTH
+
+int CIcqProto::AuthRecv(MCONTACT, PROTORECVEVENT *pre)
+{
+	return Proto_AuthRecv(m_szModuleName, pre);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////
 // PSS_AUTHREQUEST
 
 int CIcqProto::AuthRequest(MCONTACT hContact, const wchar_t* szMessage)
@@ -431,16 +439,18 @@ int CIcqProto::FileCancel(MCONTACT hContact, HANDLE hTransfer)
 	return 0;
 }
 
-int CIcqProto::FileResume(HANDLE hTransfer, int *action, const wchar_t **szFilename)
+int CIcqProto::FileResume(HANDLE hTransfer, int, const wchar_t *szFilename)
 {
 	auto *ft = (IcqFileTransfer *)hTransfer;
 	if (!m_bOnline || ft == nullptr)
 		return 1;
 
-	if (*action == FILERESUME_RENAME) {
-		ft->m_wszFileName = *szFilename;
+	if (szFilename != nullptr) {
+		ft->m_wszFileName = szFilename;
 		ft->pfts.szCurrentFile.w = ft->m_wszFileName.GetBuffer();
 	}
+
+	::SetEvent(ft->hWaitEvent);
 	return 0;
 }
 

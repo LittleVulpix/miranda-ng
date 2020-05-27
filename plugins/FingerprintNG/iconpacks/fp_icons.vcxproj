@@ -25,4 +25,7 @@
   <ImportGroup Label="PropertySheets">
     <Import Project="$(ProjectDir)..\..\..\build\vc.common\icons.props" />
   </ImportGroup>
+  <ItemGroup>
+    <ResourceCompile Include="res\fp_icons.rc" />
+  </ItemGroup>
 </Project>

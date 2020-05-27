@@ -108,7 +108,7 @@ CJabberProto::CJabberProto(const char *aProtoName, const wchar_t *aUserName) :
 	m_bGcLogStatuses(this, "GcLogStatuses", false),
 	m_bHostNameAsResource(this, "HostNameAsResource", false),
 	m_bIgnoreMUCInvites(this, "IgnoreMUCInvites", false),
-	m_bIgnoreRosterGroups(this, "IgnoreRosterGroups", false),
+	m_bIgnoreRoster(this, "IgnoreRosterGroups", false),
 	m_bInlinePictures(this, "InlinePictures", false),
 	m_bKeepAlive(this, "KeepAlive", true),
 	m_bLogChatstates(this, "LogChatstates", false),
@@ -236,7 +236,7 @@ CJabberProto::~CJabberProto()
 	ListWipe();
 
 	mir_free(m_tszSelectedLang);
-	mir_free(m_AuthMechs.m_gssapiHostName);
+	mir_free(m_gssapiHostName);
 
 	mir_free(m_modeMsgs.szOnline);
 	mir_free(m_modeMsgs.szAway);
@@ -567,14 +567,14 @@ int CJabberProto::FileDeny(MCONTACT, HANDLE hTransfer, const wchar_t *)
 ////////////////////////////////////////////////////////////////////////////////////////
 // JabberFileResume - processes file renaming etc
 
-int CJabberProto::FileResume(HANDLE hTransfer, int *action, const wchar_t **szFilename)
+int CJabberProto::FileResume(HANDLE hTransfer, int, const wchar_t *szFilename)
 {
 	filetransfer *ft = (filetransfer*)hTransfer;
 	if (!m_bJabberOnline || ft == nullptr)
 		return 1;
 
-	if (*action == FILERESUME_RENAME)
-		replaceStrW(ft->std.szCurrentFile.w, *szFilename);
+	if (szFilename != nullptr)
+		replaceStrW(ft->std.szCurrentFile.w, szFilename);
 
 	SetEvent(ft->hWaitEvent);
 	return 0;

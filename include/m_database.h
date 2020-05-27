@@ -702,22 +702,20 @@ public:
 /////////////////////////////////////////////////////////////////////////////////////////
 // Event cursors
 
-class MIR_CORE_EXPORT EventCursorBase : public MZeroedObject
+class MIR_CORE_EXPORT EventCursor : public MZeroedObject
 {
 	friend class EventIterator;
 
 protected:
-	DBEVENTINFO &dbei;
 	MCONTACT hContact;
 
-	virtual ~EventCursorBase();
-	virtual MEVENT FetchNext() = 0;
-
 public:
-	EventCursorBase(MCONTACT _1, DBEVENTINFO &_2) :
-		hContact(_1),
-		dbei(_2)
+	EventCursor(MCONTACT _1) :
+		hContact(_1)
 	{ }
+
+	virtual ~EventCursor();
+	virtual MEVENT FetchNext() = 0;
 
 	__forceinline MEVENT begin() {
 		return FetchNext();
@@ -728,17 +726,26 @@ public:
 	}
 };
 
-#if !defined(CUSTOM_EVENT_CURSOR)
-typedef class EventCursorBase EventCursor;
-#endif
+class MIR_CORE_EXPORT ECPTR : public MNonCopyable
+{
+	EventCursor *m_cursor;
+	MEVENT m_prevFetched, m_currEvent;
+
+public:
+	ECPTR(EventCursor *_1);
+	~ECPTR();
+
+	void   DeleteEvent();
+	MEVENT FetchNext();
+};
 
 class EventIterator
 {
-	EventCursorBase *cursor;
-	MEVENT hCurr;
+	EventCursor *cursor;
+	MEVENT hCurr = 0;
 
 public:
-	EventIterator(EventCursorBase *_1) :
+	EventIterator(EventCursor *_1) :
 		cursor(_1)
 	{}
 
@@ -756,8 +763,8 @@ public:
 	}
 };
 
-MIR_CORE_DLL(EventCursor*) Events(MCONTACT, DBEVENTINFO &);
-MIR_CORE_DLL(EventCursor*) EventsRev(MCONTACT, DBEVENTINFO &);
+MIR_CORE_DLL(EventCursor*) Events(MCONTACT, MEVENT iStartEvent = 0);
+MIR_CORE_DLL(EventCursor*) EventsRev(MCONTACT, MEVENT iStartEvent = 0);
 
 };
 

@@ -89,23 +89,20 @@ void CJabberProto::OnIqResultNestedRosterGroups(const TiXmlElement *iqNode, CJab
 		bPrivateStorageSupport = true;
 		auto *xmlDelimiter = XmlGetChildByTag(XmlGetChildByTag(iqNode, "query", "xmlns", JABBER_FEAT_PRIVATE_STORAGE), "roster", "xmlns", JABBER_FEAT_NESTED_ROSTER_GROUPS);
 		if (xmlDelimiter)
-			szGroupDelimiter = xmlDelimiter->GetText();
+			if (!mir_strcmp(szGroupDelimiter = xmlDelimiter->GetText(), "\\"))
+				szGroupDelimiter = nullptr;
 	}
 
-	// global fuckup
-	if (m_ThreadInfo == nullptr)
-		return;
-
 	// is our default delimiter?
-	if ((!szGroupDelimiter && bPrivateStorageSupport) || (szGroupDelimiter && mir_strcmp(szGroupDelimiter, "\\")))
+	if (!szGroupDelimiter && bPrivateStorageSupport)
 		m_ThreadInfo->send(
 			XmlNodeIq("set", SerialNext()) << XQUERY(JABBER_FEAT_PRIVATE_STORAGE)
 				<< XCHILD("roster", "\\") << XATTR("xmlns", JABBER_FEAT_NESTED_ROSTER_GROUPS));
 
 	// roster request
-	char *szUserData = mir_strdup(szGroupDelimiter ? szGroupDelimiter : "\\");
+	m_szGroupDelimiter = mir_strdup(szGroupDelimiter);
 	m_ThreadInfo->send(
-		XmlNodeIq(AddIQ(&CJabberProto::OnIqResultGetRoster, JABBER_IQ_TYPE_GET, nullptr, szUserData))
+		XmlNodeIq(AddIQ(&CJabberProto::OnIqResultGetRoster, JABBER_IQ_TYPE_GET))
 			<< XCHILDNS("query", JABBER_FEAT_IQ_ROSTER));
 }
 
@@ -129,8 +126,10 @@ void CJabberProto::OnProcessLoginRq(ThreadData *info, DWORD rq)
 		if (info->jabberServerCaps & JABBER_CAPS_ARCHIVE_AUTO)
 			EnableArchive(m_bEnableMsgArchive != 0);
 
-		if (info->jabberServerCaps & JABBER_CAPS_CARBONS)
-			EnableCarbons(m_bEnableCarbons != 0);
+		if (info->jabberServerCaps & JABBER_CAPS_CARBONS) {
+			// Server seems to support carbon copies, let's enable/disable them
+			m_ThreadInfo->send(XmlNodeIq("set", SerialNext()) << XCHILDNS((m_bEnableCarbons) ? "enable" : "disable", JABBER_FEAT_CARBONS));
+		}
 
 		if (m_bAutoJoinBookmarks) {
 			LIST<JABBER_LIST_ITEM> ll(10);
@@ -361,7 +360,6 @@ void CJabberProto::GroupchatJoinByHContact(MCONTACT hContact, bool autojoin)
 void CJabberProto::OnIqResultGetRoster(const TiXmlElement *iqNode, CJabberIqInfo *pInfo)
 {
 	debugLogA("<iq/> iqIdGetRoster");
-	ptrA szGroupDelimiter((char *)pInfo->GetUserData());
 	if (pInfo->GetIqType() != JABBER_IQ_TYPE_RESULT)
 		return;
 
@@ -371,9 +369,6 @@ void CJabberProto::OnIqResultGetRoster(const TiXmlElement *iqNode, CJabberIqInfo
 
 	if (mir_strcmp(XmlGetAttr(queryNode, "xmlns"), JABBER_FEAT_IQ_ROSTER))
 		return;
-
-	if (!mir_strcmp(szGroupDelimiter, "\\"))
-		szGroupDelimiter = nullptr;
 
 	LIST<void> chatRooms(10);
 	OBJLIST<JABBER_HTTP_AVATARS> *httpavatars = new OBJLIST<JABBER_HTTP_AVATARS>(20, JABBER_HTTP_AVATARS::compare);
@@ -408,52 +403,20 @@ void CJabberProto::OnIqResultGetRoster(const TiXmlElement *iqNode, CJabberIqInfo
 		item->subscription = sub;
 		item->bRealContact = true;
 
-		mir_free(item->nick); item->nick = nick;
+		replaceStr(item->nick, nick);
 		replaceStr(item->group, XmlGetChildText(itemNode, "group"));
-
-		// check group delimiters
-		if (item->group && szGroupDelimiter) {
-			CMStringA szNewGroup(item->group);
-			szNewGroup.Replace(szGroupDelimiter, "\\");
-			replaceStr(item->group, szNewGroup.Detach());
-		}
-
-		if (name != nullptr) {
-			ptrA tszNick(getUStringA(hContact, "Nick"));
-			if (tszNick != nullptr) {
-				if (mir_strcmp(nick, tszNick) != 0)
-					db_set_utf(hContact, "CList", "MyHandle", nick);
-				else
-					db_unset(hContact, "CList", "MyHandle");
-			}
-			else db_set_utf(hContact, "CList", "MyHandle", nick);
-		}
-		else db_unset(hContact, "CList", "MyHandle");
+		UpdateItem(item, name);
 
 		if (isChatRoom(hContact)) {
-			char *wszTitle = NEWSTR_ALLOCA(jid);
-			if (char *p = strchr(wszTitle, '@')) *p = 0;
-			Chat_NewSession(GCW_CHATROOM, m_szModuleName, Utf2T(jid), Utf2T(wszTitle));
+			char *szTitle = NEWSTR_ALLOCA(jid);
+			if (char *p = strchr(szTitle, '@'))
+				*p = 0;
+			Chat_NewSession(GCW_CHATROOM, m_szModuleName, Utf2T(jid), Utf2T(szTitle));
 
 			Contact_Hide(hContact, false);
 			chatRooms.insert((HANDLE)hContact);
 		}
 		else UpdateSubscriptionInfo(hContact, item);
-
-		if (!m_bIgnoreRosterGroups) {
-			if (item->group != nullptr) {
-				Clist_GroupCreate(0, Utf2T(item->group));
-
-				// Don't set group again if already correct, or Miranda may show wrong group count in some case
-				ptrA tszGroup(db_get_utfa(hContact, "CList", "Group"));
-				if (tszGroup != nullptr) {
-					if (mir_strcmp(tszGroup, item->group))
-						db_set_utf(hContact, "CList", "Group", item->group);
-				}
-				else db_set_utf(hContact, "CList", "Group", item->group);
-			}
-			else db_unset(hContact, "CList", "Group");
-		}
 
 		if (hContact != 0) {
 			if (bIsTransport)
@@ -497,9 +460,6 @@ void CJabberProto::OnIqResultGetRoster(const TiXmlElement *iqNode, CJabberIqInfo
 	WindowList_Broadcast(m_hWindowList, WM_PROTO_CHECK_ONLINE, 0, 0);
 
 	UI_SAFE_NOTIFY(m_pDlgServiceDiscovery, WM_JABBER_TRANSPORT_REFRESH);
-
-	if (szGroupDelimiter)
-		mir_free(szGroupDelimiter);
 
 	OnProcessLoginRq(m_ThreadInfo, JABBER_LOGIN_ROSTER);
 	RebuildInfoFrame();

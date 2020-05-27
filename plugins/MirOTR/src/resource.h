@@ -9,6 +9,15 @@
 #define IDD_OPT_FINGER                  105
 #define IDD_SMP_INPUT                   106
 #define IDD_SMP_PROGRESS                107
+#define IDR_OPT_FINGER                  108
+#define IDI_OTR                         109
+#define IDI_REFRESH                     110
+#define IDI_INSECURE                    111
+#define IDI_UNVERIFIED                  112
+#define IDI_PRIVATE                     113
+#define IDI_FINISHED                    114
+#define IDR_OPT_ACCOUNT                 115
+
 #define IDC_GRP_POLICY                  1051
 #define IDC_RAD_ALWAYS                  1052
 #define IDC_RAD_OPP                     1053
@@ -24,9 +33,7 @@
 #define IDC_CHK_ENDCLOSE                1064
 #define IDC_CHK_PREVENTSYSSAVE          1065
 #define IDC_LV_PROTO_PROTOS             1101
-#define IDC_BTN_PROTO_NEWKEY            1102
 #define IDC_CMB_PROTO_POLICY            1103
-#define IDC_BTN_PROTO_FORGET            1104
 #define IDC_STC_PROTO1                  1151
 #define IDC_STC_PROTO2                  1152
 #define IDC_LV_CONT_CONTACTS            1201
@@ -34,10 +41,6 @@
 #define IDC_STC_CONT1                   1251
 #define IDC_STC_CONT2                   1252
 #define IDC_LV_FINGER_LIST              1301
-#define IDC_BTN_FINGER_FORGET           1302
-#define IDC_BTN_FINGER_TRUST            1303
-#define IDC_BTN_FINGER_DONTTRUST        1304
-#define IDC_STC_FINGER1                 1351
 #define IDC_GENERATE                    1401
 #define IDC_ICOOTR                      1402
 #define IDC_ICOREFRESH                  1403
@@ -52,12 +55,6 @@
 #define IDC_EDT_SMP_FIELD1              1606
 #define IDC_STC_SMP_FIELD2              1607
 #define IDC_EDT_SMP_FIELD2              1608
-#define IDI_OTR                         2000
-#define IDI_REFRESH                     2001
-#define IDI_INSECURE                    2002
-#define IDI_UNVERIFIED                  2003
-#define IDI_PRIVATE                     2004
-#define IDI_FINISHED                    2005
 #define IDR_CONTEXT                     10000
 #define IDM_OTR_MENU                    10001
 #define IDM_OTR_STATUS                  10001
@@ -65,6 +62,13 @@
 #define IDM_OTR_REFRESH                 10003
 #define IDM_OTR_STOP                    10004
 #define IDM_OTR_VERIFY                  10005
+#define IDM_OPT_COPY                    10006
+#define IDM_OPT_FINGER_FORGET           10007
+#define IDM_OPT_FINGER_TRUST            10008
+#define IDM_OPT_FINGER_DONTTRUST        10009
+#define IDM_OPT_PROTO_NEWKEY            10010
+#define IDM_OPT_PROTO_FORGET            10011
+
 
 // Next default values for new objects
 // 

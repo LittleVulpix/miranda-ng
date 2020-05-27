@@ -244,7 +244,7 @@ class CIcqProto : public PROTO<CIcqProto>
 	void      MarkAsRead(MCONTACT hContact);
 	void      MoveContactToGroup(MCONTACT hContact, const wchar_t *pwszGroup, const wchar_t *pwszNewGroup);
 	bool      RetrievePassword();
-	void      RetrieveUserHistory(MCONTACT, __int64 startMsgId);
+	void      RetrieveUserHistory(MCONTACT, __int64 startMsgId, bool bCreateRead);
 	void      RetrieveUserInfo(MCONTACT = INVALID_CONTACT_ID);
 	void      SetServerStatus(int iNewStatus);
 	void      ShutdownSession(void);
@@ -255,7 +255,7 @@ class CIcqProto : public PROTO<CIcqProto>
 	void      Json2int(MCONTACT, const JSONNode&, const char *szJson, const char *szSetting);
 	void      Json2string(MCONTACT, const JSONNode&, const char *szJson, const char *szSetting);
 	MCONTACT  ParseBuddyInfo(const JSONNode &buddy, MCONTACT hContact = -1);
-	void      ParseMessage(MCONTACT hContact, __int64 &lastMsgId, const JSONNode &msg, bool bFromHistory);
+	void      ParseMessage(MCONTACT hContact, __int64 &lastMsgId, const JSONNode &msg, bool bCreateRead, bool bLocalTime);
 
 	void      OnLoggedIn(void);
 	void      OnLoggedOut(void);
@@ -349,6 +349,7 @@ class CIcqProto : public PROTO<CIcqProto>
 	LIST<AsyncHttpRequest> m_arHttpQueue;
 
 	void      CalcHash(AsyncHttpRequest*);
+	void      DropQueue();
 	bool      ExecuteRequest(AsyncHttpRequest*);
 	bool      IsQueueEmpty();
 	void      Push(MHttpRequest*);
@@ -404,6 +405,7 @@ class CIcqProto : public PROTO<CIcqProto>
 
 	MCONTACT  AddToList( int flags, PROTOSEARCHRESULT *psr) override;
 			    
+	int       AuthRecv(MCONTACT, PROTORECVEVENT *pre) override;
 	int       AuthRequest(MCONTACT hContact, const wchar_t *szMessage) override;
 
 	INT_PTR   GetCaps(int type, MCONTACT hContact = NULL) override;
@@ -413,7 +415,7 @@ class CIcqProto : public PROTO<CIcqProto>
 
 	HANDLE    FileAllow(MCONTACT hContact, HANDLE hTransfer, const wchar_t *szPath) override;
 	int       FileCancel(MCONTACT hContact, HANDLE hTransfer) override;
-	int       FileResume(HANDLE hTransfer, int *action, const wchar_t **szFilename) override;
+	int       FileResume(HANDLE hTransfer, int action, const wchar_t *szFilename) override;
 
 	HANDLE    SendFile(MCONTACT hContact, const wchar_t *szDescription, wchar_t **ppszFiles) override;
 	int       SendMsg(MCONTACT hContact, int flags, const char *msg) override;

@@ -105,7 +105,7 @@ struct CJabberProto : public PROTO<CJabberProto>, public IJabberInterface
 	// PROTO_INTERFACE
 	//====================================================================================
 
-	MCONTACT AddToList(int flags, PROTOSEARCHRESULT* psr) override;
+	MCONTACT AddToList(int flags, PROTOSEARCHRESULT *psr) override;
 	MCONTACT AddToListByEvent(int flags, int iContact, MEVENT hDbEvent) override;
 
 	int      Authorize(MEVENT hDbEvent) override;
@@ -115,7 +115,7 @@ struct CJabberProto : public PROTO<CJabberProto>, public IJabberInterface
 	HANDLE   FileAllow(MCONTACT hContact, HANDLE hTransfer, const wchar_t *szPath) override;
 	int      FileCancel(MCONTACT hContact, HANDLE hTransfer) override;
 	int      FileDeny(MCONTACT hContact, HANDLE hTransfer, const wchar_t *szReason) override;
-	int      FileResume(HANDLE hTransfer, int* action, const wchar_t** szFilename) override;
+	int      FileResume(HANDLE hTransfer, int action, const wchar_t *szFilename) override;
 
 	INT_PTR  GetCaps(int type, MCONTACT hContact = 0) override;
 	int      GetInfo(MCONTACT hContact, int infoType) override;
@@ -205,7 +205,7 @@ struct CJabberProto : public PROTO<CJabberProto>, public IJabberInterface
 	CMOption<bool> m_bGcLogStatuses;
 	CMOption<bool> m_bHostNameAsResource;
 	CMOption<bool> m_bIgnoreMUCInvites;
-	CMOption<bool> m_bIgnoreRosterGroups;
+	CMOption<bool> m_bIgnoreRoster;
 	CMOption<bool> m_bInlinePictures;
 	CMOption<bool> m_bKeepAlive;
 	CMOption<bool> m_bLogChatstates;
@@ -647,6 +647,7 @@ struct CJabberProto : public PROTO<CJabberProto>, public IJabberInterface
 	void       OnIqResultServerDiscoInfo(const TiXmlElement *iqNode, CJabberIqInfo *pInfo);
 	void       OnIqResultGetVcardPhoto(const TiXmlElement *n, MCONTACT hContact, bool &hasPhoto);
 	void       SetBookmarkRequest(XmlNodeIq &iqId);
+	void       UpdateItem(JABBER_LIST_ITEM *pItem, const char *name);
 
 	//---- jabber_menu.cpp ---------------------------------------------------------------
 
@@ -775,23 +776,19 @@ struct CJabberProto : public PROTO<CJabberProto>, public IJabberInterface
 	bool       SendHttpAuthReply(CJabberHttpAuthParams *pParams, bool bAuthorized);
 
 	//---- jabber_thread.c ----------------------------------------------
-
+	ptrA       m_szGroupDelimiter;
 	ptrW       m_savedPassword;
 
-	typedef struct {
-		bool    isPlainAvailable;
-		bool    isPlainOldAvailable;
-		bool    isMd5Available;
-		bool    isScramAvailable;
-		bool    isNtlmAvailable;
-		bool    isSpnegoAvailable;
-		bool    isKerberosAvailable;
-		bool    isAuthAvailable;
-		bool    isSessionAvailable;
-		char   *m_gssapiHostName;
-	} AUTHMECHS;
-
-	AUTHMECHS  m_AuthMechs;
+	bool       m_isPlainAvailable;
+	bool       m_isPlainOldAvailable;
+	bool       m_isMd5Available;
+	bool       m_isScramAvailable;
+	bool       m_isNtlmAvailable;
+	bool       m_isSpnegoAvailable;
+	bool       m_isKerberosAvailable;
+	bool       m_isAuthAvailable;
+	bool       m_isSessionAvailable;
+	char*      m_gssapiHostName;
 
 	void       __cdecl ServerThread(JABBER_CONN_DATA *info);
 		        
@@ -830,8 +827,6 @@ struct CJabberProto : public PROTO<CJabberProto>, public IJabberInterface
 		        
 	bool       ProcessCaptcha(const TiXmlElement *node, const TiXmlElement *parentNode, ThreadData *info);
 		        
-	void       EnableCarbons(bool bEnable);
-
 	//---- jabber_util.c -----------------------------------------------------------------
 	pResourceStatus ResourceInfoFromJID(const char *jid);
 
@@ -845,7 +840,7 @@ struct CJabberProto : public PROTO<CJabberProto>, public IJabberInterface
 			     
 	void       RebuildInfoFrame(void);
 	void       InitInfoFrame(void);
-
+	
 	// returns buf or nullptr on error
 	char*      GetClientJID(MCONTACT hContact, char *dest, size_t destLen);
 	char*      GetClientJID(const char *jid, char *dest, size_t destLen);

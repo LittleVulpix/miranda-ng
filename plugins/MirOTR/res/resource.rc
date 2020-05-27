@@ -27,11 +27,17 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDI_OTR                 ICON                    "otr.ico"
+
 IDI_REFRESH             ICON                    "refresh.ico"
+
 IDI_INSECURE            ICON                    "insecure.ico"
+
 IDI_UNVERIFIED          ICON                    "unverified.ico"
+
 IDI_PRIVATE             ICON                    "private.ico"
+
 IDI_FINISHED            ICON                    "finished.ico"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -85,8 +91,6 @@ BEGIN
     CONTROL         "",IDC_LV_PROTO_PROTOS,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_SORTASCENDING | WS_BORDER | WS_TABSTOP,0,18,296,170
     LTEXT           "Current policy:",IDC_STC_PROTO2,3,193,152,9,SS_NOPREFIX | NOT WS_GROUP
     COMBOBOX        IDC_CMB_PROTO_POLICY,3,206,152,12,CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_TABSTOP
-    PUSHBUTTON      "Generate new private key",IDC_BTN_PROTO_NEWKEY,162,192,123,14
-    PUSHBUTTON      "Forget private key",IDC_BTN_PROTO_FORGET,162,208,123,14
 END
 
 IDD_OPT_CONTACTS DIALOGEX 0, 0, 296, 223
@@ -100,16 +104,13 @@ BEGIN
     COMBOBOX        IDC_CMB_CONT_POLICY,137,207,153,12,CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_TABSTOP
 END
 
-IDD_OPT_FINGER DIALOGEX 0, 0, 296, 226
+IDD_OPT_FINGER DIALOGEX 0, 0, 296, 234
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    LTEXT           "View & Modify status of known fingerprints",IDC_STC_FINGER1,3,3,291,12,SS_NOPREFIX | NOT WS_GROUP
-    CONTROL         "",IDC_LV_FINGER_LIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_SORTASCENDING | WS_BORDER | WS_TABSTOP,0,18,296,179
-    PUSHBUTTON      "Set verified",IDC_BTN_FINGER_TRUST,4,202,66,18
-    PUSHBUTTON      "Set unknown",IDC_BTN_FINGER_DONTTRUST,72,202,66,18
-    PUSHBUTTON      "Forget",IDC_BTN_FINGER_FORGET,225,202,66,18
+    LTEXT           "View & Modify status of known fingerprints",IDC_STATIC,3,3,291,12,SS_NOPREFIX | NOT WS_GROUP
+    CONTROL         "",IDC_LV_FINGER_LIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_SORTASCENDING | WS_BORDER | WS_TABSTOP,0,18,296,210
 END
 
 IDD_SMP_PROGRESS DIALOGEX 10, 10, 200, 100
@@ -164,6 +165,31 @@ BEGIN
     END
 END
 
+IDR_OPT_FINGER MENU
+BEGIN
+    POPUP ""
+    BEGIN
+        MENUITEM "Set verified",                IDM_OPT_FINGER_TRUST
+        MENUITEM "Set unknown",                 IDM_OPT_FINGER_DONTTRUST
+        MENUITEM SEPARATOR
+        MENUITEM "Copy",                        IDM_OPT_COPY
+        MENUITEM SEPARATOR
+        MENUITEM "Forget",                      IDM_OPT_FINGER_FORGET
+    END
+END
+
+IDR_OPT_ACCOUNT MENU
+BEGIN
+    POPUP ""
+    BEGIN
+        MENUITEM "Generate new private key",    IDM_OPT_PROTO_NEWKEY
+        MENUITEM SEPARATOR
+        MENUITEM "Copy",                        IDM_OPT_COPY
+        MENUITEM SEPARATOR
+        MENUITEM "Forget private key",          IDM_OPT_PROTO_FORGET
+    END
+END
+
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -206,19 +232,10 @@ BEGIN
     IDD_OPT_GENERAL, DIALOG
     BEGIN
         RIGHTMARGIN, 296
-        VERTGUIDE, 12
-        VERTGUIDE, 23
-        VERTGUIDE, 138
-        VERTGUIDE, 144
-        VERTGUIDE, 290
     END
 
     IDD_OPT_PROTO, DIALOG
     BEGIN
-        VERTGUIDE, 3
-        VERTGUIDE, 155
-        VERTGUIDE, 162
-        VERTGUIDE, 285
         BOTTOMMARGIN, 220
     END
 
@@ -229,8 +246,7 @@ BEGIN
 
     IDD_OPT_FINGER, DIALOG
     BEGIN
-        BOTTOMMARGIN, 220
-        HORZGUIDE, 203
+        BOTTOMMARGIN, 228
     END
 
     IDD_SMP_INPUT, DIALOG
@@ -246,6 +262,11 @@ END
 //
 
 IDD_OPT_PROTO AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_OPT_FINGER AFX_DIALOG_LAYOUT
 BEGIN
     0
 END

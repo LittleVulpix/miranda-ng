@@ -438,22 +438,11 @@ void CDiscordProto::OnCommandMessageAck(const JSONNode &pRoot)
 
 void CDiscordProto::OnCommandPresence(const JSONNode &pRoot)
 {
-	CDiscordUser *pUser = FindUser(::getId(pRoot["user"]["id"]));
-	if (pUser == nullptr)
-		return;
-
-	int iStatus = StrToStatus(pRoot["status"].as_mstring());
-	if (iStatus != 0)
-		setWord(pUser->hContact, "Status", iStatus);
-
-	CMStringW wszGame = pRoot["game"]["name"].as_mstring();
-	if (!wszGame.IsEmpty())
-		setWString(pUser->hContact, "XStatusMsg", wszGame);
-	else
-		delSetting(pUser->hContact, "XStatusMsg");
-
-	// check avatar
-	CheckAvatarChange(pUser->hContact, pRoot["user"]["avatar"].as_mstring());
+	auto *pGuild = FindGuild(::getId(pRoot["user"]["guild_id"]));
+	if (pGuild == nullptr)
+		ProcessPresence(pRoot);
+	// else
+		// pGuild->ProcessPresence(pRoot);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -474,11 +463,8 @@ void CDiscordProto::OnCommandReady(const JSONNode &pRoot)
 		ProcessType(pUser, it);
 	}
 
-	for (auto &it : pRoot["presences"]) {
-		CDiscordUser *pUser = FindUser(::getId(it["user"]["id"]));
-		if (pUser != nullptr)
-			setWord(pUser->hContact, "Status", StrToStatus(it["status"].as_mstring()));
-	}
+	for (auto &it : pRoot["presences"])
+		ProcessPresence(it);
 
 	for (auto &it : pRoot["private_channels"])
 		PreparePrivateChannel(it);
