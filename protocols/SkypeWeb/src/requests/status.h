@@ -18,54 +18,33 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 #ifndef _SKYPE_REQUEST_STATUS_H_
 #define _SKYPE_REQUEST_STATUS_H_
 
-class GetStatusRequest : public HttpRequest
+struct GetStatusRequest : public AsyncHttpRequest
 {
-public:
-	GetStatusRequest(CSkypeProto *ppro) :
-		HttpRequest(REQUEST_GET, FORMAT, "%s/v1/users/ME/contacts/ALL/presenceDocs/messagingService", ppro->m_szServer)
-	{
-		Headers
-			<< CHAR_VALUE("Accept", "application/json, text/javascript")
-			<< FORMAT_VALUE("RegistrationToken", "registrationToken=%s", ppro->m_szToken.get())
-			<< CHAR_VALUE("Content-Type", "application/json; charset=UTF-8");
-	}
+	GetStatusRequest() :
+		AsyncHttpRequest(REQUEST_GET, HOST_DEFAULT, "/users/ME/contacts/ALL/presenceDocs/messagingService", &CSkypeProto::OnReceiveStatus)
+	{}
 };
 
-class SetStatusRequest : public HttpRequest
+struct SetStatusRequest : public AsyncHttpRequest
 {
-public:
-	SetStatusRequest(const char *status, CSkypeProto *ppro) :
-	  HttpRequest(REQUEST_PUT, FORMAT, "%s/v1/users/ME/presenceDocs/messagingService", ppro->m_szServer)
+	SetStatusRequest(const char *status) :
+		AsyncHttpRequest(REQUEST_PUT, HOST_DEFAULT, "/users/ME/presenceDocs/messagingService", &CSkypeProto::OnStatusChanged)
 	{
-		Headers
-			<< CHAR_VALUE("Accept", "application/json, text/javascript")
-			<< FORMAT_VALUE("RegistrationToken", "registrationToken=%s", ppro->m_szToken.get())
-			<< CHAR_VALUE("Content-Type", "application/json; charset=UTF-8");
-
 		JSONNode node(JSON_NODE);
-		node << JSONNode("status", status);
-
-		Body << VALUE(node.write().c_str());
+		node << CHAR_PARAM("status", status);
+		m_szParam = node.write().c_str();
 	}
 };
 
-class SetStatusMsgRequest : public HttpRequest
+struct SetStatusMsgRequest : public AsyncHttpRequest
 {
-public:
-	SetStatusMsgRequest(const char *status, CSkypeProto *ppro) :
-		HttpRequest(REQUEST_POST, "api.skype.com/users/self/profile/partial")
+	SetStatusMsgRequest(const char *status) :
+		AsyncHttpRequest(REQUEST_POST, HOST_API, "/users/self/profile/partial")
 	{
-		Headers
-			<< CHAR_VALUE("Accept", "application/json, text/javascript")
-			<< CHAR_VALUE("X-Skypetoken", ppro->m_szApiToken)
-			<< CHAR_VALUE("Content-Type", "application/json; charset=UTF-8");
-
 		JSONNode node, payload;
 		payload.set_name("payload");
-		node << (payload << JSONNode("mood", status));
-
-
-		Body << VALUE(node.write().c_str());
+		node << (payload << CHAR_PARAM("mood", status));
+		m_szParam = node.write().c_str();
 	}
 };
 

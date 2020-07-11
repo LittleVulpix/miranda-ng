@@ -28,9 +28,11 @@ int GetJabberInterface(WPARAM, LPARAM);
 int onProtoAck(WPARAM, LPARAM);
 int onWindowEvent(WPARAM, LPARAM);
 int onIconPressed(WPARAM, LPARAM);
+int onExtraIconPressed(WPARAM, LPARAM, LPARAM);
 
 void InitCheck();
 void FirstRun();
+void RemoveHandlers();
 
 // global variables
 CMPlugin g_plugin;
@@ -59,7 +61,8 @@ CMPlugin::CMPlugin() :
 	bSameAction(MODULENAME, "bSameAction", false),
 	bAutoExchange(MODULENAME, "bAutoExchange", false),
 	bFileTransfers(MODULENAME, "bFileTransfers", false),
-	bPresenceSigning(MODULENAME, "bPresenceSigning", false)
+	bPresenceSigning(MODULENAME, "bPresenceSigning", false),
+	bSendErrorMessages(MODULENAME, "bSendErrorMessages", false)
 {
 }
 
@@ -70,9 +73,6 @@ INT_PTR SendKey(WPARAM, LPARAM);
 INT_PTR ExportGpGKeys(WPARAM, LPARAM);
 INT_PTR ImportGpGKeys(WPARAM, LPARAM);
 INT_PTR ToggleEncryption(WPARAM, LPARAM);
-
-int onExtraImageApplying(WPARAM, LPARAM);
-int onExtraImageListRebuilding(WPARAM, LPARAM);
 
 void InitIconLib();
 
@@ -124,13 +124,43 @@ static int OnModulesLoaded(WPARAM, LPARAM)
 	return 0;
 }
 
+static int OnShutdown(WPARAM, LPARAM)
+{
+	RemoveHandlers();
+	return 0;
+}
+
+static INT_PTR EventGetIcon(WPARAM flags, LPARAM)
+{
+	HICON hIcon = g_plugin.getIcon(IDI_SECURED);
+	return (INT_PTR)((flags & LR_SHARED) ? hIcon : CopyIcon(hIcon));
+}
+
+static INT_PTR GetEventText(WPARAM pEvent, LPARAM datatype)
+{
+	DBEVENTINFO *dbei = (DBEVENTINFO *)pEvent;
+	ptrW wszText(mir_utf8decodeW((char *)dbei->pBlob));
+	return (datatype != DBVT_WCHAR) ? (INT_PTR)mir_u2a(wszText) : (INT_PTR)wszText.detach();
+}
+
 int CMPlugin::Load()
 {
+	DBEVENTTYPEDESCR dbEventType = {};
+	dbEventType.module = MODULENAME;
+	dbEventType.descr = "GPG service event";
+	dbEventType.iconService = MODULENAME "/GetEventIcon";
+	dbEventType.textService = MODULENAME "/GetEventText";
+	DbEvent_RegisterType(&dbEventType);
+
+	CreateServiceFunction(dbEventType.iconService, &EventGetIcon);
+	CreateServiceFunction(dbEventType.textService, &GetEventText);
+
 	HookEvent(ME_CLIST_PREBUILDCONTACTMENU, OnPreBuildContactMenu);
 	HookEvent(ME_DB_EVENT_FILTER_ADD, HookSendMsg);
 	HookEvent(ME_OPT_INITIALISE, GpgOptInit);
 	HookEvent(ME_PROTO_ACK, onProtoAck);
 	HookEvent(ME_SYSTEM_MODULESLOADED, OnModulesLoaded);
+	HookEvent(ME_SYSTEM_PRESHUTDOWN, OnShutdown);
 
 	InitIconLib();
 	init_vars();
@@ -152,14 +182,14 @@ int CMPlugin::Load()
 	mi.position = -0x7FFFFFFe;
 	mi.name.a = LPGEN("Toggle GPG encryption");
 	mi.pszService = "/ToggleEncryption";
-	globals.hToggleEncryption = Menu_AddContactMenuItem(&mi);
+	g_plugin.hToggleEncryption = Menu_AddContactMenuItem(&mi);
 	CreateServiceFunction(mi.pszService, ToggleEncryption);
 
 	SET_UID(mi, 0x42bb535f, 0xd58e, 0x4edb, 0xbf, 0x2c, 0xfa, 0x9a, 0xbf, 0x1e, 0xb8, 0x69);
 	mi.position = -0x7FFFFFFd;
 	mi.name.a = LPGEN("Send public key");
 	mi.pszService = "/SendKey";
-	globals.hSendKey = Menu_AddContactMenuItem(&mi);
+	g_plugin.hSendKey = Menu_AddContactMenuItem(&mi);
 	CreateServiceFunction(mi.pszService, SendKey);
 
 	////////////////////////////////////////////////////////////////////////////////////////
@@ -185,13 +215,21 @@ int CMPlugin::Load()
 	Menu_AddMainMenuItem(&mi);
 	CreateServiceFunction(mi.pszService, ImportGpGKeys);
 
-	globals.g_hCLIcon = ExtraIcon_RegisterCallback(MODULENAME, Translate("GPG encryption status"), "secured", onExtraImageListRebuilding, onExtraImageApplying);
+	////////////////////////////////////////////////////////////////////////////////////////
+	// Extra icon
+
+	hCLIcon = ExtraIcon_RegisterIcolib(MODULENAME, Translate("GPG encryption status"), "secured", &onExtraIconPressed);
+	for (auto &cc : Contacts())
+		if (isContactHaveKey(cc))
+			setSrmmIcon(cc);
+
 	return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
 extern list<wstring> transfers;
+
 int CMPlugin::Unload()
 {
 	for (auto p : transfers)

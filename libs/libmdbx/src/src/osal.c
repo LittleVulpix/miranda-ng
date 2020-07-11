@@ -362,106 +362,98 @@ char *mdbx_strdup(const char *str) {
 
 /*----------------------------------------------------------------------------*/
 
-MDBX_INTERNAL_FUNC int mdbx_condmutex_init(mdbx_condmutex_t *condmutex) {
+MDBX_INTERNAL_FUNC int mdbx_condpair_init(mdbx_condpair_t *condpair) {
+  int rc;
+  memset(condpair, 0, sizeof(mdbx_condpair_t));
 #if defined(_WIN32) || defined(_WIN64)
-  int rc = MDBX_SUCCESS;
-  condmutex->event = NULL;
-  condmutex->mutex = CreateMutexW(NULL, FALSE, NULL);
-  if (!condmutex->mutex)
-    return GetLastError();
-
-  condmutex->event = CreateEventW(NULL, TRUE, FALSE, NULL);
-  if (!condmutex->event) {
+  if ((condpair->mutex = CreateMutexW(NULL, FALSE, NULL)) == NULL) {
     rc = GetLastError();
-    (void)CloseHandle(condmutex->mutex);
-    condmutex->mutex = NULL;
+    goto bailout_mutex;
   }
-  return rc;
+  if ((condpair->event[0] = CreateEventW(NULL, FALSE, FALSE, NULL)) == NULL) {
+    rc = GetLastError();
+    goto bailout_event;
+  }
+  if ((condpair->event[1] = CreateEventW(NULL, FALSE, FALSE, NULL)) != NULL)
+    return MDBX_SUCCESS;
+
+  rc = GetLastError();
+  (void)CloseHandle(condpair->event[0]);
+bailout_event:
+  (void)CloseHandle(condpair->mutex);
 #else
-  memset(condmutex, 0, sizeof(mdbx_condmutex_t));
-  int rc = pthread_mutex_init(&condmutex->mutex, NULL);
-  if (rc == 0) {
-    rc = pthread_cond_init(&condmutex->cond, NULL);
-    if (rc != 0)
-      (void)pthread_mutex_destroy(&condmutex->mutex);
-  }
-  return rc;
+  rc = pthread_mutex_init(&condpair->mutex, NULL);
+  if (unlikely(rc != 0))
+    goto bailout_mutex;
+  rc = pthread_cond_init(&condpair->cond[0], NULL);
+  if (unlikely(rc != 0))
+    goto bailout_cond;
+  rc = pthread_cond_init(&condpair->cond[1], NULL);
+  if (likely(rc == 0))
+    return MDBX_SUCCESS;
+
+  (void)pthread_cond_destroy(&condpair->cond[0]);
+bailout_cond:
+  (void)pthread_mutex_destroy(&condpair->mutex);
 #endif
+bailout_mutex:
+  memset(condpair, 0, sizeof(mdbx_condpair_t));
+  return rc;
 }
 
-static bool is_allzeros(const void *ptr, size_t bytes) {
-  const uint8_t *u8 = ptr;
-  for (size_t i = 0; i < bytes; ++i)
-    if (u8[i] != 0)
-      return false;
-  return true;
-}
-
-MDBX_INTERNAL_FUNC int mdbx_condmutex_destroy(mdbx_condmutex_t *condmutex) {
-  int rc = MDBX_EINVAL;
+MDBX_INTERNAL_FUNC int mdbx_condpair_destroy(mdbx_condpair_t *condpair) {
 #if defined(_WIN32) || defined(_WIN64)
-  if (condmutex->event) {
-    rc = CloseHandle(condmutex->event) ? MDBX_SUCCESS : GetLastError();
-    if (rc == MDBX_SUCCESS)
-      condmutex->event = NULL;
-  }
-  if (condmutex->mutex) {
-    rc = CloseHandle(condmutex->mutex) ? MDBX_SUCCESS : GetLastError();
-    if (rc == MDBX_SUCCESS)
-      condmutex->mutex = NULL;
-  }
+  int rc = CloseHandle(condpair->mutex) ? MDBX_SUCCESS : GetLastError();
+  rc = CloseHandle(condpair->event[0]) ? rc : GetLastError();
+  rc = CloseHandle(condpair->event[1]) ? rc : GetLastError();
 #else
-  if (!is_allzeros(&condmutex->cond, sizeof(condmutex->cond))) {
-    rc = pthread_cond_destroy(&condmutex->cond);
-    if (rc == 0)
-      memset(&condmutex->cond, 0, sizeof(condmutex->cond));
-  }
-  if (!is_allzeros(&condmutex->mutex, sizeof(condmutex->mutex))) {
-    rc = pthread_mutex_destroy(&condmutex->mutex);
-    if (rc == 0)
-      memset(&condmutex->mutex, 0, sizeof(condmutex->mutex));
-  }
+  int err, rc = pthread_mutex_destroy(&condpair->mutex);
+  rc = (err = pthread_cond_destroy(&condpair->cond[0])) ? err : rc;
+  rc = (err = pthread_cond_destroy(&condpair->cond[1])) ? err : rc;
 #endif
+  memset(condpair, 0, sizeof(mdbx_condpair_t));
   return rc;
 }
 
-MDBX_INTERNAL_FUNC int mdbx_condmutex_lock(mdbx_condmutex_t *condmutex) {
+MDBX_INTERNAL_FUNC int mdbx_condpair_lock(mdbx_condpair_t *condpair) {
 #if defined(_WIN32) || defined(_WIN64)
-  DWORD code = WaitForSingleObject(condmutex->mutex, INFINITE);
+  DWORD code = WaitForSingleObject(condpair->mutex, INFINITE);
   return waitstatus2errcode(code);
 #else
-  return pthread_mutex_lock(&condmutex->mutex);
+  return pthread_mutex_lock(&condpair->mutex);
 #endif
 }
 
-MDBX_INTERNAL_FUNC int mdbx_condmutex_unlock(mdbx_condmutex_t *condmutex) {
+MDBX_INTERNAL_FUNC int mdbx_condpair_unlock(mdbx_condpair_t *condpair) {
 #if defined(_WIN32) || defined(_WIN64)
-  return ReleaseMutex(condmutex->mutex) ? MDBX_SUCCESS : GetLastError();
+  return ReleaseMutex(condpair->mutex) ? MDBX_SUCCESS : GetLastError();
 #else
-  return pthread_mutex_unlock(&condmutex->mutex);
+  return pthread_mutex_unlock(&condpair->mutex);
 #endif
 }
 
-MDBX_INTERNAL_FUNC int mdbx_condmutex_signal(mdbx_condmutex_t *condmutex) {
+MDBX_INTERNAL_FUNC int mdbx_condpair_signal(mdbx_condpair_t *condpair,
+                                            bool part) {
 #if defined(_WIN32) || defined(_WIN64)
-  return SetEvent(condmutex->event) ? MDBX_SUCCESS : GetLastError();
+  return SetEvent(condpair->event[part]) ? MDBX_SUCCESS : GetLastError();
 #else
-  return pthread_cond_signal(&condmutex->cond);
+  return pthread_cond_signal(&condpair->cond[part]);
 #endif
 }
 
-MDBX_INTERNAL_FUNC int mdbx_condmutex_wait(mdbx_condmutex_t *condmutex) {
+MDBX_INTERNAL_FUNC int mdbx_condpair_wait(mdbx_condpair_t *condpair,
+                                          bool part) {
 #if defined(_WIN32) || defined(_WIN64)
-  DWORD code =
-      SignalObjectAndWait(condmutex->mutex, condmutex->event, INFINITE, FALSE);
+  DWORD code = SignalObjectAndWait(condpair->mutex, condpair->event[part],
+                                   INFINITE, FALSE);
   if (code == WAIT_OBJECT_0) {
-    code = WaitForSingleObject(condmutex->mutex, INFINITE);
+    code = WaitForSingleObject(condpair->mutex, INFINITE);
     if (code == WAIT_OBJECT_0)
-      return ResetEvent(condmutex->event) ? MDBX_SUCCESS : GetLastError();
+      return MDBX_SUCCESS;
   }
   return waitstatus2errcode(code);
 #else
-  return pthread_cond_wait(&condmutex->cond, &condmutex->mutex);
+  return pthread_cond_wait(&condpair->cond[part], &condpair->mutex);
 #endif
 }
 
@@ -1414,7 +1406,7 @@ MDBX_INTERNAL_FUNC int mdbx_munmap(mdbx_mmap_t *map) {
 }
 
 MDBX_INTERNAL_FUNC int mdbx_mresize(int flags, mdbx_mmap_t *map, size_t size,
-                                    size_t limit) {
+                                    size_t limit, const bool may_move) {
   assert(size <= limit);
 #if defined(_WIN32) || defined(_WIN64)
   assert(size != map->current || limit != map->limit || size < map->filesize);
@@ -1493,9 +1485,9 @@ MDBX_INTERNAL_FUNC int mdbx_mresize(int flags, mdbx_mmap_t *map, size_t size,
     if (status != /* STATUS_CONFLICTING_ADDRESSES */ 0xC0000018)
       goto bailout_ntstatus /* no way to recovery */;
 
-    /* assume we can change base address if mapping size changed or prev address
-     * couldn't be used */
-    map->address = NULL;
+    if (may_move)
+      /* the base address could be changed */
+      map->address = NULL;
   }
 
 retry_file_and_section:
@@ -1552,7 +1544,7 @@ retry_mapview:;
 
   if (!NT_SUCCESS(status)) {
     if (status == /* STATUS_CONFLICTING_ADDRESSES */ 0xC0000018 &&
-        map->address) {
+        map->address && may_move) {
       /* try remap at another base address */
       map->address = NULL;
       goto retry_mapview;
@@ -1576,6 +1568,7 @@ retry_mapview:;
 
   map->current = (size_t)SectionSize.QuadPart;
   map->limit = ViewSize;
+
 #else
 
   uint64_t filesize = 0;
@@ -1596,7 +1589,8 @@ retry_mapview:;
 
   if (limit != map->limit) {
 #if defined(MREMAP_MAYMOVE)
-    void *ptr = mremap(map->address, map->limit, limit, 0);
+    void *ptr =
+        mremap(map->address, map->limit, limit, may_move ? MREMAP_MAYMOVE : 0);
     if (ptr == MAP_FAILED) {
       rc = errno;
       switch (rc) {
@@ -1607,7 +1601,59 @@ retry_mapview:;
       }
       return rc;
     }
-    map->address = ptr;
+#else
+    if (!may_move)
+      /* TODO: Perhaps here it is worth to implement suspend/resume threads
+       *       and perform unmap/map as like for Windows. */
+      return MDBX_UNABLE_EXTEND_MAPSIZE;
+
+    if (unlikely(munmap(map->address, map->limit)))
+      return errno;
+
+    unsigned mmap_flags =
+        MAP_CONCEAL | MAP_SHARED | MAP_FILE |
+        (F_ISSET(flags, MDBX_UTTERLY_NOSYNC) ? MAP_NOSYNC : 0);
+#ifdef MAP_FIXED
+    if (!may_move)
+      mmap_flags |= MAP_FIXED;
+#endif
+
+    void *ptr =
+        mmap(map->address, limit,
+             (flags & MDBX_WRITEMAP) ? PROT_READ | PROT_WRITE : PROT_READ,
+             mmap_flags, map->fd, 0);
+    if (unlikely(ptr == MAP_FAILED)) {
+      ptr = mmap(map->address, map->limit,
+                 (flags & MDBX_WRITEMAP) ? PROT_READ | PROT_WRITE : PROT_READ,
+                 mmap_flags, map->fd, 0);
+      if (unlikely(ptr == MAP_FAILED)) {
+        VALGRIND_MAKE_MEM_NOACCESS(map->address, map->current);
+        /* Unpoisoning is required for ASAN to avoid false-positive diagnostic
+         * when this memory will re-used by malloc or another mmaping.
+         * See https://github.com/erthink/libmdbx/pull/93#issuecomment-613687203
+         */
+        ASAN_UNPOISON_MEMORY_REGION(map->address, map->limit);
+        map->limit = 0;
+        map->current = 0;
+        map->address = nullptr;
+        return errno;
+      }
+      return MDBX_UNABLE_EXTEND_MAPSIZE;
+    }
+#endif /* !MREMAP_MAYMOVE */
+
+    if (map->address != ptr) {
+      VALGRIND_MAKE_MEM_NOACCESS(map->address, map->current);
+      /* Unpoisoning is required for ASAN to avoid false-positive diagnostic
+       * when this memory will re-used by malloc or another mmaping.
+       * See https://github.com/erthink/libmdbx/pull/93#issuecomment-613687203
+       */
+      ASAN_UNPOISON_MEMORY_REGION(map->address, map->limit);
+
+      VALGRIND_MAKE_MEM_DEFINED(ptr, map->current);
+      ASAN_UNPOISON_MEMORY_REGION(ptr, map->current);
+      map->address = ptr;
+    }
     map->limit = limit;
 
 #ifdef MADV_DONTFORK
@@ -1618,14 +1664,9 @@ retry_mapview:;
 #ifdef MADV_NOHUGEPAGE
     (void)madvise(map->address, map->limit, MADV_NOHUGEPAGE);
 #endif /* MADV_NOHUGEPAGE */
-
-#else  /* MREMAP_MAYMOVE */
-    /* TODO: Perhaps here it is worth to implement suspend/resume threads
-     *       and perform unmap/map as like for Windows. */
-    rc = MDBX_UNABLE_EXTEND_MAPSIZE;
-#endif /* !MREMAP_MAYMOVE */
   }
 #endif
+
   return rc;
 }
 

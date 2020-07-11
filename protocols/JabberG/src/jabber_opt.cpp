@@ -239,8 +239,6 @@ public:
 		m_btnOk(this, IDOK)
 	{
 		SetParent(hwndParent);
-		m_autoClose = CLOSE_ON_CANCEL;
-		m_btnOk.OnClick = Callback(this, &CJabberDlgRegister::btnOk_OnClick);
 	}
 
 	bool OnInitDialog() override
@@ -250,43 +248,45 @@ public:
 		return true;
 	}
 
-	INT_PTR DlgProc(UINT msg, WPARAM wParam, LPARAM lParam) override
-	{
-		switch (msg) {
-		case WM_JABBER_REGDLG_UPDATE:	// wParam=progress (0-100), lparam=status string
-			if ((wchar_t*)lParam == nullptr)
-				SetDlgItemTextW(m_hwnd, IDC_REG_STATUS, TranslateT("No message"));
-			else
-				SetDlgItemTextW(m_hwnd, IDC_REG_STATUS, (wchar_t*)lParam);
-
-			SendDlgItemMessage(m_hwnd, IDC_PROGRESS_REG, PBM_SETPOS, wParam, 0);
-			if (wParam >= 100)
-				m_btnOk.SetText(TranslateT("Close"));
-			else
-				SetFocus(GetDlgItem(m_hwnd, IDC_PROGRESS_REG));
-
-			return TRUE;
-		}
-
-		return CSuper::DlgProc(msg, wParam, lParam);
-	}
-
-	void btnOk_OnClick(CCtrlButton*)
+	bool OnApply() override
 	{
 		if (m_bProcessStarted) {
 			Close();
-			return;
+			return true;
 		}
 
 		ShowWindow(GetDlgItem(m_hwnd, IDC_PROGRESS_REG), SW_SHOW);
 
-		m_regInfo->reg_hwndDlg = m_hwnd;
-		m_proto->ForkThread((CJabberProto::MyThreadFunc)&CJabberProto::ServerThread, m_regInfo);
+		m_regInfo->pDlg = this;
+		m_proto->ForkThread((CJabberProto::MyThreadFunc) & CJabberProto::ServerThread, m_regInfo);
 
 		m_btnOk.SetText(TranslateT("Cancel"));
 		m_bProcessStarted = true;
+		return false;
+	}
+
+	void OnDestroy() override
+	{
+		m_regInfo->pDlg = nullptr;
+	}
+
+	void Update(int progress, const wchar_t *pwszText)
+	{
+		SetDlgItemTextW(m_hwnd, IDC_REG_STATUS, pwszText);
+		SendDlgItemMessageW(m_hwnd, IDC_PROGRESS_REG, PBM_SETPOS, progress, 0);
+
+		if (progress >= 100)
+			m_btnOk.SetText(TranslateT("Close"));
+		else
+			SetFocus(GetDlgItem(m_hwnd, IDC_PROGRESS_REG));
 	}
 };
+
+void JABBER_CONN_DATA::SetProgress(int progress, const wchar_t *pwszText)
+{
+	if (pDlg)
+		pDlg->Update(progress, pwszText);
+}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // JabberOptDlgProc - main options dialog procedure
@@ -349,7 +349,7 @@ class CDlgOptAccount : public CJabberDlgBase
 	CCtrlEdit		m_txtManualPort;
 	CCtrlCheck		m_chkKeepAlive;
 	CCtrlCheck		m_chkAutoDeleteContacts;
-	CCtrlCombo		m_cbLocale;
+	CCtrlCombo		m_cbLocale, m_cbMam;
 	CCtrlButton		m_btnRegister;
 	CCtrlButton		m_btnUnregister;
 	CCtrlButton		m_btnChangePassword;
@@ -365,6 +365,7 @@ public:
 		m_cbResource(this, IDC_COMBO_RESOURCE),
 		m_chkUseHostnameAsResource(this, IDC_HOSTNAME_AS_RESOURCE),
 		m_chkUseDomainLogin(this, IDC_USEDOMAINLOGIN),
+		m_cbMam(this, IDC_MAM_MODE),
 		m_cbServer(this, IDC_EDIT_LOGIN_SERVER),
 		m_txtPort(this, IDC_PORT),
 		m_chkUseSsl(this, IDC_USE_SSL),
@@ -430,6 +431,14 @@ protected:
 		for (auto &it : szResources)
 			m_cbResource.AddString(it);
 
+
+		// fill MAM modes
+		wchar_t *szMamModes[] = { LPGENW("Never"), LPGENW("Roster"), LPGENW("Always") };
+		for (auto &it : szMamModes)
+			m_cbMam.AddString(it, int(&it - szMamModes));
+		m_cbMam.SetCurSel(m_proto->m_iMamMode);
+		m_cbMam.Enable(m_proto->m_bMamPrefsAvailable);
+
 		// append computer name to the resource list
 		wchar_t szCompName[MAX_COMPUTERNAME_LENGTH + 1];
 		DWORD dwCompNameLength = MAX_COMPUTERNAME_LENGTH;
@@ -489,6 +498,9 @@ protected:
 			}
 		}
 
+		if (m_cbMam.Enabled() && m_cbMam.GetCurSel() != m_proto->m_iMamMode)
+			m_proto->MamSetMode(m_cbMam.GetCurSel());
+
 		sttStoreJidFromUI(m_proto, m_txtUsername, m_cbServer);
 
 		if (m_proto->m_bJabberOnline) {
@@ -507,7 +519,7 @@ protected:
 
 	void OnChange(CCtrlBase*)
 	{
-		if (m_initialized)
+		if (m_bInitialized)
 			CheckRegistration();
 	}
 
@@ -770,6 +782,7 @@ public:
 		m_otvOptions.AddOption(LPGENW("Messaging") L"/" LPGENW("Receive notes"), m_proto->m_bAcceptNotes);
 		m_otvOptions.AddOption(LPGENW("Messaging") L"/" LPGENW("Automatically save received notes"), m_proto->m_bAutosaveNotes);
 		m_otvOptions.AddOption(LPGENW("Messaging") L"/" LPGENW("Inline pictures in messages (XEP-0231)"), m_proto->m_bInlinePictures);
+		m_otvOptions.AddOption(LPGENW("Messaging") L"/" LPGENW("Enable chat states sending (XEP-0085)"), m_proto->m_bEnableChatStates);
 		m_otvOptions.AddOption(LPGENW("Messaging") L"/" LPGENW("Enable server-side history (XEP-0136)"), m_proto->m_bEnableMsgArchive);
 		m_otvOptions.AddOption(LPGENW("Messaging") L"/" LPGENW("Enable carbon copies (XEP-0280)"), m_proto->m_bEnableCarbons);
 		m_otvOptions.AddOption(LPGENW("Messaging") L"/" LPGENW("Use Stream Management (XEP-0198) if possible (Testing)"), m_proto->m_bEnableStreamMgmt);
@@ -1213,7 +1226,7 @@ protected:
 
 	void OnChange(CCtrlBase*)
 	{
-		if (m_initialized)
+		if (m_bInitialized)
 			CheckRegistration();
 	}
 

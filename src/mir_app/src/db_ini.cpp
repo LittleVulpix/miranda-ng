@@ -46,16 +46,17 @@ protected:
 		m_iniName.SetText(m_szIniPath);
 
 		wchar_t szSecurity[11];
-		const wchar_t *pszSecurityInfo;
-
 		Profile_GetSetting(L"AutoExec/Warn", szSecurity, L"notsafe");
+
+		const wchar_t *pszSecurityInfo;
 		if (!mir_wstrcmpi(szSecurity, L"all"))
 			pszSecurityInfo = LPGENW("Security systems to prevent malicious changes are in place and you will be warned before every change that is made.");
 		else if (!mir_wstrcmpi(szSecurity, L"onlyunsafe"))
 			pszSecurityInfo = LPGENW("Security systems to prevent malicious changes are in place and you will be warned before changes that are known to be unsafe.");
 		else if (!mir_wstrcmpi(szSecurity, L"none"))
 			pszSecurityInfo = LPGENW("Security systems to prevent malicious changes have been disabled. You will receive no further warnings.");
-		else pszSecurityInfo = nullptr;
+		else
+			pszSecurityInfo = nullptr;
 
 		if (pszSecurityInfo)
 			m_securityInfo.SetText(TranslateW(pszSecurityInfo));
@@ -70,7 +71,7 @@ protected:
 
 	void NoToAll_OnClick(CCtrlBase*)
 	{
-		Close();
+		EndModal(IDC_NOTOALL);
 	}
 
 public:
@@ -123,7 +124,6 @@ class CWarnIniChangeDlg : public CDlgBase
 
 	CCtrlButton m_yes;
 	CCtrlButton m_no;
-	CCtrlButton m_cancel;
 
 	CCtrlCheck m_noWarn;
 
@@ -136,13 +136,14 @@ protected:
 	bool OnInitDialog() override
 	{
 		char szSettingName[256];
-		const wchar_t *pszSecurityInfo;
 		m_iniName.SetText(m_warnInfo->szIniPath);
 		mir_strcpy(szSettingName, m_warnInfo->szSection);
 		mir_strcat(szSettingName, " / ");
 		mir_strcat(szSettingName, m_warnInfo->szName);
 		m_settingName.SetTextA(szSettingName);
 		m_newValue.SetTextA(m_warnInfo->szValue);
+
+		const wchar_t *pszSecurityInfo;
 		if (IsInSpaceSeparatedList(m_warnInfo->szSection, m_warnInfo->szSafeSections))
 			pszSecurityInfo = LPGENW("This change is known to be safe.");
 		else if (IsInSpaceSeparatedList(m_warnInfo->szSection, m_warnInfo->szUnsafeSections))
@@ -153,23 +154,22 @@ protected:
 		return true;
 	}
 
-	void YesNo_OnClick(CCtrlBase*)
+	void OnDestroy() override
 	{
+		m_warnInfo->cancel = !m_bSucceeded;
 		m_warnInfo->warnNoMore = m_noWarn.GetState();
-		Close();
 	}
 
-	void Cancel_OnClick(CCtrlBase*)
+	void YesNo_OnClick(CCtrlBase *pButton)
 	{
-		m_warnInfo->cancel = 1;
-		m_warnInfo->warnNoMore = m_noWarn.GetState();
+		EndModal(pButton->GetCtrlId());
 	}
 
 public:
 	CWarnIniChangeDlg(warnSettingChangeInfo_t *warnInfo) :
 		CDlgBase(g_plugin, IDD_WARNINICHANGE),
 		m_yes(this, IDYES), m_no(this, IDNO),
-		m_cancel(this, IDCANCEL), m_noWarn(this, IDC_WARNNOMORE),
+		m_noWarn(this, IDC_WARNNOMORE),
 		m_iniName(this, IDC_ININAME), m_settingName(this, IDC_SETTINGNAME),
 		m_newValue(this, IDC_NEWVALUE), m_securityInfo(this, IDC_SECURITYINFO)
 	{
@@ -177,7 +177,6 @@ public:
 
 		m_yes.OnClick = Callback(this, &CWarnIniChangeDlg::YesNo_OnClick);
 		m_no.OnClick = Callback(this, &CWarnIniChangeDlg::YesNo_OnClick);
-		m_cancel.OnClick = Callback(this, &CWarnIniChangeDlg::Cancel_OnClick);
 	}
 };
 

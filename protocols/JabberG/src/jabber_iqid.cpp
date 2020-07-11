@@ -126,10 +126,13 @@ void CJabberProto::OnProcessLoginRq(ThreadData *info, DWORD rq)
 		if (info->jabberServerCaps & JABBER_CAPS_ARCHIVE_AUTO)
 			EnableArchive(m_bEnableMsgArchive != 0);
 
-		if (info->jabberServerCaps & JABBER_CAPS_CARBONS) {
+		if (info->jabberServerCaps & JABBER_CAPS_CARBONS)
 			// Server seems to support carbon copies, let's enable/disable them
 			m_ThreadInfo->send(XmlNodeIq("set", SerialNext()) << XCHILDNS((m_bEnableCarbons) ? "enable" : "disable", JABBER_FEAT_CARBONS));
-		}
+
+		// Server seems to support MAM, let's retrieve MAM settings
+		if (info->jabberServerCaps & JABBER_CAPS_MAM)
+			m_ThreadInfo->send(XmlNodeIq(AddIQ(&CJabberProto::OnIqResultMamInfo, JABBER_IQ_TYPE_GET, 0, this)) << XCHILDNS("prefs", JABBER_FEAT_MAM));
 
 		if (m_bAutoJoinBookmarks) {
 			LIST<JABBER_LIST_ITEM> ll(10);
@@ -168,6 +171,7 @@ void CJabberProto::OnProcessLoginRq(ThreadData *info, DWORD rq)
 
 void CJabberProto::OnLoggedIn()
 {
+	m_bMamPrefsAvailable = false;
 	m_bJabberOnline = true;
 	m_tmJabberLoggedInTime = time(0);
 
@@ -463,51 +467,6 @@ void CJabberProto::OnIqResultGetRoster(const TiXmlElement *iqNode, CJabberIqInfo
 
 	OnProcessLoginRq(m_ThreadInfo, JABBER_LOGIN_ROSTER);
 	RebuildInfoFrame();
-}
-
-void CJabberProto::OnIqResultGetRegister(const TiXmlElement *iqNode, CJabberIqInfo*)
-{
-	// RECVED: result of the request for (agent) registration mechanism
-	// ACTION: activate (agent) registration input dialog
-	debugLogA("<iq/> iqIdGetRegister");
-
-	const TiXmlElement *queryNode;
-	const char *type;
-	if ((type = XmlGetAttr(iqNode, "type")) == nullptr) return;
-	if ((queryNode = XmlFirstChild(iqNode, "query")) == nullptr) return;
-
-	if (!mir_strcmp(type, "result")) {
-		if (m_hwndAgentRegInput)
-			SendMessage(m_hwndAgentRegInput, WM_JABBER_REGINPUT_ACTIVATE, 1 /*success*/, (LPARAM)iqNode);
-	}
-	else if (!mir_strcmp(type, "error")) {
-		if (m_hwndAgentRegInput)
-			SendMessage(m_hwndAgentRegInput, WM_JABBER_REGINPUT_ACTIVATE, 0 /*error*/, (LPARAM)JabberErrorMsg(iqNode).c_str());
-	}
-}
-
-void CJabberProto::OnIqResultSetRegister(const TiXmlElement *iqNode, CJabberIqInfo*)
-{
-	// RECVED: result of registration process
-	// ACTION: notify of successful agent registration
-	debugLogA("<iq/> iqIdSetRegister");
-
-	const char *type, *from;
-	if ((type = XmlGetAttr(iqNode, "type")) == nullptr) return;
-	if ((from = XmlGetAttr(iqNode, "from")) == nullptr) return;
-
-	if (!mir_strcmp(type, "result")) {
-		MCONTACT hContact = HContactFromJID(from);
-		if (hContact != 0)
-			setByte(hContact, "IsTransport", true);
-
-		if (m_hwndRegProgress)
-			SendMessage(m_hwndRegProgress, WM_JABBER_REGDLG_UPDATE, 100, (LPARAM)TranslateT("Registration successful"));
-	}
-	else if (!mir_strcmp(type, "error")) {
-		if (m_hwndRegProgress)
-			SendMessage(m_hwndRegProgress, WM_JABBER_REGDLG_UPDATE, 100, (LPARAM)JabberErrorMsg(iqNode).c_str());
-	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

@@ -308,7 +308,6 @@ private:
 	void OnReceiveGroupInfo(NETLIBHTTPREQUEST * reply, AsyncHttpRequest * pReq);
 	void RetrieveFriends(bool bCleanNonFriendContacts = false);
 	void OnReceiveFriends(NETLIBHTTPREQUEST*, AsyncHttpRequest*);
-	void MarkMessagesRead(const CMStringA &mids);
 	void MarkMessagesRead(const MCONTACT hContact);
 	void RetrieveMessagesByIds(const CMStringA &mids);
 	void RetrieveUnreadMessages();
@@ -360,6 +359,7 @@ private:
 	CMStringW SetBBCString(LPCWSTR wszString, BBCSupport iBBC, VKBBCType bbcType, LPCWSTR wszAddString = nullptr);
 	CMStringW& ClearFormatNick(CMStringW& wszText);
 	CMStringW GetAttachmentDescr(const JSONNode &jnAttachments, BBCSupport iBBC = bbcNo);
+	CMStringW GetFwdMessage(const JSONNode& jnMsg, const JSONNode& jnFUsers, OBJLIST<CVkUserInfo>& vkUsers, BBCSupport iBBC);
 	CMStringW GetFwdMessages(const JSONNode &jnMessages, const JSONNode &jnFUsers, BBCSupport iBBC = bbcNo);
 	void SetInvisible(MCONTACT hContact);
 	CMStringW RemoveBBC(CMStringW& wszSrc);
@@ -388,9 +388,9 @@ private:
 	void __cdecl ChatContactTypingThread(void *p);
 	void StopChatContactTyping(int iChatId, LONG iUserId);
 	void OnCreateNewChat(NETLIBHTTPREQUEST*, AsyncHttpRequest*);
-	CVkChatInfo* AppendChat(int id, const JSONNode &jnNode);
+	CVkChatInfo* AppendConversationChat(int iChatId, const JSONNode& jnItem);
 	void SetChatTitle(CVkChatInfo *cc, LPCWSTR wszTopic);
-	void AppendChatMessage(int id, const JSONNode &jnMsg, const JSONNode &jnFUsers, bool bIsHistory);
+	void AppendChatConversationMessage(int id, const JSONNode& jnMsg, const JSONNode& jnFUsers, bool bIsHistory);
 	void AppendChatMessage(CVkChatInfo *cc, LONG uid, int msgTime, LPCWSTR pwszBody, bool bIsHistory, bool bIsAction = false);
 	void RetrieveChatInfo(CVkChatInfo*);
 	void OnReceiveChatInfo(NETLIBHTTPREQUEST*, AsyncHttpRequest*);

@@ -97,7 +97,6 @@
 #define IDC_LINK_PUBLIC_SERVER          1009
 #define IDC_NAME                        1009
 #define IDC_PROGRESS_REG                1011
-#define IDC_SUBMIT                      1023
 #define IDC_NEXT                        1025
 #define IDC_PREV                        1026
 #define IDC_COMPLETE                    1027
@@ -115,9 +114,10 @@
 #define IDC_MSGLANG                     1049
 #define IDC_PASSWORD                    1050
 #define IDC_JID                         1051
-#define IDC_NEWPASSWD2                  1052
 #define IDC_ROSTER_SYNC                 1052
 #define IDC_OLDPASSWD                   1053
+#define IDC_MAM_MODE                    1054
+#define IDC_NEWPASSWD2                  1055
 #define IDC_ADDRESS1                    1056
 #define IDC_ADDRESS2                    1057
 #define IDC_CITY                        1058

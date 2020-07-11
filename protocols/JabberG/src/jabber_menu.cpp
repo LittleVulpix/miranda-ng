@@ -147,7 +147,6 @@ void g_MenuInit(void)
 	// Contact menu initialization
 
 	CMenuItem mi(&g_plugin);
-	mi.flags = CMIF_UNMOVABLE;
 
 	// "Add to Bookmarks"
 	SET_UID(mi, 0x7d06d00b, 0x3a3e, 0x4d65, 0xac, 0xc5, 0x63, 0xe2, 0x60, 0xbe, 0xc6, 0x6);
@@ -267,6 +266,7 @@ int CJabberProto::OnPrebuildContactMenu(WPARAM hContact, LPARAM)
 	if (hContact == 0)
 		return 0;
 
+	Menu_ShowItem(GetMenuItem(PROTO_MENU_LOAD_HISTORY), false);
 	bool bIsChatRoom = isChatRoom(hContact);
 	bool bIsTransport = getBool(hContact, "IsTransport", false);
 
@@ -276,6 +276,9 @@ int CJabberProto::OnPrebuildContactMenu(WPARAM hContact, LPARAM)
 	Menu_ShowItem(g_hMenuDirectPresence[0], TRUE);
 	for (int i = 0; i < _countof(PresenceModeArray); i++)
 		Menu_ModifyItem(g_hMenuDirectPresence[i + 1], nullptr, Skin_GetProtoIcon(m_szModuleName, PresenceModeArray[i].mode));
+
+	if (m_ThreadInfo && (m_ThreadInfo->jabberServerCaps & JABBER_CAPS_MAM))
+		Menu_ShowItem(GetMenuItem(PROTO_MENU_LOAD_HISTORY), true);
 
 	if (bIsChatRoom) {
 		ptrA roomid(getUStringA(hContact, "ChatRoomID"));
@@ -302,9 +305,9 @@ int CJabberProto::OnPrebuildContactMenu(WPARAM hContact, LPARAM)
 		return 0;
 
 	bool bCtrlPressed = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
-	Menu_ShowItem(m_hmiReqAuth, item->subscription == SUB_FROM || item->subscription == SUB_NONE || bCtrlPressed);
-	Menu_ShowItem(m_hmiGrantAuth, bCtrlPressed);
-	Menu_ShowItem(m_hmiRevokeAuth, item->subscription == SUB_FROM || item->subscription == SUB_BOTH || bCtrlPressed);
+	Menu_ShowItem(GetMenuItem(PROTO_MENU_REQ_AUTH), item->subscription == SUB_FROM || item->subscription == SUB_NONE || bCtrlPressed);
+	Menu_ShowItem(GetMenuItem(PROTO_MENU_GRANT_AUTH), bCtrlPressed);
+	Menu_ShowItem(GetMenuItem(PROTO_MENU_REVOKE_AUTH), item->subscription == SUB_FROM || item->subscription == SUB_BOTH || bCtrlPressed);
 	Menu_ShowItem(g_hMenuCommands, ((jcb & JABBER_CAPS_COMMANDS) != 0) || bCtrlPressed);
 	Menu_ShowItem(g_hMenuSendNote, TRUE);
 
@@ -832,7 +835,7 @@ int CJabberProto::OnProcessSrmmEvent(WPARAM, LPARAM lParam)
 			if (r && r->m_bMessageSessionActive) {
 				r->m_bMessageSessionActive = false;
 
-				if (GetResourceCapabilities(jid) & JABBER_CAPS_CHATSTATES)
+				if (m_bEnableChatStates && (GetResourceCapabilities(jid, r) & JABBER_CAPS_CHATSTATES))
 					m_ThreadInfo->send(XmlNode("message") << XATTR("to", jid) << XATTR("type", "chat") << XATTRID(SerialNext()) << XCHILDNS("gone", JABBER_FEAT_CHATSTATES));
 			}
 		}

@@ -658,9 +658,9 @@ typedef pthread_t mdbx_tid_t;
 
 /*----------------------------------------------------------------------------*/
 
-/* MDBX version 0.7.0, released 2020-03-18 */
+/* MDBX version 0.8.2, released 2020-07-06 */
 #define MDBX_VERSION_MAJOR 0
-#define MDBX_VERSION_MINOR 7
+#define MDBX_VERSION_MINOR 8
 
 #ifndef LIBMDBX_API
 #if defined(LIBMDBX_EXPORTS)
@@ -924,7 +924,9 @@ LIBMDBX_API const char *mdbx_dump_val(const MDBX_val *key, char *const buf,
  *  - without MDBX_NOSUBDIR = in a filesystem we have the MDBX-directory with
  *    given pathname, within that a pair of MDBX-files with predefined names.
  *
- * This flag affects only at environment opening and can't be changed after. */
+ * This flag affects only at new environment creating by mdbx_env_open(),
+ * otherwise at opening an existing environment libmdbx will choice this
+ * automatically. */
 #define MDBX_NOSUBDIR 0x4000u
 
 /* MDBX_RDONLY = read only mode.
@@ -1001,9 +1003,6 @@ LIBMDBX_API const char *mdbx_dump_val(const MDBX_val *key, char *const buf,
  *       this is unreasonable. I.e. nested transactions requires mallocation of
  *       database pages and more work for tracking ones, which neuters a
  *       performance boost caused by the MDBX_WRITEMAP mode.
- *
- * NOTE: MDBX don't allow to mix processes with and without MDBX_WRITEMAP on
- *       the same environment. In such case MDBX_INCOMPATIBLE will be generated.
  *
  *  - with MDBX_WRITEMAP = all data will be mapped into memory in the read-write
  *    mode. This offers a significant performance benefit, since the data will
@@ -1375,6 +1374,7 @@ LIBMDBX_API const char *mdbx_dump_val(const MDBX_val *key, char *const buf,
 /**** ENVIRONMENT COPY FLAGS **************************************************/
 /* Compacting: Omit free space from copy, and renumber all pages sequentially */
 #define MDBX_CP_COMPACT 1u
+#define MDBX_CP_FORCE_RESIZEABLE 2u
 
 /**** CURSOR OPERATIONS ********************************************************
  *
@@ -1385,7 +1385,8 @@ typedef enum MDBX_cursor_op {
   MDBX_FIRST_DUP,      /* MDBX_DUPSORT-only: Position at first data item
                         * of current key. */
   MDBX_GET_BOTH,       /* MDBX_DUPSORT-only: Position at key/data pair. */
-  MDBX_GET_BOTH_RANGE, /* MDBX_DUPSORT-only: position at key, nearest data. */
+  MDBX_GET_BOTH_RANGE, /* MDBX_DUPSORT-only: Position at given key and at first
+                        * data greater than or equal to specified data. */
   MDBX_GET_CURRENT,    /* Return key/data at current cursor position */
   MDBX_GET_MULTIPLE,   /* MDBX_DUPFIXED-only: Return up to a page of duplicate
                         * data items from current cursor position.
@@ -1612,9 +1613,9 @@ LIBMDBX_API int mdbx_env_create(MDBX_env **penv);
  * NOTE: MDB_NOLOCK flag don't supported by MDBX,
  *       try use MDBX_EXCLUSIVE as a replacement.
  *
- * NOTE: MDBX don't allow to mix processes with different MDBX_WRITEMAP,
- *       MDBX_SAFE_NOSYNC, MDBX_NOMETASYNC, MDBX_MAPASYNC flags on the same
- *       environment. In such case MDBX_INCOMPATIBLE will be returned.
+ * NOTE: MDBX don't allow to mix processes with different MDBX_SAFE_NOSYNC,
+ *       MDBX_NOMETASYNC, MDBX_MAPASYNC flags on the same environment.
+ *       In such case MDBX_INCOMPATIBLE will be returned.
  *
  * If the database is already exist and parameters specified early by
  * mdbx_env_set_geometry() are incompatible (i.e. for instance, different page
@@ -1638,9 +1639,8 @@ LIBMDBX_API int mdbx_env_create(MDBX_env **penv);
  *                             or the current process tries to open environment
  *                             more than once.
  *   - MDBX_INCOMPATIBLE     = Environment is already opened by another process,
- *                             but with different set of MDBX_WRITEMAP,
- *                             MDBX_SAFE_NOSYNC, MDBX_NOMETASYNC, MDBX_MAPASYNC
- *                             flags.
+ *                             but with different set of MDBX_SAFE_NOSYNC,
+ *                             MDBX_NOMETASYNC, MDBX_MAPASYNC flags.
  *                             Or if the database is already exist and
  *                             parameters specified early by
  *                             mdbx_env_set_geometry() are incompatible (i.e.
@@ -2430,20 +2430,37 @@ LIBMDBX_API uint64_t mdbx_txn_id(const MDBX_txn *txn);
 
 /* Commit all the operations of a transaction into the database.
  *
- * The transaction handle is freed. It and its cursors must not be used again
- * after this call, except with mdbx_cursor_renew() and mdbx_cursor_close().
- *
- * A cursor must be closed explicitly always, before or after its transaction
- * ends. It can be reused with mdbx_cursor_renew() before finally closing it.
+ * If the current thread is not eligible to manage the transaction then
+ * the MDBX_THREAD_MISMATCH error will returned. Otherwise the transaction
+ * will be committed and its handle is freed. If the transaction cannot
+ * be committed, it will be aborted with the corresponding error returned.
+ * Thus, a result other than MDBX_THREAD_MISMATCH means that the transaction
+ * is terminated:
+ *  - Resources are released;
+ *  - Transaction handle is invalid;
+ *  - Cursor(s) associated with transaction must not be used, except with
+ *    mdbx_cursor_renew() and mdbx_cursor_close().
+ *    Such cursor(s) must be closed explicitly by mdbx_cursor_close() before
+ *    or after transaction commit, either can be reused with mdbx_cursor_renew()
+ *    until it will be explicitly closed by mdbx_cursor_close().
  *
  * [in] txn  A transaction handle returned by mdbx_txn_begin().
  *
  * Returns A non-zero error value on failure and 0 on success, some
  * possible errors are:
- *  - MDBX_EINVAL   = an invalid parameter was specified.
- *  - MDBX_ENOSPC   = no more disk space.
- *  - MDBX_EIO      = a low-level I/O error occurred while writing.
- *  - MDBX_ENOMEM   = out of memory. */
+ *  - MDBX_RESULT_TRUE      = transaction was aborted since it should be aborted
+ *                            due to previous errors.
+ *  - MDBX_PANIC            = a fatal error occurred earlier and the environment
+ *                            must be shut down.
+ *  - MDBX_BAD_TXN          = transaction is already fihished or never began.
+ *  - MDBX_EBADSIGN         = transaction object has invalid signature,
+ *                            e.g. transaction was already terminated
+ *                            or memory was corrupted.
+ *  - MDBX_THREAD_MISMATCH  = given transaction is not owned by current thread.
+ *  - MDBX_EINVAL           = transaction handle is NULL.
+ *  - MDBX_ENOSPC           = no more disk space.
+ *  - MDBX_EIO              = a system-level I/O error occurred while writing.
+ *  - MDBX_ENOMEM           = out of memory. */
 LIBMDBX_API int mdbx_txn_commit(MDBX_txn *txn);
 
 /* Abandon all the operations of the transaction instead of saving them.
@@ -2451,12 +2468,30 @@ LIBMDBX_API int mdbx_txn_commit(MDBX_txn *txn);
  * The transaction handle is freed. It and its cursors must not be used again
  * after this call, except with mdbx_cursor_renew() and mdbx_cursor_close().
  *
- * A cursor must be closed explicitly always, before or after its transaction
- * ends. It can be reused with mdbx_cursor_renew() before finally closing it.
+ * If the current thread is not eligible to manage the transaction then
+ * the MDBX_THREAD_MISMATCH error will returned. Otherwise the transaction
+ * will be aborted and its handle is freed. Thus, a result other than
+ * MDBX_THREAD_MISMATCH means that the transaction is terminated:
+ *  - Resources are released;
+ *  - Transaction handle is invalid;
+ *  - Cursor(s) associated with transaction must not be used, except with
+ *    mdbx_cursor_renew() and mdbx_cursor_close().
+ *    Such cursor(s) must be closed explicitly by mdbx_cursor_close() before
+ *    or after transaction abort, either can be reused with mdbx_cursor_renew()
+ *    until it will be explicitly closed by mdbx_cursor_close().
  *
  * [in] txn  A transaction handle returned by mdbx_txn_begin().
  *
- * Returns A non-zero error value on failure and 0 on success. */
+ * Returns A non-zero error value on failure and 0 on success, some
+ * possible errors are:
+ *  - MDBX_PANIC            = a fatal error occurred earlier and the environment
+ *                            must be shut down.
+ *  - MDBX_BAD_TXN          = transaction is already fihished or never began.
+ *  - MDBX_EBADSIGN         = transaction object has invalid signature,
+ *                            e.g. transaction was already terminated
+ *                            or memory was corrupted.
+ *  - MDBX_THREAD_MISMATCH  = given transaction is not owned by current thread.
+ *  - MDBX_EINVAL           = transaction handle is NULL. */
 LIBMDBX_API int mdbx_txn_abort(MDBX_txn *txn);
 
 /* Reset a read-only transaction.
@@ -2479,7 +2514,16 @@ LIBMDBX_API int mdbx_txn_abort(MDBX_txn *txn);
  *
  * [in] txn  A transaction handle returned by mdbx_txn_begin().
  *
- * Returns A non-zero error value on failure and 0 on success. */
+ * Returns A non-zero error value on failure and 0 on success, some
+ * possible errors are:
+ *  - MDBX_PANIC            = a fatal error occurred earlier and the environment
+ *                            must be shut down.
+ *  - MDBX_BAD_TXN          = transaction is already fihished or never began.
+ *  - MDBX_EBADSIGN         = transaction object has invalid signature,
+ *                            e.g. transaction was already terminated
+ *                            or memory was corrupted.
+ *  - MDBX_THREAD_MISMATCH  = given transaction is not owned by current thread.
+ *  - MDBX_EINVAL           = transaction handle is NULL. */
 LIBMDBX_API int mdbx_txn_reset(MDBX_txn *txn);
 
 /* Renew a read-only transaction.
@@ -2492,9 +2536,14 @@ LIBMDBX_API int mdbx_txn_reset(MDBX_txn *txn);
  *
  * Returns A non-zero error value on failure and 0 on success, some
  * possible errors are:
- *  - MDBX_PANIC     = a fatal error occurred earlier and the environment
- *                     must be shut down.
- *  - MDBX_EINVAL    = an invalid parameter was specified. */
+ *  - MDBX_PANIC            = a fatal error occurred earlier and the environment
+ *                            must be shut down.
+ *  - MDBX_BAD_TXN          = transaction is already fihished or never began.
+ *  - MDBX_EBADSIGN         = transaction object has invalid signature,
+ *                            e.g. transaction was already terminated
+ *                            or memory was corrupted.
+ *  - MDBX_THREAD_MISMATCH  = transaction is running by other thread.
+ *  - MDBX_EINVAL           = transaction handle is NULL. */
 LIBMDBX_API int mdbx_txn_renew(MDBX_txn *txn);
 
 /* The fours integers markers (aka "canary") associated with the environment.
@@ -2637,7 +2686,7 @@ LIBMDBX_API int mdbx_dbi_open_ex(MDBX_txn *txn, const char *name,
 LIBMDBX_API int mdbx_dbi_open(MDBX_txn *txn, const char *name, unsigned flags,
                               MDBX_dbi *dbi);
 
-/* Key-making functions to avoid custom comparators.
+/* Key-making (value-to-key) functions to avoid custom comparators.
  *
  * The mdbx_key_from_jsonInteger() build key which are comparable with
  * keys created by mdbx_key_from_double(). So this allow mix int64 and IEEE754
@@ -2656,6 +2705,13 @@ __inline uint32_t mdbx_key_from_int32(const int32_t i32) {
   return UINT32_C(0x80000000) + i32;
 }
 
+/* Key-reverse (key-to-value) functions to avoid custom comparators. */
+LIBMDBX_API int64_t mdbx_jsonInteger_from_key(const MDBX_val);
+LIBMDBX_API double mdbx_double_from_key(const MDBX_val);
+LIBMDBX_API float mdbx_float_from_key(const MDBX_val);
+LIBMDBX_API int32_t mdbx_int32_from_key(const MDBX_val);
+LIBMDBX_API int64_t mdbx_int64_from_key(const MDBX_val);
+
 /* Retrieve statistics for a database.
  *
  * [in] txn     A transaction handle returned by mdbx_txn_begin().
@@ -2669,6 +2725,21 @@ __inline uint32_t mdbx_key_from_int32(const int32_t i32) {
 LIBMDBX_API int mdbx_dbi_stat(MDBX_txn *txn, MDBX_dbi dbi, MDBX_stat *stat,
                               size_t bytes);
 
+/* Retrieve depth (bitmask) information of nested dupsort (multi-value) B+trees
+ * for given database.
+ *
+ * [in] txn     A transaction handle returned by mdbx_txn_begin().
+ * [in] dbi     A database handle returned by mdbx_dbi_open().
+ * [out] mask   The address of an uint32_t value where the bitmask
+ *              will be stored.
+ *
+ * Returns A non-zero error value on failure and 0 on success, some
+ * possible errors are:
+ *  - MDBX_EINVAL       = an invalid parameter was specified.
+ *  - MDBX_RESULT_TRUE  = the dbi isn't a dupsort (multi-value) database. */
+LIBMDBX_API int mdbx_dbi_dupsort_depthmask(MDBX_txn *txn, MDBX_dbi dbi,
+                                           uint32_t *mask);
+
 /* Retrieve the DB flags and status for a database handle.
  *
  * [in] txn     A transaction handle returned by mdbx_txn_begin().
@@ -2680,10 +2751,10 @@ LIBMDBX_API int mdbx_dbi_stat(MDBX_txn *txn, MDBX_dbi dbi, MDBX_stat *stat,
  * discarding result from the last argument.
  *
  * Returns A non-zero error value on failure and 0 on success. */
-#define MDBX_TBL_DIRTY 0x01 /* DB was written in this txn */
-#define MDBX_TBL_STALE 0x02 /* Named-DB record is older than txnID */
-#define MDBX_TBL_FRESH 0x04 /* Named-DB handle opened in this txn */
-#define MDBX_TBL_CREAT 0x08 /* Named-DB handle created in this txn */
+#define MDBX_DBI_DIRTY 0x01 /* DB was written in this txn */
+#define MDBX_DBI_STALE 0x02 /* Named-DB record is older than txnID */
+#define MDBX_DBI_FRESH 0x04 /* Named-DB handle opened in this txn */
+#define MDBX_DBI_CREAT 0x08 /* Named-DB handle created in this txn */
 LIBMDBX_API int mdbx_dbi_flags_ex(MDBX_txn *txn, MDBX_dbi dbi, unsigned *flags,
                                   unsigned *state);
 LIBMDBX_API int mdbx_dbi_flags(MDBX_txn *txn, MDBX_dbi dbi, unsigned *flags);
@@ -2910,7 +2981,8 @@ LIBMDBX_API int mdbx_replace(MDBX_txn *txn, MDBX_dbi dbi, const MDBX_val *key,
  *
  * NOTE: The data parameter is NOT ignored regardless the database does
  * support sorted duplicate data items or not. If the data parameter
- * is non-NULL only the matching data item will be deleted.
+ * is non-NULL only the matching data item will be deleted. Otherwise, if data
+ * parameter is NULL, any/all value(s) for specified key will be deleted.
  *
  * This function will return MDBX_NOTFOUND if the specified key/data
  * pair is not in the database.
@@ -3025,14 +3097,15 @@ LIBMDBX_API int mdbx_cursor_get(MDBX_cursor *cursor, MDBX_val *key,
  * [in] key       The key operated on.
  * [in,out] data  The data operated on.
  * [in] flags     Options for this operation. This parameter
- *                must be set to 0 or one of the values described here:
+ *                must be set to 0 or by bitwise OR'ing together one or more of
+ *                the values described here:
  *
  *  - MDBX_CURRENT
  *      Replace the item at the current cursor position. The key parameter
  *      must still be provided, and must match it, otherwise the function
  *      return MDBX_EKEYMISMATCH.
  *
- *      NOTE: MDBX unlike LMDB allows you to change the size of the data and
+ *      NOTE: MDBX allows (unlike LMDB) you to change the size of the data and
  *      automatically handles reordering for sorted duplicates (MDBX_DUPSORT).
  *
  *  - MDBX_NODUPDATA
@@ -3097,8 +3170,8 @@ LIBMDBX_API int mdbx_cursor_put(MDBX_cursor *cursor, const MDBX_val *key,
  *              or one of the values described here.
  *
  *  - MDBX_NODUPDATA
- *      Delete all of the data items for the current key. This flag may only
- *      be specified if the database was opened with MDBX_DUPSORT.
+ *      Delete all of the data items for the current key. This flag has effect
+ *      only for database(s) was created with MDBX_DUPSORT.
  *
  * Returns A non-zero error value on failure and 0 on success, some
  * possible errors are:
@@ -3286,8 +3359,8 @@ LIBMDBX_API int mdbx_is_dirty(const MDBX_txn *txn, const void *ptr);
  * [in] increment  Value to increase the sequence,
  *                 must be 0 for read-only transactions.
  *
- * Returns A non-zero error value on failure and 0 on success, some
- * possible errors are:
+ * Returns A non-zero error value on failure and 0 on success,
+ * some possible errors are:
  *  - MDBX_RESULT_TRUE   = Increasing the sequence has resulted in an overflow
  *                         and therefore cannot be executed. */
 LIBMDBX_API int mdbx_dbi_sequence(MDBX_txn *txn, MDBX_dbi dbi, uint64_t *result,
@@ -3306,6 +3379,7 @@ LIBMDBX_API int mdbx_dbi_sequence(MDBX_txn *txn, MDBX_dbi dbi, uint64_t *result,
  * Returns < 0 if a < b, 0 if a == b, > 0 if a > b */
 LIBMDBX_API int mdbx_cmp(const MDBX_txn *txn, MDBX_dbi dbi, const MDBX_val *a,
                          const MDBX_val *b);
+LIBMDBX_API MDBX_cmp_func *mdbx_get_keycmp(unsigned flags);
 
 /* Compare two data items according to a particular database.
  *
@@ -3320,6 +3394,7 @@ LIBMDBX_API int mdbx_cmp(const MDBX_txn *txn, MDBX_dbi dbi, const MDBX_val *a,
  * Returns < 0 if a < b, 0 if a == b, > 0 if a > b */
 LIBMDBX_API int mdbx_dcmp(const MDBX_txn *txn, MDBX_dbi dbi, const MDBX_val *a,
                           const MDBX_val *b);
+LIBMDBX_API MDBX_cmp_func *mdbx_get_datacmp(unsigned flags);
 
 /* A callback function used to enumerate the reader lock table.
  *
@@ -3483,7 +3558,7 @@ MDBX_pgvisitor_func(const uint64_t pgno, const unsigned number, void *const ctx,
 
 /* B-tree traversal function. */
 LIBMDBX_API int mdbx_env_pgwalk(MDBX_txn *txn, MDBX_pgvisitor_func *visitor,
-                                void *ctx);
+                                void *ctx, int dont_check_keys_ordering);
 
 /**** Attribute support functions for Nexenta *********************************/
 #ifdef MDBX_NEXENTA_ATTRS

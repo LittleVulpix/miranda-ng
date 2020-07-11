@@ -28,69 +28,82 @@ static LPCWSTR sttStatuses[] = { LPGENW("Participants"), LPGENW("Owners") };
 
 extern JSONNode nullNode;
 
-CVkChatInfo* CVkProto::AppendChat(int id, const JSONNode &jnDlg)
+
+CVkChatInfo* CVkProto::AppendConversationChat(int iChatId, const JSONNode& jnItem)
 {
-	debugLogW(L"CVkProto::AppendChat");
-	if (id == 0)
+	debugLogW(L"CVkProto::AppendConversationChat %d", iChatId);
+	if (iChatId == 0)
 		return nullptr;
 
-	if (jnDlg) {
-		CMStringW action_chat = jnDlg["action"].as_mstring();
-		int action_mid = _wtoi(jnDlg["action_mid"].as_mstring());
-		if ((action_chat == L"chat_kick_user") && (action_mid == m_myUserId))
-			return nullptr;
+
+	const JSONNode& jnConversation = jnItem ? jnItem["conversation"] : nullNode;
+	const JSONNode& jnLastMessage = jnItem ? jnItem["last_message"] : nullNode;
+	const JSONNode& jnChatSettings = jnConversation ? jnConversation["chat_settings"] : nullNode;
+
+	if (jnLastMessage) {
+		const JSONNode& jnAction = jnLastMessage["action"];
+		if (jnAction) {
+			CMStringW wszActionType(jnAction["type"].as_mstring());
+			if ((wszActionType == L"chat_kick_user") && (jnAction["member_id"].as_int() == m_myUserId))
+				return nullptr;
+		}
 	}
 
-	MCONTACT chatContact = FindChat(id);
-	if (chatContact && getBool(chatContact, "kicked"))
+	MCONTACT hChatContact = FindChat(iChatId);
+	if (hChatContact && getBool(hChatContact, "kicked"))
 		return nullptr;
 
-	CVkChatInfo *c = m_chats.find((CVkChatInfo*)&id);
-	if (c != nullptr)
-		return c;
 
-	CMStringW wszTitle;
-	c = new CVkChatInfo(id);
-	if (jnDlg) {
-		wszTitle = jnDlg["title"].as_mstring();
-		c->m_wszTopic = mir_wstrdup(!wszTitle.IsEmpty() ? wszTitle : L"");
+	CVkChatInfo* vkChatInfo = m_chats.find((CVkChatInfo*)&iChatId);
+	if (vkChatInfo != nullptr)
+		return vkChatInfo;
+
+	CMStringW wszTitle, wszState;
+	vkChatInfo = new CVkChatInfo(iChatId);
+	if (jnChatSettings) {
+		wszTitle = jnChatSettings["title"].as_mstring();
+		vkChatInfo->m_wszTopic = mir_wstrdup(!wszTitle.IsEmpty() ? wszTitle : L"");
+		wszState = jnChatSettings["state"].as_mstring();
 	}
 
 	CMStringW sid;
-	sid.Format(L"%S_%d", m_szModuleName, id);
-	c->m_wszId = mir_wstrdup(sid);
+	sid.Format(L"%S_%d", m_szModuleName, iChatId);
+	vkChatInfo->m_wszId = mir_wstrdup(sid);
 
-	SESSION_INFO *si = Chat_NewSession(GCW_CHATROOM, m_szModuleName, sid, wszTitle);
+
+	SESSION_INFO* si = Chat_NewSession(GCW_CHATROOM, m_szModuleName, sid, wszTitle);
 	if (si == nullptr) {
-		delete c;
+		delete vkChatInfo;
 		return nullptr;
 	}
 
-	c->m_hContact = si->hContact;
+	vkChatInfo->m_hContact = si->hContact;
 	setWString(si->hContact, "Nick", wszTitle);
-	m_chats.insert(c);
+	m_chats.insert(vkChatInfo);
 
 	for (int i = _countof(sttStatuses) - 1; i >= 0; i--)
 		Chat_AddGroup(si, TranslateW(sttStatuses[i]));
 
-	setDword(si->hContact, "vk_chat_id", id);
+	setDword(si->hContact, "vk_chat_id", iChatId);
 
-	CMStringW wszHomepage(FORMAT, L"https://vk.com/im?sel=c%d", id);
+	CMStringW wszHomepage(FORMAT, L"https://vk.com/im?sel=c%d", iChatId);
 	setWString(si->hContact, "Homepage", wszHomepage);
 
 	db_unset(si->hContact, m_szModuleName, "off");
 
-	if (jnDlg && jnDlg["left"].as_bool()) {
+	if (jnChatSettings && wszState != L"in") {
 		setByte(si->hContact, "off", 1);
-		m_chats.remove(c);
+		m_chats.remove(vkChatInfo);
 		return nullptr;
 	}
 
 	Chat_Control(m_szModuleName, sid, (m_vkOptions.bHideChats) ? WINDOW_HIDDEN : SESSION_INITDONE);
 	Chat_Control(m_szModuleName, sid, SESSION_ONLINE);
 
-	RetrieveChatInfo(c);
-	return c;
+	RetrieveChatInfo(vkChatInfo);
+
+	return vkChatInfo;
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -101,7 +114,7 @@ void CVkProto::RetrieveChatInfo(CVkChatInfo *cc)
 
 	Push(new AsyncHttpRequest(this, REQUEST_GET, "/method/execute.RetrieveChatInfo", true, &CVkProto::OnReceiveChatInfo)
 		<< INT_PARAM("chatid", cc->m_iChatId)
-		<< INT_PARAM("func_v", cc->m_bHistoryRead ? 1 : 2)
+		<< INT_PARAM("func_v", cc->m_bHistoryRead ? 1 : 3)
 	)->pUserInfo = cc;
 }
 
@@ -133,7 +146,12 @@ void CVkProto::OnReceiveChatInfo(NETLIBHTTPREQUEST *reply, AsyncHttpRequest *pRe
 		cc->m_iAdminId = jnInfo["admin_id"].as_int();
 	}
 
-	const JSONNode &jnUsers = jnResponse["users"];
+
+	if (!jnResponse["users"])
+		return;
+
+	const JSONNode &jnUsers = jnResponse["users"]["profiles"];
+
 	if (jnUsers) {
 		for (auto &it : cc->m_users)
 			it->m_bDel = true;
@@ -219,6 +237,7 @@ void CVkProto::OnReceiveChatInfo(NETLIBHTTPREQUEST *reply, AsyncHttpRequest *pRe
 
 	const JSONNode &jnMsgs = jnResponse["msgs"];
 	const JSONNode &jnFUsers = jnResponse["fwd_users"];
+	const JSONNode &jnGUsers = jnResponse["groups"];
 	if (jnMsgs) {
 		const JSONNode &jnItems = jnMsgs["items"];
 		if (jnItems) {
@@ -226,7 +245,7 @@ void CVkProto::OnReceiveChatInfo(NETLIBHTTPREQUEST *reply, AsyncHttpRequest *pRe
 				if (!jnMsg)
 					break;
 
-				AppendChatMessage(cc->m_iChatId, jnMsg, jnFUsers, true);
+				AppendChatConversationMessage(cc->m_iChatId, jnMsg, jnFUsers, true);
 			}
 			cc->m_bHistoryRead = true;
 		}
@@ -255,15 +274,15 @@ void CVkProto::SetChatTitle(CVkChatInfo *cc, LPCWSTR wszTopic)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void CVkProto::AppendChatMessage(int id, const JSONNode &jnMsg, const JSONNode &jnFUsers, bool bIsHistory)
+void CVkProto::AppendChatConversationMessage(int id, const JSONNode& jnMsg, const JSONNode& jnFUsers, bool bIsHistory)
 {
 	debugLogA("CVkProto::AppendChatMessage");
-	CVkChatInfo *cc = AppendChat(id, nullNode);
+	CVkChatInfo* cc = AppendConversationChat(id, nullNode);
 	if (cc == nullptr)
 		return;
 
 	int mid = jnMsg["id"].as_int();
-	int uid = jnMsg["user_id"].as_int();
+	int uid = jnMsg["from_id"].as_int();
 	bool bIsAction = false;
 
 	int msgTime = jnMsg["date"].as_int();
@@ -271,18 +290,26 @@ void CVkProto::AppendChatMessage(int id, const JSONNode &jnMsg, const JSONNode &
 	if (!msgTime || msgTime > now)
 		msgTime = now;
 
-	CMStringW wszBody(jnMsg["body"].as_mstring());
+	CMStringW wszBody(jnMsg["text"].as_mstring());
 
-	const JSONNode &jnFwdMessages = jnMsg["fwd_messages"];
-	if (jnFwdMessages) {
+	const JSONNode& jnFwdMessages = jnMsg["fwd_messages"];
+	if (jnFwdMessages && !jnFwdMessages.empty()) {
 		CMStringW wszFwdMessages = GetFwdMessages(jnFwdMessages, jnFUsers, bbcNo);
 		if (!wszBody.IsEmpty())
 			wszFwdMessages = L"\n" + wszFwdMessages;
 		wszBody += wszFwdMessages;
 	}
 
-	const JSONNode &jnAttachments = jnMsg["attachments"];
-	if (jnAttachments) {
+	const JSONNode& jnReplyMessages = jnMsg["reply_message"];
+	if (jnReplyMessages && !jnReplyMessages.empty()) {
+		CMStringW wszReplyMessages = GetFwdMessages(jnReplyMessages, jnFUsers, bbcNo);
+		if (!wszBody.IsEmpty())
+			wszReplyMessages = L"\n" + wszReplyMessages;
+		wszBody += wszReplyMessages;
+	}
+
+	const JSONNode& jnAttachments = jnMsg["attachments"];
+	if (jnAttachments && !jnAttachments.empty()) {
 		CMStringW wszAttachmentDescr = GetAttachmentDescr(jnAttachments, bbcNo);
 
 		if (wszAttachmentDescr == L"== FilterAudioMessages ==")
@@ -293,20 +320,20 @@ void CVkProto::AppendChatMessage(int id, const JSONNode &jnMsg, const JSONNode &
 		wszBody += wszAttachmentDescr;
 	}
 
-	if (m_vkOptions.bAddMessageLinkToMesWAtt && (jnAttachments || jnFwdMessages))
+	if (m_vkOptions.bAddMessageLinkToMesWAtt && ((jnAttachments && !jnAttachments.empty()) || (jnFwdMessages && !jnFwdMessages.empty()) || (jnReplyMessages && !jnReplyMessages.empty())))
 		wszBody += SetBBCString(TranslateT("Message link"), bbcNo, vkbbcUrl,
 			CMStringW(FORMAT, L"https://vk.com/im?sel=c%d&msgid=%d", cc->m_iChatId, mid));
 
-	if (jnMsg["action"]) {
+	if (jnMsg["action"] && jnMsg["action"]["type"]) {
 		bIsAction = true;
-		CMStringW wszAction = jnMsg["action"].as_mstring();
+		CMStringW wszAction = jnMsg["action"]["type"].as_mstring();
 
 		if (wszAction == L"chat_create") {
-			CMStringW wszActionText = jnMsg["action_text"].as_mstring();
+			CMStringW wszActionText = jnMsg["action"]["text"].as_mstring();
 			wszBody.AppendFormat(L"%s \"%s\"", TranslateT("create chat"), wszActionText.IsEmpty() ? L" " : wszActionText.c_str());
 		}
 		else if (wszAction == L"chat_kick_user") {
-			CMStringW wszActionMid = jnMsg["action_mid"].as_mstring();
+			CMStringW wszActionMid = jnMsg["action"]["member_id"].as_mstring();
 			if (wszActionMid.IsEmpty())
 				wszBody = TranslateT("kick user");
 			else {
@@ -320,7 +347,7 @@ void CVkProto::AppendChatMessage(int id, const JSONNode &jnMsg, const JSONNode &
 					int a_uid = 0;
 					int iReadCount = swscanf(wszActionMid, L"%d", &a_uid);
 					if (iReadCount == 1) {
-						CVkChatUser *cu = cc->m_users.find((CVkChatUser*)&a_uid);
+						CVkChatUser* cu = cc->m_users.find((CVkChatUser*)&a_uid);
 						if (cu == nullptr)
 							wszBody.AppendFormat(L"%s (%s)", TranslateT("kick user"), UserProfileUrl(a_uid).c_str());
 						else
@@ -331,7 +358,7 @@ void CVkProto::AppendChatMessage(int id, const JSONNode &jnMsg, const JSONNode &
 			}
 		}
 		else if (wszAction == L"chat_invite_user" || wszAction == L"chat_invite_user_by_link") {
-			CMStringW wszActionMid = jnMsg["action_mid"].as_mstring();
+			CMStringW wszActionMid = jnMsg["action"]["member_id"].as_mstring();
 			if (wszActionMid.IsEmpty())
 				wszBody = TranslateT("invite user");
 			else {
@@ -342,7 +369,7 @@ void CVkProto::AppendChatMessage(int id, const JSONNode &jnMsg, const JSONNode &
 					int a_uid = 0;
 					int iReadCount = swscanf(wszActionMid, L"%d", &a_uid);
 					if (iReadCount == 1) {
-						CVkChatUser *cu = cc->m_users.find((CVkChatUser*)&a_uid);
+						CVkChatUser* cu = cc->m_users.find((CVkChatUser*)&a_uid);
 						if (cu == nullptr)
 							wszBody.AppendFormat(L"%s (%s)", TranslateT("invite user"), UserProfileUrl(a_uid).c_str());
 						else
@@ -353,7 +380,7 @@ void CVkProto::AppendChatMessage(int id, const JSONNode &jnMsg, const JSONNode &
 			}
 		}
 		else if (wszAction == L"chat_title_update") {
-			CMStringW wszTitle = jnMsg["action_text"].as_mstring();
+			CMStringW wszTitle = jnMsg["action"]["text"].as_mstring();
 			wszBody.AppendFormat(L"%s \"%s\"", TranslateT("change chat title to"), wszTitle.IsEmpty() ? L" " : wszTitle.c_str());
 
 			if (!bIsHistory)
@@ -374,12 +401,10 @@ void CVkProto::AppendChatMessage(int id, const JSONNode &jnMsg, const JSONNode &
 	wszBody.Replace(L"%", L"%%");
 
 	if (cc->m_bHistoryRead) {
-		if (jnMsg["title"])
-			SetChatTitle(cc, jnMsg["title"].as_mstring());
 		AppendChatMessage(cc, uid, msgTime, wszBody, bIsHistory, bIsAction);
 	}
 	else {
-		CVkChatMessage *cm = cc->m_msgs.find((CVkChatMessage *)&mid);
+		CVkChatMessage* cm = cc->m_msgs.find((CVkChatMessage*)&mid);
 		if (cm == nullptr)
 			cc->m_msgs.insert(cm = new CVkChatMessage(mid));
 
@@ -580,9 +605,9 @@ INT_PTR __cdecl CVkProto::OnJoinChat(WPARAM hContact, LPARAM)
 	if (chat_id == VK_INVALID_USER)
 		return 1;
 
-	AsyncHttpRequest *pReq = new AsyncHttpRequest(this, REQUEST_POST, "/method/messages.send.json", true, &CVkProto::OnSendChatMsg, AsyncHttpRequest::rpHigh);
-	pReq << INT_PARAM("chat_id", chat_id) << WCHAR_PARAM("message", m_vkOptions.pwszReturnChatMessage);
-	pReq->AddHeader("Content-Type", "application/x-www-form-urlencoded");
+	AsyncHttpRequest* pReq = new AsyncHttpRequest(this, REQUEST_POST, "/method/messages.addChatUser.json", true, &CVkProto::OnReceiveSmth, AsyncHttpRequest::rpHigh);
+	pReq << INT_PARAM("user_id", m_myUserId);
+	pReq<< INT_PARAM("chat_id", chat_id);
 	Push(pReq);
 	db_unset(hContact, m_szModuleName, "off");
 	return 0;
@@ -644,7 +669,8 @@ void CVkProto::KickFromChat(int chat_id, LONG user_id, const JSONNode &jnMsg, co
 		return;
 
 	MCONTACT hContact = FindUser(user_id, false);
-	CMStringW msg(jnMsg["body"].as_mstring());
+
+	CMStringW msg(jnMsg["text"].as_mstring());
 	if (msg.IsEmpty()) {
 		msg = TranslateT("You've been kicked by ");
 		if (hContact != 0)
@@ -653,7 +679,7 @@ void CVkProto::KickFromChat(int chat_id, LONG user_id, const JSONNode &jnMsg, co
 			msg += TranslateT("(Unknown contact)");
 	}
 	else
-		AppendChatMessage(chat_id, jnMsg, jnFUsers, false);
+		AppendChatConversationMessage(chat_id, jnMsg, jnFUsers, false);
 
 	MsgPopup(hContact, msg, TranslateT("Chat"));
 	setByte(cc->m_hContact, "kicked", 1);
@@ -912,5 +938,5 @@ void CVkProto::OnCreateNewChat(NETLIBHTTPREQUEST *reply, AsyncHttpRequest *pReq)
 
 	int chat_id = jnResponse.as_int();
 	if (chat_id != 0)
-		AppendChat(chat_id, nullNode);
+		AppendConversationChat(chat_id, nullNode);
 }

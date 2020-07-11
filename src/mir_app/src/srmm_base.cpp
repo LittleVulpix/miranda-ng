@@ -733,6 +733,51 @@ int CSrmmBaseDialog::NotifyEvent(int code)
 	return ::NotifyEventHooks(hHookSrmmEvent, 0, (LPARAM)&mwe);
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////
+
+bool CSrmmBaseDialog::ProcessFileDrop(HDROP hDrop, MCONTACT hContact)
+{
+	if (PasteFilesAsURL(hDrop))
+		return true;
+
+	return ::ProcessFileDrop(hDrop, hContact);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// If enabled pastes droped files as list of URL of file:/// type
+// Can be enabled/disabled by Chat/ShiftDropFilePasteURL database parameter
+// @param hDrop - Drop handle
+// @return Returns true if processed here, returns false if should be processed elsewhere
+
+bool CSrmmBaseDialog::PasteFilesAsURL(HDROP hDrop)
+{
+	bool isShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+	if (db_get_b(0, CHAT_MODULE, "ShiftDropFilePasteURL", 1) == 0 || !isShift) // hidden setting: Chat/ShiftDropFilePasteURL
+		return false;
+
+	int fileCount = DragQueryFileW(hDrop, -1, nullptr, 0);
+	if (fileCount == 0)
+		return true;
+
+	CMStringW pasteString(L" ");
+	for (int i = 0; i < fileCount; i++) {
+		wchar_t szFilename[MAX_PATH];
+		if (DragQueryFileW(hDrop, i, szFilename, _countof(szFilename))) {
+			CMStringW fileString(L"file:///");
+			fileString.Append(szFilename);
+			fileString.Replace(L"%", L"%25");
+			fileString.Replace(L" ", L"%20");
+			fileString.Append((i != fileCount - 1) ? L"\r\n" : L" ");
+			pasteString += fileString;
+		}
+	}
+
+	m_message.SendMsg(EM_REPLACESEL, TRUE, (LPARAM)pasteString.c_str());
+	return true;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 bool CSrmmBaseDialog::ProcessHotkeys(int key, bool isShift, bool isCtrl, bool isAlt)
 {
 	// Esc (close tab)

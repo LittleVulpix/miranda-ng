@@ -75,11 +75,6 @@ MCONTACT CIcqProto::CheckOwnMessage(const CMStringA &reqId, const CMStringA &msg
 
 	MCONTACT ret = pOwn->m_hContact;
 	if (bRemove) {
-		// here we filter service messages for SecureIM, OTR etc, i.e. messages that 
-		// weren't initialized by SRMM (we identify it by missing server id)
-		if (db_event_getById(m_szModuleName, msgId) == 0)
-			db_event_setId(m_szModuleName, 1, msgId);
-
 		mir_cslock lck(m_csOwnIds);
 		m_arOwnIds.remove(pOwn);
 	}
@@ -391,17 +386,18 @@ void CIcqProto::ParseMessage(MCONTACT hContact, __int64 &lastMsgId, const JSONNo
 
 		// user added you
 		if (it["class"].as_mstring() == L"event" && it["eventTypeId"].as_mstring() == L"27:33000") {
-			CMStringA id = getMStringA(hContact, DB_KEY_ID);
-			int pos = id.Find('@');
-			CMStringA nick = (pos == -1) ? id : id.Left(pos);
+			if (bLocalTime) {
+				CMStringA id = getMStringA(hContact, DB_KEY_ID);
+				int pos = id.Find('@');
+				CMStringA nick = (pos == -1) ? id : id.Left(pos);
+				DB::AUTH_BLOB blob(hContact, nick, nullptr, nullptr, id, nullptr);
 
-			DB::AUTH_BLOB blob(hContact, nick, nullptr, nullptr, id, nullptr);
-
-			PROTORECVEVENT pre = {};
-			pre.timestamp = (DWORD)time(0);
-			pre.lParam = blob.size();
-			pre.szMessage = blob;
-			ProtoChainRecv(hContact, PSR_AUTH, 0, (LPARAM)&pre);
+				PROTORECVEVENT pre = {};
+				pre.timestamp = (DWORD)time(0);
+				pre.lParam = blob.size();
+				pre.szMessage = blob;
+				ProtoChainRecv(hContact, PSR_AUTH, 0, (LPARAM)&pre);
+			}
 			return;
 		}
 	}
@@ -437,6 +433,7 @@ void CIcqProto::ParseMessage(MCONTACT hContact, __int64 &lastMsgId, const JSONNo
 			return;
 		}
 
+		// filter out file transfers
 		bool bIsOutgoing = it["outgoing"].as_bool();
 		if (!bCreateRead && !bIsOutgoing && wszText.Left(26) == L"https://files.icq.net/get/") {
 			CMStringW wszUrl(wszText.Mid(26));
@@ -447,16 +444,22 @@ void CIcqProto::ParseMessage(MCONTACT hContact, __int64 &lastMsgId, const JSONNo
 			CMStringA szUrl(FORMAT, ICQ_FILE_SERVER "/info/%S/", wszUrl.c_str());
 			auto *pReq = new AsyncHttpRequest(CONN_MAIN, REQUEST_GET, szUrl, &CIcqProto::OnFileInfo);
 			pReq->hContact = hContact;
+			pReq->pUserInfo = (void*)iMsgTime;
 			pReq << CHAR_PARAM("aimsid", m_aimsid) << CHAR_PARAM("previews", "600");
 			Push(pReq);
-
-			db_event_setId(m_szModuleName, 1, szMsgId);
 
 			MarkAsRead(hContact);
 			return;
 		}
 
-		debugLogA("Adding message %d:%s (CR=%d)", hContact, szMsgId.c_str(), bCreateRead);
+		// suppress notifications for already loaded/processed messages
+		__int64 storedLastId = getId(hContact, DB_KEY_LASTMSGID);
+		if (msgId <= storedLastId) {
+			debugLogA("Parsing old/processed message with id %lld < %lld, setting CR to true", msgId, storedLastId);
+			bCreateRead = true;
+		}
+
+		debugLogA("Adding message %d:%lld (CR=%d)", hContact, msgId, bCreateRead);
 
 		ptrA szUtf(mir_utf8encodeW(wszText));
 
@@ -864,7 +867,7 @@ void CIcqProto::OnFileInfo(NETLIBHTTPREQUEST *pReply, AsyncHttpRequest *pReq)
 	PROTORECVFILE pre = { 0 };
 	pre.dwFlags = PRFF_UNICODE;
 	pre.fileCount = 1;
-	pre.timestamp = time(0);
+	pre.timestamp = DWORD_PTR(pReq->pUserInfo);
 	pre.files.w = &ft->m_wszShortName;
 	pre.descr.w = wszDescr;
 	pre.lParam = (LPARAM)ft;
@@ -1000,8 +1003,7 @@ void CIcqProto::OnStartSession(NETLIBHTTPREQUEST *pReply, AsyncHttpRequest *)
 	for (auto &it : data["events"])
 		ProcessEvent(it);
 
-	if (m_hPollThread == nullptr)
-		m_hPollThread = ForkThreadEx(&CIcqProto::PollThread, 0, 0);
+	ForkThread(&CIcqProto::PollThread);
 }
 
 void CIcqProto::OnReceiveAvatar(NETLIBHTTPREQUEST *pReply, AsyncHttpRequest *pReq)

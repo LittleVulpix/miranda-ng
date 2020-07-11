@@ -43,10 +43,15 @@ MEVENT CSkypeProto::AddDbEvent(WORD type, MCONTACT hContact, DWORD timestamp, DW
 	if (MEVENT hDbEvent = GetMessageFromDb(uid))
 		return hDbEvent;
 
-	MEVENT ret = AddEventToDb(hContact, type, timestamp, flags, (DWORD)mir_strlen(content)+1, (BYTE*)content);
-	if (uid && ret)
-		db_event_setId(m_szModuleName, ret, uid);
-	return ret;
+	DBEVENTINFO dbei = {};
+	dbei.szModule = m_szModuleName;
+	dbei.timestamp = timestamp;
+	dbei.eventType = type;
+	dbei.cbBlob = (DWORD)mir_strlen(content) + 1;
+	dbei.pBlob = (BYTE *)content;
+	dbei.flags = flags;
+	dbei.szId = uid;
+	return db_event_add(hContact, &dbei);
 }
 
 void CSkypeProto::EditEvent(MCONTACT hContact, MEVENT hEvent, const char *szContent, time_t edit_time)
@@ -67,29 +72,21 @@ void CSkypeProto::EditEvent(MCONTACT hContact, MEVENT hEvent, const char *szCont
 					return;
 
 			JSONNode jEdit;
-			jEdit
-				<< JSONNode("time", (long)edit_time)
-				<< JSONNode("text", szContent);
-
+			jEdit << INT_PARAM("time", (long)edit_time) << CHAR_PARAM("text", szContent);
 			jEdits << jEdit;
 		}
 	}
 	else {
-		jMsg = JSONNode();
 		JSONNode jOriginalMsg; jOriginalMsg.set_name("original_message");
-		JSONNode jEdits(JSON_ARRAY); jEdits.set_name("edits");
-		JSONNode jEdit;
+		jOriginalMsg << INT_PARAM("time", (long)dbei.timestamp) << CHAR_PARAM("text", (char *)dbei.pBlob);
 
-		jOriginalMsg
-			<< JSONNode("time", (long)dbei.timestamp)
-			<< JSONNode("text", (char*)dbei.pBlob);
-
+		jMsg = JSONNode();
 		jMsg << jOriginalMsg;
 
-		jEdit
-			<< JSONNode("time", (long)edit_time)
-			<< JSONNode("text", szContent);
+		JSONNode jEdit;
+		jEdit << INT_PARAM("time", (long)edit_time) << CHAR_PARAM("text", szContent);
 
+		JSONNode jEdits(JSON_ARRAY); jEdits.set_name("edits");
 		jEdits << jEdit;
 		jMsg << jEdits;
 	}
@@ -98,18 +95,6 @@ void CSkypeProto::EditEvent(MCONTACT hContact, MEVENT hEvent, const char *szCont
 	dbei.cbBlob = int(newMsg.size() + 1);
 	dbei.pBlob = (PBYTE)newMsg.c_str();
 	db_event_edit(hContact, hEvent, &dbei);
-}
-
-MEVENT CSkypeProto::AddEventToDb(MCONTACT hContact, WORD type, DWORD timestamp, DWORD flags, DWORD cbBlob, PBYTE pBlob)
-{
-	DBEVENTINFO dbei = {};
-	dbei.szModule = m_szModuleName;
-	dbei.timestamp = timestamp;
-	dbei.eventType = type;
-	dbei.cbBlob = cbBlob;
-	dbei.pBlob = pBlob;
-	dbei.flags = flags;
-	return db_event_add(hContact, &dbei);
 }
 
 void CSkypeProto::InitDBEvents()

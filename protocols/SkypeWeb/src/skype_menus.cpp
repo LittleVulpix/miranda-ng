@@ -35,12 +35,11 @@ int CSkypeProto::OnPrebuildContactMenu(WPARAM hContact, LPARAM)
 	bool isGrantNeed = getByte(hContact, "Grant", 0) > 0;
 	bool isBlocked = getBool(hContact, "IsBlocked", false);
 
-	Menu_ShowItem(m_hmiReqAuth, isCtrlPressed || isAuthNeed);
-	Menu_ShowItem(m_hmiGrantAuth, isCtrlPressed || isGrantNeed);
+	Menu_ShowItem(GetMenuItem(PROTO_MENU_REQ_AUTH), isCtrlPressed || isAuthNeed);
+	Menu_ShowItem(GetMenuItem(PROTO_MENU_GRANT_AUTH), isCtrlPressed || isGrantNeed);
 	
 	Menu_ShowItem(ContactMenuItems[CMI_BLOCK], true);
 	Menu_ShowItem(ContactMenuItems[CMI_UNBLOCK], isCtrlPressed || isBlocked);
-	Menu_ShowItem(ContactMenuItems[CMI_GETSERVERHISTORY], true);
 	return 0;
 }
 
@@ -60,14 +59,6 @@ void CSkypeProto::InitMenus()
 
 	CMenuItem mi(&g_plugin);
 	mi.flags = CMIF_UNICODE;
-
-	mi.pszService = MODULE"/GetHistory";
-	mi.name.w = LPGENW("Get server history");
-	mi.position = CMI_POSITION + CMI_GETSERVERHISTORY;
-	mi.hIcolibItem = g_plugin.getIconHandle(IDI_SYNCHISTORY);
-	SET_UID(mi, 0xc9a64e98, 0x9257, 0x4b52, 0x98, 0xdd, 0x7f, 0x56, 0xb3, 0x90, 0xe3, 0xde);
-	ContactMenuItems[CMI_GETSERVERHISTORY] = Menu_AddContactMenuItem(&mi);
-	CreateServiceFunction(mi.pszService, GlobalService<&CSkypeProto::GetContactHistory>);
 
 	mi.pszService = MODULE"/BlockContact";
 	mi.name.w = LPGENW("Block contact");

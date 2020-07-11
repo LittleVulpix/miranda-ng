@@ -372,8 +372,6 @@ class CIcqProto : public PROTO<CIcqProto>
 
 	HANDLE    m_hWorkerThread;
 	void      __cdecl ServerThread(void*);
-
-	HANDLE    m_hPollThread;
 	void      __cdecl PollThread(void*);
 
 	////////////////////////////////////////////////////////////////////////////////////////
@@ -427,6 +425,7 @@ class CIcqProto : public PROTO<CIcqProto>
 			    
 	void      OnBuildProtoMenu(void) override;
 	void      OnContactDeleted(MCONTACT) override;
+	void      OnEventEdited(MCONTACT, MEVENT) override;
 	void      OnModulesLoaded() override;
 	void      OnShutdown() override;
 

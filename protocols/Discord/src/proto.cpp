@@ -63,6 +63,7 @@ CDiscordProto::CDiscordProto(const char *proto_name, const wchar_t *username) :
 	CreateProtoService(PS_SETMYAVATAR, &CDiscordProto::SetMyAvatar);
 
 	CreateProtoService(PS_MENU_REQAUTH, &CDiscordProto::RequestFriendship);
+	CreateProtoService(PS_MENU_LOADHISTORY, &CDiscordProto::OnMenuLoadHistory);
 
 	CreateProtoService(PS_VOICE_CAPS, &CDiscordProto::VoiceCaps);
 
@@ -90,6 +91,13 @@ CDiscordProto::CDiscordProto(const char *proto_name, const wchar_t *username) :
 	dbEventType.descr = Translate("Call ended");
 	dbEventType.eventIcon = g_plugin.getIconHandle(IDI_VOICE_ENDED);
 	DbEvent_RegisterType(&dbEventType);
+
+	// Groupchat initialization
+	GCREGISTER gcr = {};
+	gcr.dwFlags = GC_TYPNOTIF | GC_CHANMGR;
+	gcr.ptszDispName = m_tszUserName;
+	gcr.pszModule = m_szModuleName;
+	Chat_Register(&gcr);
 
 	// Network initialization
 	CMStringW descr;
@@ -143,12 +151,6 @@ void CDiscordProto::OnModulesLoaded()
 		}
 		else pNew->channelId = getId(hContact, DB_KEY_CHANNELID);
 	}
-
-	GCREGISTER gcr = {};
-	gcr.dwFlags = GC_TYPNOTIF | GC_CHANMGR;
-	gcr.ptszDispName = m_tszUserName;
-	gcr.pszModule = m_szModuleName;
-	Chat_Register(&gcr);
 
 	// Clist
 	Clist_GroupCreate(0, m_wszDefaultGroup);

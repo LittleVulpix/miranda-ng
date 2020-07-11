@@ -235,61 +235,6 @@ private:
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
-// Callbacks
-
-struct CCallbackImp
-{
-	struct CDummy
-	{	int foo;
-	};
-
-public:
-	__inline CCallbackImp(): m_object(nullptr), m_func(nullptr) {}
-
-	__inline CCallbackImp(const CCallbackImp &other): m_object(other.m_object), m_func(other.m_func) {}
-	__inline CCallbackImp &operator=(const CCallbackImp &other) { m_object = other.m_object; m_func = other.m_func; return *this; }
-
-	__inline bool operator==(const CCallbackImp &other) const { return (m_object == other.m_object) && (m_func == other.m_func); }
-	__inline bool operator!=(const CCallbackImp &other) const { return (m_object != other.m_object) || (m_func != other.m_func); }
-
-	__inline operator bool() const { return m_object && m_func; }
-
-	__inline bool CheckObject(void *object) const { return (object == m_object) ? true : false; }
-
-protected:
-	template<typename TClass, typename TArgument>
-	__inline CCallbackImp(TClass *object, void (TClass::*func)(TArgument *argument)): m_object((CDummy*)object), m_func((TFnCallback)func) {}
-
-	__inline void Invoke(void *argument) const { if (m_func && m_object) (m_object->*m_func)(argument); }
-
-private:
-	typedef void (CDummy::*TFnCallback)(void *argument);
-
-	CDummy* m_object;
-	TFnCallback m_func;
-};
-
-template<typename TArgument>
-struct CCallback: public CCallbackImp
-{
-	typedef CCallbackImp CSuper;
-
-public:
-	__inline CCallback() {}
-
-	template<typename TClass>
-	__inline CCallback(TClass *object, void (TClass::*func)(TArgument *argument)): CCallbackImp(object, func) {}
-
-	__inline CCallback& operator=(const CCallbackImp& x) { CSuper::operator =(x); return *this; }
-
-	__inline void operator()(TArgument *argument) const { Invoke((void*)argument); }
-};
-
-template<typename TClass, typename TArgument>
-__inline CCallback<TArgument> Callback(TClass *object, void (TClass::*func)(TArgument *argument))
-	{ return CCallback<TArgument>(object, func); }
-
-/////////////////////////////////////////////////////////////////////////////////////////
 // CDbLink
 
 class MIR_CORE_EXPORT CDataLink
@@ -399,7 +344,7 @@ public:
 	__forceinline HINSTANCE GetInst() const { return m_pPlugin.getInst(); }
 	__forceinline HWND GetHwnd() const { return m_hwnd; }
 	__forceinline void Hide() { Show(SW_HIDE); }
-	__forceinline bool IsInitialized() const { return m_initialized; }
+	__forceinline bool IsInitialized() const { return m_bInitialized; }
 	__forceinline void SetMinSize(int x, int y) { m_iMinWidth = x, m_iMinHeight = y; }
 	__forceinline void SetParent(HWND hwnd) { m_hwndParent = hwnd; }
 
@@ -411,15 +356,17 @@ protected:
 	HWND    m_hwnd = nullptr;  // must be the first data item
 	HWND    m_hwndParent = nullptr;
 	int     m_idDialog;
-	bool    m_isModal = false;
-	bool    m_initialized = false;
-	bool    m_forceResizable = false;
-	bool    m_bExiting = false; // window received WM_CLOSE and gonna die soon
 
-	CMPluginBase &m_pPlugin;
+	bool    m_isModal = false;
+	bool    m_bInitialized = false;
+	bool    m_forceResizable = false;
+	bool    m_bSucceeded = false; // was IDOK pressed or not
+	bool    m_bExiting = false; // window received WM_CLOSE and gonna die soon
 
 	enum { CLOSE_ON_OK = 0x1, CLOSE_ON_CANCEL = 0x2 };
 	BYTE    m_autoClose;    // automatically close dialog on IDOK/CANCEL commands. default: CLOSE_ON_OK|CLOSE_ON_CANCEL
+
+	CMPluginBase &m_pPlugin;
 
 	// override this handlers to provide custom functionality
 	// general messages
@@ -904,26 +851,26 @@ class MIR_CORE_EXPORT CCtrlListBox : public CCtrlBase
 public:
 	CCtrlListBox(CDlgBase *dlg, int ctrlId);
 
-	int    AddString(const wchar_t *text, LPARAM data=0);
-	void   DeleteString(int index);
-	int    FindString(const wchar_t *str, int index = -1, bool exact = false);
-	int    GetCount();
-	int    GetCurSel();
-	LPARAM GetItemData(int index);
-	int    GetItemRect(int index, RECT *pResult);
+	int      AddString(const wchar_t *text, LPARAM data=0);
+	void     DeleteString(int index);
+	int      FindString(const wchar_t *str, int index = -1, bool exact = false);
+	int      GetCount();
+	int      GetCurSel();
+	LPARAM   GetItemData(int index);
+	int      GetItemRect(int index, RECT *pResult);
 	wchar_t* GetItemText(int index);
 	wchar_t* GetItemText(int index, wchar_t *buf, int size);
-	bool   GetSel(int index);
-	int    GetSelCount();
-	int*   GetSelItems(int *items, int count);
-	int*   GetSelItems();
-	int    InsertString(const wchar_t *text, int pos, LPARAM data=0);
-	void   ResetContent();
-	int    SelectString(const wchar_t *str);
-	int    SetCurSel(int index);
-	void   SetItemData(int index, LPARAM data);
-	void   SetItemHeight(int index, int iHeight);
-	void   SetSel(int index, bool sel = true);
+	bool     GetSel(int index);
+	int      GetSelCount();
+	int*     GetSelItems(int *items, int count);
+	int*     GetSelItems();
+	int      InsertString(const wchar_t *text, int pos, LPARAM data=0);
+	void     ResetContent();
+	int      SelectString(const wchar_t *str);
+	int      SetCurSel(int index);
+	void     SetItemData(int index, LPARAM data);
+	void     SetItemHeight(int index, int iHeight);
+	void     SetSel(int index, bool sel = true);
 
 	// Events
 	CCallback<CCtrlListBox>	OnDblClick;
@@ -950,23 +897,23 @@ public:
 	void OnReset() override;
 
 	// Control interface
-	int    AddString(const wchar_t *text, LPARAM data = 0);
-	int    AddStringA(const char *text, LPARAM data = 0);
-	void   DeleteString(int index);
-	int    FindString(const wchar_t *str, int index = -1, bool exact = false);
-	int    FindStringA(const char *str, int index = -1, bool exact = false);
-	int    GetCount();
-	int    GetCurSel();
-	bool   GetDroppedState();
-	LPARAM GetItemData(int index);
+	int      AddString(const wchar_t *text, LPARAM data = 0);
+	int      AddStringA(const char *text, LPARAM data = 0);
+	void     DeleteString(int index);
+	int      FindString(const wchar_t *str, int index = -1, bool exact = false);
+	int      FindStringA(const char *str, int index = -1, bool exact = false);
+	int      GetCount();
+	int      GetCurSel();
+	bool     GetDroppedState();
+	LPARAM   GetItemData(int index);
 	wchar_t* GetItemText(int index);
 	wchar_t* GetItemText(int index, wchar_t *buf, int size);
-	int    InsertString(const wchar_t *text, int pos, LPARAM data=0);
-	void   ResetContent();
-	int    SelectString(const wchar_t *str);
-	int    SetCurSel(int index);
-	void   SetItemData(int index, LPARAM data);
-	void   ShowDropdown(bool show = true);
+	int      InsertString(const wchar_t *text, int pos, LPARAM data=0);
+	void     ResetContent();
+	int      SelectString(const wchar_t *str);
+	int      SetCurSel(int index);
+	void     SetItemData(int index, LPARAM data);
+	void     ShowDropdown(bool show = true);
 
 	// Events
 	CCallback<CCtrlCombo>	OnCloseup;
@@ -1464,11 +1411,11 @@ class MIR_APP_EXPORT CProtoIntDlgBase : public CDlgBase
 public:
 	CProtoIntDlgBase(PROTO_INTERFACE *proto, int idDialog);
 
-	void CreateLink(CCtrlData& ctrl, const char *szSetting, BYTE type, DWORD iValue);
-	void CreateLink(CCtrlData& ctrl, const char *szSetting, wchar_t *szValue);
+	void CreateLink(CCtrlData &ctrl, const char *szSetting, BYTE type, DWORD iValue);
+	void CreateLink(CCtrlData &ctrl, const char *szSetting, wchar_t *szValue);
 
 	template<class T>
-	__inline void CreateLink(CCtrlData& ctrl, CMOption<T> &option)
+	__inline void CreateLink(CCtrlData &ctrl, CMOption<T> &option)
 	{
 		ctrl.CreateDbLink(new CMOptionLink<T>(option));
 	}

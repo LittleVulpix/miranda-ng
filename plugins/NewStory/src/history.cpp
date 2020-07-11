@@ -328,12 +328,10 @@ class CHistoryDlg : public CDlgBase
 
 	void UpdateTitle()
 	{
-		if (m_hContact && m_hContact != INVALID_CONTACT_ID)
+		if (m_hContact != INVALID_CONTACT_ID)
 			SetWindowText(m_hwnd, ptrW(TplFormatString(TPL_TITLE, m_hContact, 0)));
-		else if (m_hContact == INVALID_CONTACT_ID)
+		else 
 			SetWindowText(m_hwnd, TranslateT("History search results"));
-		else
-			SetWindowText(m_hwnd, TranslateT("System history"));
 	}
 
 	void TimeTreeBuild()
@@ -440,27 +438,20 @@ public:
 
 		showFlags = g_plugin.getWord(m_hContact, "showFlags", 0x7f);
 		m_dwOptions = g_plugin.getDword(0, "dwOptions");
+		m_autoClose = CLOSE_ON_CANCEL;
 
 		m_hMenu = LoadMenu(g_plugin.getInst(), MAKEINTRESOURCE(IDR_POPUPS));
 		TranslateMenu(m_hMenu);
 
 		HMENU hMenu = GetSubMenu(m_hMenu, 0);
-		CheckMenuItem(hMenu, ID_FILTER_INCOMING,
-			showFlags & HIST_SHOW_IN ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(hMenu, ID_FILTER_OUTGOING,
-			showFlags & HIST_SHOW_OUT ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(hMenu, ID_FILTER_MESSAGES,
-			showFlags & HIST_SHOW_MSGS ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(hMenu, ID_FILTER_FILES,
-			showFlags & HIST_SHOW_FILES ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(hMenu, ID_FILTER_URLS,
-			showFlags & HIST_SHOW_URLS ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(hMenu, ID_FILTER_STATUS,
-			showFlags & HIST_SHOW_STATUS ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(hMenu, ID_FILTER_OTHER,
-			showFlags & HIST_SHOW_OTHER ? MF_CHECKED : MF_UNCHECKED);
-		CheckMenuItem(hMenu, ID_FILTER_AUTO,
-			showFlags & HIST_AUTO_FILTER ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(hMenu, ID_FILTER_INCOMING, (showFlags & HIST_SHOW_IN) ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(hMenu, ID_FILTER_OUTGOING, (showFlags & HIST_SHOW_OUT) ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(hMenu, ID_FILTER_MESSAGES, (showFlags & HIST_SHOW_MSGS) ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(hMenu, ID_FILTER_FILES,    (showFlags & HIST_SHOW_FILES) ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(hMenu, ID_FILTER_URLS,     (showFlags & HIST_SHOW_URLS) ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(hMenu, ID_FILTER_STATUS,   (showFlags & HIST_SHOW_STATUS) ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(hMenu, ID_FILTER_OTHER,    (showFlags & HIST_SHOW_OTHER) ? MF_CHECKED : MF_UNCHECKED);
+		CheckMenuItem(hMenu, ID_FILTER_AUTO,     (showFlags & HIST_AUTO_FILTER) ? MF_CHECKED : MF_UNCHECKED);
 	}
 
 	bool OnInitDialog() override
@@ -553,6 +544,7 @@ public:
 
 		ADDEVENTS tmp = { m_hContact, db_event_first(m_hContact), -1 };
 		m_histControl.SendMsg(NSM_ADDEVENTS, WPARAM(&tmp), 0);
+		m_histControl.SendMsg(WM_KEYDOWN, VK_END, 0);
 
 		Window_SetIcon_IcoLib(m_hwnd, g_plugin.getIconHandle(ICO_NEWSTORY));
 

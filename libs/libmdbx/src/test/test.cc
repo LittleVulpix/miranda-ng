@@ -144,8 +144,14 @@ void testcase::db_open() {
     db_prepare();
 
   jitter_delay(true);
+
+  unsigned mode = (unsigned)config.params.mode_flags;
+  if (config.params.random_writemap && flipcoin())
+    mode ^= MDBX_WRITEMAP;
+
+  actual_db_mode = mode;
   int rc = mdbx_env_open(db_guard.get(), config.params.pathname_db.c_str(),
-                         (unsigned)config.params.mode_flags, 0640);
+                         mode, 0640);
   if (unlikely(rc != MDBX_SUCCESS))
     failure_perror("mdbx_env_open()", rc);
 
@@ -172,28 +178,29 @@ void testcase::txn_begin(bool readonly, unsigned flags) {
   if (unlikely(rc != MDBX_SUCCESS))
     failure_perror("mdbx_txn_begin()", rc);
   txn_guard.reset(txn);
+  need_speculum_assign = config.params.speculum && !readonly;
 
   log_trace("<< txn_begin(%s, 0x%04X)", readonly ? "read-only" : "read-write",
             flags);
 }
 
 int testcase::breakable_commit() {
-  int rc = MDBX_SUCCESS;
   log_trace(">> txn_commit");
   assert(txn_guard);
 
   MDBX_txn *txn = txn_guard.release();
   txn_inject_writefault(txn);
-  int err = mdbx_txn_commit(txn);
-  if (unlikely(err != MDBX_SUCCESS)) {
-    if (err == MDBX_MAP_FULL && config.params.ignore_dbfull) {
-      rc = err;
-      err = mdbx_txn_abort(txn);
-      if (unlikely(err != MDBX_SUCCESS && err != MDBX_THREAD_MISMATCH &&
-                   err != MDBX_BAD_TXN))
-        failure_perror("mdbx_txn_abort()", err);
-    } else
-      failure_perror("mdbx_txn_commit()", err);
+  int rc = mdbx_txn_commit(txn);
+  if (unlikely(rc != MDBX_SUCCESS) &&
+      (rc != MDBX_MAP_FULL || !config.params.ignore_dbfull))
+    failure_perror("mdbx_txn_commit()", rc);
+
+  if (need_speculum_assign) {
+    need_speculum_assign = false;
+    if (unlikely(rc != MDBX_SUCCESS))
+      speculum = speculum_commited;
+    else
+      speculum_commited = speculum;
   }
 
   log_trace("<< txn_commit: %s", rc ? "failed" : "Ok");
@@ -221,14 +228,17 @@ void testcase::txn_end(bool abort) {
   MDBX_txn *txn = txn_guard.release();
   if (abort) {
     int err = mdbx_txn_abort(txn);
-    if (unlikely(err != MDBX_SUCCESS && err != MDBX_THREAD_MISMATCH &&
-                 err != MDBX_BAD_TXN))
+    if (unlikely(err != MDBX_SUCCESS))
       failure_perror("mdbx_txn_abort()", err);
+    if (need_speculum_assign)
+      speculum = speculum_commited;
   } else {
     txn_inject_writefault(txn);
     int err = mdbx_txn_commit(txn);
     if (unlikely(err != MDBX_SUCCESS))
       failure_perror("mdbx_txn_commit()", err);
+    if (need_speculum_assign)
+      speculum_commited = speculum;
   }
 
   log_trace("<< txn_end(%s)", abort ? "abort" : "commit");
@@ -336,18 +346,18 @@ void testcase::report(size_t nops_done) {
     return;
 
   nops_completed += nops_done;
-  log_debug("== complete +%" PRIuPTR " iteration, total %" PRIuPTR " done",
+  log_debug("== complete +%" PRIuPTR " iteration, total %" PRIu64 " done",
             nops_done, nops_completed);
 
   kick_progress(true);
 
   if (config.signal_nops && !signalled &&
       config.signal_nops <= nops_completed) {
-    log_trace(">> signal(n-ops %" PRIuPTR ")", nops_completed);
+    log_trace(">> signal(n-ops %" PRIu64 ")", nops_completed);
     if (!global::singlemode)
       osal_broadcast(config.actor_id);
     signalled = true;
-    log_trace("<< signal(n-ops %" PRIuPTR ")", nops_completed);
+    log_trace("<< signal(n-ops %" PRIu64 ")", nops_completed);
   }
 }
 
@@ -491,6 +501,7 @@ void testcase::db_table_drop(MDBX_dbi handle) {
     int rc = mdbx_drop(txn_guard.get(), handle, true);
     if (unlikely(rc != MDBX_SUCCESS))
       failure_perror("mdbx_drop(delete=true)", rc);
+    speculum.clear();
     log_trace("<< testcase::db_table_drop");
   } else {
     log_trace("<< testcase::db_table_drop: not needed");
@@ -502,6 +513,7 @@ void testcase::db_table_clear(MDBX_dbi handle, MDBX_txn *txn) {
   int rc = mdbx_drop(txn ? txn : txn_guard.get(), handle, false);
   if (unlikely(rc != MDBX_SUCCESS))
     failure_perror("mdbx_drop(delete=false)", rc);
+  speculum.clear();
   log_trace("<< testcase::db_table_clear");
 }
 

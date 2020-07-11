@@ -128,7 +128,7 @@ INT_PTR SendKey(WPARAM w, LPARAM)
 		msg += keyid;
 		msg += " sent";
 
-		HistoryLog(hContact, db_event((char*)msg.c_str(), 0, 0, DBEF_SENT));
+		HistoryLog(hContact, msg.c_str(), DBEF_SENT);
 		g_plugin.setByte(hContact, "GPGEncryption", enc);
 	}
 
@@ -155,12 +155,7 @@ INT_PTR ToggleEncryption(WPARAM w, LPARAM)
 		enc = g_plugin.getByte(hContact, "GPGEncryption", 0);
 		g_plugin.setByte(hContact, "GPGEncryption", enc ? 0 : 1);
 	}
-	void setSrmmIcon(MCONTACT hContact);
-	void setClistIcon(MCONTACT hContact);
 	setSrmmIcon(hContact);
-	setClistIcon(hContact);
-
-	Menu_ModifyItem(globals.hToggleEncryption, enc ? LPGENW("Turn off GPG encryption") : LPGENW("Turn on GPG encryption"));
 	return 0;
 }
 
@@ -183,7 +178,7 @@ int OnPreBuildContactMenu(WPARAM w, LPARAM)
 
 		wchar_t buf[128] = { 0 };
 		mir_snwprintf(buf, L"%s: %S", TranslateT("Send public key"), keyid.c_str());
-		Menu_ModifyItem(globals.hSendKey, buf);
+		Menu_ModifyItem(g_plugin.hSendKey, buf);
 	}
 
 	int flags;
@@ -194,12 +189,12 @@ int OnPreBuildContactMenu(WPARAM w, LPARAM)
 	}
 	else flags = 0;
 
-	Menu_ModifyItem(globals.hToggleEncryption,
-		g_plugin.getByte(hContact, "GPGEncryption", 0) ? L"Turn off GPG encryption" : L"Turn on GPG encryption",
-		INVALID_HANDLE_VALUE, flags);
+	if (g_plugin.getByte(hContact, "GPGEncryption"))
+		Menu_ModifyItem(g_plugin.hToggleEncryption, LPGENW("Turn off GPG encryption"), g_plugin.getIconHandle(IDI_SECURED), flags);
+	else
+		Menu_ModifyItem(g_plugin.hToggleEncryption, LPGENW("Turn on GPG encryption"), g_plugin.getIconHandle(IDI_UNSECURED), flags);
 	return 0;
 }
-
 
 list<wstring> transfers;
 
@@ -240,7 +235,7 @@ int onProtoAck(WPARAM, LPARAM l)
 							return 0;
 						if (!globals.bDecryptFiles)
 							return 0;
-						HistoryLog(ack->hContact, db_event("Received encrypted file, trying to decrypt", 0, 0, 0));
+						HistoryLog(ack->hContact, "Received encrypted file, trying to decrypt");
 						if (!boost::filesystem::exists(f->szCurrentFile.w))
 							return 0;
 
@@ -306,8 +301,8 @@ int onProtoAck(WPARAM, LPARAM l)
 								else
 									g_plugin.setString(ack->hContact, "InKeyID", out.substr(s, s2 - s).c_str());
 							}
-							CDlgKeyPasswordMsgBox *d = new CDlgKeyPasswordMsgBox(ack->hContact);
-							d->DoModal();
+							
+							CDlgKeyPasswordMsgBox(ack->hContact).DoModal();
 
 							if (!globals.wszPassword.IsEmpty()) {
 								if (globals.debuglog)
@@ -337,7 +332,7 @@ int onProtoAck(WPARAM, LPARAM l)
 			if (ack->result == ACKRESULT_FAILED) {
 				std::list<HANDLE>::iterator it = std::find(sent_msgs.begin(), sent_msgs.end(), ack->hProcess);
 				if (it != sent_msgs.end())
-					HistoryLog(ack->hContact, db_event("Failed to send encrypted message", 0, 0, 0));
+					HistoryLog(ack->hContact, "Failed to send encrypted message");
 			}
 			else if (ack->result == ACKRESULT_SUCCESS) {
 				std::list<HANDLE>::iterator it = std::find(sent_msgs.begin(), sent_msgs.end(), ack->hProcess);
@@ -439,7 +434,7 @@ INT_PTR onSendFile(WPARAM w, LPARAM l)
 			if (MessageBox(nullptr, TranslateT("Unable to check encryption support on other side.\nRecipient may be unable to decrypt file(s).\nCurrently capability check supported only for ICQ and Jabber protocols.\nIt will work for any other proto if Miranda with New_GPG is used on other side.\nDo you want to encrypt file(s) anyway?"), TranslateT("File transfer warning"), MB_YESNO) == IDNO)
 				return Proto_ChainSend(w, ccs);
 		}
-		HistoryLog(ccs->hContact, db_event(Translate("encrypting file for transfer"), 0, 0, DBEF_SENT));
+		HistoryLog(ccs->hContact, TranslateU("encrypting file for transfer"), DBEF_SENT);
 		if (StriStr(ccs->szProtoService, "/sendfilew")) {
 			wchar_t **file = (wchar_t **)ccs->lParam;
 			for (int i = 0; file[i]; i++) {
@@ -474,20 +469,15 @@ INT_PTR onSendFile(WPARAM w, LPARAM l)
 	return Proto_ChainSend(w, ccs);
 }
 
-
-void HistoryLog(MCONTACT hContact, db_event evt)
+void HistoryLog(MCONTACT hContact, const char *msg, DWORD _time, DWORD flags)
 {
-	DBEVENTINFO Event = {};
-	Event.szModule = MODULENAME;
-	Event.eventType = evt.eventType;
-	Event.flags = evt.flags;
-	if (!evt.timestamp)
-		Event.timestamp = (DWORD)time(0);
-	else
-		Event.timestamp = evt.timestamp;
-	Event.cbBlob = (DWORD)mir_strlen((char*)evt.pBlob) + 1;
-	Event.pBlob = (PBYTE)_strdup((char*)evt.pBlob);
-	db_event_add(hContact, &Event);
+	DBEVENTINFO dbei = {};
+	dbei.szModule = MODULENAME;
+	dbei.flags = DBEF_UTF | flags;
+	dbei.timestamp = (_time) ? _time : (DWORD)time(0);
+	dbei.cbBlob = (DWORD)mir_strlen(msg) + 1;
+	dbei.pBlob = (PBYTE)msg;
+	db_event_add(hContact, &dbei);
 }
 
 static int ControlAddStringUtf(HWND ctrl, DWORD msg, const wchar_t *szString)
@@ -503,40 +493,6 @@ int ComboBoxAddStringUtf(HWND hCombo, const wchar_t *szString, DWORD data)
 	SendMessage(hCombo, CB_SETITEMDATA, item, data);
 
 	return item;
-}
-
-
-int GetJabberInterface(WPARAM, LPARAM) //get interface for all jabber accounts, options later
-{
-	void AddHandlers();
-
-	list <JabberAccount*>::iterator p;
-	globals.Accounts.clear();
-	globals.Accounts.push_back(new JabberAccount);
-	p = globals.Accounts.begin();
-	(*p)->setAccountNumber(0);
-	for (auto &pa : Accounts()) {
-		IJabberInterface *JIftmp = getJabberApi(pa->szModuleName);
-		int a = 0;
-		if (JIftmp) {
-			(*p)->setJabberInterface(JIftmp);
-			if (pa->tszAccountName) {
-				wchar_t* tmp = mir_wstrdup(pa->tszAccountName);
-				(*p)->setAccountName(tmp);
-			}
-			else {
-				wchar_t *tmp = mir_a2u(pa->szModuleName);
-				(*p)->setAccountName(tmp);
-			}
-			(*p)->setAccountNumber(a);
-			a++;
-			globals.Accounts.push_back(new JabberAccount);
-			p++;
-		}
-	}
-	globals.Accounts.pop_back();
-	AddHandlers();
-	return 0;
 }
 
 static JABBER_HANDLER_FUNC SendHandler(IJabberInterface *ji, TiXmlElement *node, void*)
@@ -773,25 +729,56 @@ static JABBER_HANDLER_FUNC MessageHandler(IJabberInterface*, TiXmlElement*, void
 	return FALSE;
 }
 
-void AddHandlers()
+int GetJabberInterface(WPARAM, LPARAM) //get interface for all jabber accounts, options later
 {
-	for (auto p : globals.Accounts) {
-		/*if (p)
-			break;*/
-		if (p->getSendHandler() == INVALID_HANDLE_VALUE)
-			p->setSendHandler(p->getJabberInterface()->AddSendHandler((JABBER_HANDLER_FUNC)SendHandler));
-		
-		if (p->getPresenceHandler() == INVALID_HANDLE_VALUE)
-			p->setPresenceHandler(p->getJabberInterface()->AddPresenceHandler((JABBER_HANDLER_FUNC)PresenceHandler));
+	list <JabberAccount *>::iterator p;
+	globals.Accounts.clear();
+
+	int accNum = 0;
+	for (auto &pa : Accounts()) {
+		IJabberInterface *pApi = getJabberApi(pa->szModuleName);
+		if (pApi == nullptr)
+			continue;
+
+		auto *pAcc = new JabberAccount();
+		pAcc->setJabberInterface(pApi);
+		if (pa->tszAccountName)
+			pAcc->setAccountName(mir_wstrdup(pa->tszAccountName));
+		else
+			pAcc->setAccountName(mir_a2u(pa->szModuleName));
+
+		pAcc->setAccountNumber(accNum++);
+		pAcc->setSendHandler(pApi->AddSendHandler((JABBER_HANDLER_FUNC)SendHandler));
+		pAcc->setPresenceHandler(pApi->AddPresenceHandler((JABBER_HANDLER_FUNC)PresenceHandler));
 
 		if (g_plugin.bAutoExchange) {
-			p->getJabberInterface()->RegisterFeature("GPG_Key_Auto_Exchange:0", "Indicates that gpg installed and configured to public key auto exchange (currently implemented in new_gpg plugin for Miranda IM and Miranda NG)");
-			p->getJabberInterface()->AddFeatures("GPG_Key_Auto_Exchange:0\0\0");
+			pApi->RegisterFeature("GPG_Key_Auto_Exchange:0", "Indicates that gpg installed and configured to public key auto exchange (currently implemented in new_gpg plugin for Miranda IM and Miranda NG)");
+			pApi->AddFeatures("GPG_Key_Auto_Exchange:0\0\0");
 		}
 		if (g_plugin.bFileTransfers) {
-			p->getJabberInterface()->RegisterFeature("GPG_Encrypted_FileTransfers:0", "Indicates that gpg installed and configured to encrypt files (currently implemented in new_gpg plugin for Miranda IM and Miranda NG)");
-			p->getJabberInterface()->AddFeatures("GPG_Encrypted_FileTransfers:0\0\0");
+			pApi->RegisterFeature("GPG_Encrypted_FileTransfers:0", "Indicates that gpg installed and configured to encrypt files (currently implemented in new_gpg plugin for Miranda IM and Miranda NG)");
+			pApi->AddFeatures("GPG_Encrypted_FileTransfers:0\0\0");
 		}
+
+		globals.Accounts.push_back(pAcc);
+	}
+
+	return 0;
+}
+
+void RemoveHandlers()
+{
+	for (auto &it : globals.Accounts) {
+		auto *pApi = it->getJabberInterface();
+		if (pApi == nullptr)
+			continue;
+
+		if (it->getMessageHandler() != INVALID_HANDLE_VALUE)
+			pApi->RemoveHandler(it->getMessageHandler());
+		if (it->getPresenceHandler() != INVALID_HANDLE_VALUE)
+			pApi->RemoveHandler(it->getPresenceHandler());
+		pApi->RemoveFeatures("GPG_Encrypted_FileTransfers:0\0\0");
+		pApi->RemoveFeatures("GPG_Key_Auto_Exchange:0\0\0");
 	}
 }
 
@@ -953,7 +940,7 @@ void send_encrypted_msgs_thread(void *param)
 			extern std::list<HANDLE> sent_msgs;
 			for (list<string>::iterator p = globals.hcontact_data[hContact].msgs_to_send.begin(); p != end; ++p) {
 				sent_msgs.push_back((HANDLE)ProtoChainSend(hContact, PSS_MESSAGE, 0, (LPARAM)p->c_str()));
-				HistoryLog(hContact, db_event((char*)p->c_str(), 0, 0, DBEF_SENT));
+				HistoryLog(hContact, p->c_str(), DBEF_SENT);
 				Sleep(1000);
 			}
 			globals.hcontact_data[hContact].msgs_to_send.clear();
@@ -979,118 +966,24 @@ void ExportGpGKeysFunc(int type)
 	if (!type || type == 2) {
 		for (auto &hContact : Contacts()) {
 			CMStringA key = g_plugin.getMStringA(hContact, "GPGPubKey");
+			if (key.IsEmpty())
+				continue;
 
-			const char *proto = Proto_GetBaseAccountName(hContact);
+			ptrW wszLogin(Contact_GetInfo(CNF_UNIQUEID, 0, Proto_GetBaseAccountName(hContact))), wszContact(Contact_GetInfo(CNF_UNIQUEID, hContact));
+			if (wszLogin == nullptr || wszContact == nullptr)
+				continue;
+
 			std::string id = "Comment: login ";
-			const char *uid = Proto_GetUniqueId(proto);
-			DBVARIANT dbv = { 0 };
-			db_get(0, proto, uid, &dbv);
-			switch (dbv.type) {
-			case DBVT_DELETED:
-				continue;
-
-			case DBVT_BYTE:
-				{
-					char _id[64];
-					mir_snprintf(_id, "%d", dbv.bVal);
-					id += _id;
-				}
-				break;
-			case DBVT_WORD:
-				{
-					char _id[64];
-					mir_snprintf(_id, "%d", dbv.wVal);
-					id += _id;
-				}
-				break;
-			case DBVT_DWORD:
-				{
-					char _id[64];
-					mir_snprintf(_id, "%d", dbv.dVal);
-					id += _id;
-				}
-				break;
-			case DBVT_ASCIIZ:
-				{
-					id += dbv.pszVal;
-					db_free(&dbv);
-				}
-				break;
-			case DBVT_UTF8:
-				{
-					char *tmp = mir_utf8decodeA(dbv.pszVal);
-					if (tmp[0])
-						id += tmp;
-					mir_free(tmp);
-					db_free(&dbv);
-				}
-				break;
-			case DBVT_BLOB:
-				//TODO
-				db_free(&dbv);
-				break;
-			case DBVT_WCHAR:
-				//TODO
-				db_free(&dbv);
-				break;
-			}
+			id += T2Utf(wszLogin).get();
 			id += " contact_id ";
-			memset(&dbv, 0, sizeof(dbv));
-			db_get(hContact, proto, uid, &dbv);
-			switch (dbv.type) {
-			case DBVT_DELETED:
-				continue;
-			case DBVT_BYTE:
-				{
-					char _id[64];
-					mir_snprintf(_id, "%d", dbv.bVal);
-					id += _id;
-				}
-				break;
-			case DBVT_WORD:
-				{
-					char _id[64];
-					mir_snprintf(_id, "%d", dbv.wVal);
-					id += _id;
-				}
-				break;
-			case DBVT_DWORD:
-				{
-					char _id[64];
-					mir_snprintf(_id, "%d", dbv.dVal);
-					id += _id;
-				}
-				break;
-			case DBVT_ASCIIZ:
-				{
-					id += dbv.pszVal;
-					db_free(&dbv);
-				}
-				break;
-			case DBVT_UTF8:
-				{
-					char *tmp = mir_utf8decodeA(dbv.pszVal);
-					if (tmp[0])
-						id += tmp;
-					mir_free(tmp);
-					db_free(&dbv);
-				}
-				break;
-			case DBVT_BLOB:
-				//TODO
-				db_free(&dbv);
-				break;
-			case DBVT_WCHAR:
-				//TODO
-				db_free(&dbv);
-				break;
-			}
+			id += T2Utf(wszContact).get();
+			id += '\n';
+
 			int p1 = key.Find("-----BEGIN PGP PUBLIC KEY BLOCK-----");
 			if (p1 == -1)
 				continue;
 			p1 += mir_strlen("-----BEGIN PGP PUBLIC KEY BLOCK-----");
 			p1++;
-			id += '\n';
 			key.Insert(p1, id.c_str());
 			file << key;
 			file << std::endl;
@@ -1101,7 +994,7 @@ void ExportGpGKeysFunc(int type)
 	if (type == 1 || type == 2) {
 		gpg_execution_params params;
 		params.addParam(L"--batch");
-		params.addParam(L"-export-secret-keys");
+		params.addParam(L"--export-secret-keys");
 		params.addParam(L"-a");
 		gpg_launcher(params); //TODO: handle errors
 
@@ -1118,12 +1011,6 @@ void ExportGpGKeysFunc(int type)
 	else if (!type)
 		mir_snwprintf(msg, TranslateT("We have successfully exported %d public keys."), exported_keys);
 	MessageBox(nullptr, msg, TranslateT("Keys export result"), MB_OK);
-}
-
-INT_PTR ExportGpGKeys(WPARAM, LPARAM)
-{
-	(new CDlgExportKeysMsgBox())->Show();
-	return 0;
 }
 
 INT_PTR ImportGpGKeys(WPARAM, LPARAM)
@@ -1168,232 +1055,120 @@ INT_PTR ImportGpGKeys(WPARAM, LPARAM)
 			p2 = key.find("\n", p1);
 			p2++;
 			key.erase(p1, p2 - p1);
-			std::string acc;
-
+			
+			PROTOACCOUNT *pFoundAcc = nullptr;
 			for (auto &pa : Accounts()) {
-				if (acc.length())
-					break;
-				const char *uid = Proto_GetUniqueId(pa->szModuleName);
-				DBVARIANT dbv = { 0 };
-				db_get(0, pa->szModuleName, uid, &dbv);
-				std::string id;
-				switch (dbv.type) {
-				case DBVT_DELETED:
+				ptrW wszUniqueId(Contact_GetInfo(CNF_UNIQUEID, 0, pa->szModuleName));
+				if (wszUniqueId == nullptr)
 					continue;
-					break;
 
-				case DBVT_BYTE:
-					char _id[64];
-					mir_snprintf(_id, "%d", dbv.bVal);
-					id += _id;
-					if (id == login)
-						acc = pa->szModuleName;
-					break;
-
-				case DBVT_WORD:
-					mir_snprintf(_id, "%d", dbv.wVal);
-					id += _id;
-					if (id == login)
-						acc = pa->szModuleName;
-					break;
-
-				case DBVT_DWORD:
-					mir_snprintf(_id, "%d", dbv.dVal);
-					id += _id;
-					if (id == login)
-						acc = pa->szModuleName;
-					break;
-
-				case DBVT_ASCIIZ:
-					id += dbv.pszVal;
-					db_free(&dbv);
-					if (id == login)
-						acc = pa->szModuleName;
-					break;
-
-				case DBVT_UTF8:
-					{
-						char *tmp = mir_utf8decodeA(dbv.pszVal);
-						if (tmp[0])
-							id += tmp;
-						mir_free(tmp);
-						db_free(&dbv);
-						if (id == login)
-							acc = pa->szModuleName;
-					}
-					break;
-
-				case DBVT_BLOB:
-					//TODO
-					db_free(&dbv);
-					break;
-
-				case DBVT_WCHAR:
-					//TODO
-					db_free(&dbv);
+				if (login == T2Utf(wszUniqueId).get()) {
+					pFoundAcc = pa;
 					break;
 				}
 			}
 
-			if (acc.length()) {
-				const char *uid = Proto_GetUniqueId(acc.c_str());
-				for (auto &hContact : Contacts(acc.c_str())) {
-					DBVARIANT dbv = { 0 };
-					db_get(hContact, acc.c_str(), uid, &dbv);
-					std::string id;
-					bool found = false;
-					switch (dbv.type) {
-					case DBVT_DELETED:
-						continue;
-						break;
-					case DBVT_BYTE:
-						{
-							char _id[64];
-							mir_snprintf(_id, "%d", dbv.bVal);
-							id += _id;
-							if (id == contact_id)
-								found = true;
-						}
-						break;
-					case DBVT_WORD:
-						{
-							char _id[64];
-							mir_snprintf(_id, "%d", dbv.wVal);
-							id += _id;
-							if (id == contact_id)
-								found = true;
-						}
-						break;
-					case DBVT_DWORD:
-						{
-							char _id[64];
-							mir_snprintf(_id, "%d", dbv.dVal);
-							id += _id;
-							if (id == contact_id)
-								found = true;
-						}
-						break;
-					case DBVT_ASCIIZ:
-						{
-							id += dbv.pszVal;
-							db_free(&dbv);
-							if (id == contact_id)
-								found = true;
-						}
-						break;
-					case DBVT_UTF8:
-						{
-							char *tmp = mir_utf8decodeA(dbv.pszVal);
-							if (tmp[0])
-								id += tmp;
-							mir_free(tmp);
-							db_free(&dbv);
-							if (id == contact_id)
-								found = true;
-						}
-						break;
-					case DBVT_BLOB:
-						//TODO
-						db_free(&dbv);
-						break;
-					case DBVT_WCHAR:
-						//TODO
-						db_free(&dbv);
-						break;
-					}
-					if (found) {
-						CMStringW path = g_plugin.getMStringW("szHomePath");
+			if (pFoundAcc == nullptr)
+				continue;
 
-						gpg_execution_params params;
-						{
-							wstring rand = toUTF16(get_random(10));
-							path += L"\\";
-							path += rand.c_str();
-							boost::filesystem::remove(path.c_str());
-							wfstream f(path, std::ios::out);
-							f << toUTF16(key).c_str();
-							f.close();
-							params.addParam(L"--batch");
-							params.addParam(L"--import");
-							params.addParam(path.c_str());
-						}
-						if (!gpg_launcher(params))
-							break;
-						if (params.result == pxNotFound)
-							break;
-						if (params.result == pxSuccess)
-							processed_keys++;
-						{
-							string output(params.out);
-							if (output.find("already in secret keyring") != string::npos) {
-								MessageBox(nullptr, TranslateT("Key already in secret keyring."), TranslateT("Info"), MB_OK);
-								boost::filesystem::remove(path.c_str());
-								break;
-							}
-							char *tmp2;
-							string::size_type s = output.find("gpg: key ") + mir_strlen("gpg: key ");
-							string::size_type s2 = output.find(":", s);
-							tmp2 = (char*)mir_alloc((output.substr(s, s2 - s).length() + 1) * sizeof(char));
-							mir_strcpy(tmp2, output.substr(s, s2 - s).c_str());
-							mir_utf8decode(tmp2, nullptr);
-							g_plugin.setString(hContact, "KeyID", tmp2);
-							mir_free(tmp2);
-							s = output.find("“", s2);
-							if (s == string::npos) {
-								s = output.find("\"", s2);
-								s += 1;
-							}
-							else
-								s += 3;
-							if ((s2 = output.find("(", s)) == string::npos)
-								s2 = output.find("<", s);
-							else if (s2 > output.find("<", s))
-								s2 = output.find("<", s);
-							if (s2 != string::npos) {
-								tmp2 = (char*)mir_alloc((output.substr(s, s2 - s - 1).length() + 1) * sizeof(char));
-								mir_strcpy(tmp2, output.substr(s, s2 - s - 1).c_str());
-								mir_utf8decode(tmp2, nullptr);
-								if (hContact) {
-									g_plugin.setString(hContact, "KeyMainName", output.substr(s, s2 - s - 1).c_str());
-								}
-								mir_free(tmp2);
-								if ((s = output.find(")", s2)) == string::npos)
-									s = output.find(">", s2);
-								else if (s > output.find(">", s2))
-									s = output.find(">", s2);
-								s2++;
-								if (output[s] == ')') {
-									tmp2 = (char*)mir_alloc((output.substr(s2, s - s2).length() + 1) * sizeof(char));
-									mir_strcpy(tmp2, output.substr(s2, s - s2).c_str());
-									mir_utf8decode(tmp2, nullptr);
-									if (hContact)
-										g_plugin.setString(hContact, "KeyComment", output.substr(s2, s - s2).c_str());
-									mir_free(tmp2);
-									s += 3;
-									s2 = output.find(">", s);
-									tmp2 = (char*)mir_alloc((output.substr(s, s2 - s).length() + 1) * sizeof(char));
-									mir_strcpy(tmp2, output.substr(s, s2 - s).c_str());
-									mir_utf8decode(tmp2, nullptr);
-									if (hContact)
-										g_plugin.setString(hContact, "KeyMainEmail", output.substr(s, s2 - s).c_str());
-									mir_free(tmp2);
-								}
-								else {
-									tmp2 = (char*)mir_alloc((output.substr(s2, s - s2).length() + 1) * sizeof(char));
-									mir_strcpy(tmp2, output.substr(s2, s - s2).c_str());
-									mir_utf8decode(tmp2, nullptr);
-									if (hContact)
-										g_plugin.setString(hContact, "KeyMainEmail", output.substr(s2, s - s2).c_str());
-									mir_free(tmp2);
-								}
-							}
-							g_plugin.setByte(hContact, "GPGEncryption", 1);
-							g_plugin.setWString(hContact, "GPGPubKey", toUTF16(key).c_str());
-						}
-						boost::filesystem::remove(path.c_str());
-						break;
+			for (auto &hContact : Contacts(pFoundAcc->szModuleName)) {
+				ptrW wszUniqueId(Contact_GetInfo(CNF_UNIQUEID, hContact, pFoundAcc->szModuleName));
+				if (wszUniqueId == nullptr)
+					continue;
+
+				if (contact_id != T2Utf(wszUniqueId).get())
+					continue;
+
+				CMStringW path = g_plugin.getMStringW("szHomePath");
+
+				gpg_execution_params params;
+				{
+					wstring rand = toUTF16(get_random(10));
+					path += L"\\";
+					path += rand.c_str();
+					boost::filesystem::remove(path.c_str());
+					wfstream f(path, std::ios::out);
+					f << toUTF16(key).c_str();
+					f.close();
+					params.addParam(L"--batch");
+					params.addParam(L"--import");
+					params.addParam(path.c_str());
+				}
+				if (!gpg_launcher(params))
+					break;
+				if (params.result == pxNotFound)
+					break;
+				if (params.result == pxSuccess)
+					processed_keys++;
+
+				string output(params.out);
+				if (output.find("already in secret keyring") != string::npos) {
+					MessageBox(nullptr, TranslateT("Key already in secret keyring."), TranslateT("Info"), MB_OK);
+					boost::filesystem::remove(path.c_str());
+					break;
+				}
+				char *tmp2;
+				string::size_type s = output.find("gpg: key ") + mir_strlen("gpg: key ");
+				string::size_type s2 = output.find(":", s);
+				tmp2 = (char *)mir_alloc((output.substr(s, s2 - s).length() + 1) * sizeof(char));
+				mir_strcpy(tmp2, output.substr(s, s2 - s).c_str());
+				mir_utf8decode(tmp2, nullptr);
+				g_plugin.setString(hContact, "KeyID", tmp2);
+				mir_free(tmp2);
+				s = output.find("“", s2);
+				if (s == string::npos) {
+					s = output.find("\"", s2);
+					s += 1;
+				}
+				else
+					s += 3;
+				if ((s2 = output.find("(", s)) == string::npos)
+					s2 = output.find("<", s);
+				else if (s2 > output.find("<", s))
+					s2 = output.find("<", s);
+				if (s2 != string::npos) {
+					tmp2 = (char *)mir_alloc((output.substr(s, s2 - s - 1).length() + 1) * sizeof(char));
+					mir_strcpy(tmp2, output.substr(s, s2 - s - 1).c_str());
+					mir_utf8decode(tmp2, nullptr);
+					if (hContact) {
+						g_plugin.setString(hContact, "KeyMainName", output.substr(s, s2 - s - 1).c_str());
+					}
+					mir_free(tmp2);
+					if ((s = output.find(")", s2)) == string::npos)
+						s = output.find(">", s2);
+					else if (s > output.find(">", s2))
+						s = output.find(">", s2);
+					s2++;
+					if (output[s] == ')') {
+						tmp2 = (char *)mir_alloc((output.substr(s2, s - s2).length() + 1) * sizeof(char));
+						mir_strcpy(tmp2, output.substr(s2, s - s2).c_str());
+						mir_utf8decode(tmp2, nullptr);
+						if (hContact)
+							g_plugin.setString(hContact, "KeyComment", output.substr(s2, s - s2).c_str());
+						mir_free(tmp2);
+						s += 3;
+						s2 = output.find(">", s);
+						tmp2 = (char *)mir_alloc((output.substr(s, s2 - s).length() + 1) * sizeof(char));
+						mir_strcpy(tmp2, output.substr(s, s2 - s).c_str());
+						mir_utf8decode(tmp2, nullptr);
+						if (hContact)
+							g_plugin.setString(hContact, "KeyMainEmail", output.substr(s, s2 - s).c_str());
+						mir_free(tmp2);
+					}
+					else {
+						tmp2 = (char *)mir_alloc((output.substr(s2, s - s2).length() + 1) * sizeof(char));
+						mir_strcpy(tmp2, output.substr(s2, s - s2).c_str());
+						mir_utf8decode(tmp2, nullptr);
+						if (hContact)
+							g_plugin.setString(hContact, "KeyMainEmail", output.substr(s2, s - s2).c_str());
+						mir_free(tmp2);
 					}
 				}
+				g_plugin.setByte(hContact, "GPGEncryption", 1);
+				g_plugin.setWString(hContact, "GPGPubKey", toUTF16(key).c_str());
+
+				boost::filesystem::remove(path.c_str());
+				break;
 			}
 			key.clear();
 		}
@@ -1430,18 +1205,28 @@ INT_PTR ImportGpGKeys(WPARAM, LPARAM)
 	return 0;
 }
 
+void SendErrorMessage(MCONTACT hContact)
+{
+	if (!g_plugin.bSendErrorMessages)
+		return;
+
+	BYTE enc = g_plugin.getByte(hContact, "GPGEncryption", 0);
+	g_plugin.setByte(hContact, "GPGEncryption", 0);
+	ProtoChainSend(hContact, PSS_MESSAGE, 0, (LPARAM)"Unable to decrypt PGP encrypted message");
+	HistoryLog(hContact, "Error message sent", DBEF_SENT);
+	g_plugin.setByte(hContact, "GPGEncryption", enc);
+}
+
 void fix_line_term(std::string &s)
 {
 	if (s.empty())
 		return;
-	boost::algorithm::erase_all(s, "\r\r");
-}
 
-void fix_line_term(std::wstring &s)
-{
-	if (s.empty())
-		return;
-	boost::algorithm::erase_all(s, L"\r\r");
+	boost::algorithm::erase_all(s, "\r\r");
+
+	// unified line endings for unix & windows port
+	boost::algorithm::replace_all(s, "\r\n", "\n");
+	boost::algorithm::replace_all(s, "\n", "\r\n");
 }
 
 void strip_line_term(std::wstring &s)
@@ -1460,7 +1245,7 @@ void strip_line_term(std::string &s)
 	boost::algorithm::erase_all(s, "\n");
 }
 
-void strip_tags(std::wstring &str)
+void strip_tags(std::string &str)
 {
 	if (str.empty())
 		return;
@@ -1474,12 +1259,6 @@ void strip_tags(std::wstring &str)
 void ShowEncryptedFileMsgBox()
 {
 	CDlgEncryptedFileMsgBox *d = new CDlgEncryptedFileMsgBox;
-	d->DoModal();
-}
-
-void ShowChangePasswdDlg()
-{
-	CDlgChangePasswdMsgBox *d = new CDlgChangePasswdMsgBox;
 	d->DoModal();
 }
 

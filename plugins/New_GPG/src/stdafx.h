@@ -55,6 +55,7 @@ using std::fstream;
 
 // miranda
 #include <newpluginapi.h>
+#include <m_contacts.h>
 #include <m_database.h>
 #include <m_options.h>
 #include <m_langpack.h>
@@ -72,7 +73,9 @@ using std::fstream;
 
 struct CMPlugin : public PLUGIN<CMPlugin>
 {
-	CMOption<bool> bJabberAPI, bPresenceSigning, bFileTransfers, bAutoExchange, bSameAction, bAppendTags, bStripTags, bDebugLog;
+	CMOption<bool> bJabberAPI, bPresenceSigning, bFileTransfers, bAutoExchange, bSameAction, bAppendTags, bStripTags, bDebugLog, bSendErrorMessages;
+	HANDLE hCLIcon = nullptr;
+	HGENMENU hToggleEncryption = nullptr, hSendKey = nullptr;
 
 	CMPlugin();
 

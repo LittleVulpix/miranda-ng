@@ -4,7 +4,7 @@
 #include "src/internals.h"
 
 #if MDBX_VERSION_MAJOR != 0 ||                             \
-    MDBX_VERSION_MINOR != 7
+    MDBX_VERSION_MINOR != 8
 #error "API version mismatch! Had `git fetch --tags` done?"
 #endif
 
@@ -24,11 +24,11 @@ __dll_export
 #endif
     const mdbx_version_info mdbx_version = {
         0,
-        7,
-        0,
-        1981,
-        {"2020-04-25T11:12:23+03:00", "5c78012e38f306d9601e1f43109c8aecbacb2e14", "ca8fa31c3fe1b4d92278d7a54364f6fb73dbae04",
-         "v0.7.0-39-gca8fa31"},
+        8,
+        2,
+        2,
+        {"2020-07-08T16:46:29+03:00", "91ba90ae5964c49852b2fe8ec5c6733e10d0414c", "4fffd033615ec45fd2669edcf26abd4134f76b94",
+         "v0.8.2-2-g4fffd03"},
         sourcery};
 
 __dll_export

@@ -15,7 +15,7 @@ class CSteamPasswordEditor : public CSteamDlgBase
 protected:
 	bool OnInitDialog() override;
 	bool OnApply() override;
-	bool OnClose() override;
+	void OnDestroy() override;
 
 public:
 	CSteamPasswordEditor(CSteamProto *proto);
@@ -34,7 +34,7 @@ class CSteamGuardDialog : public CSteamDlgBase
 protected:
 	bool OnInitDialog() override;
 	bool OnApply() override;
-	bool OnClose() override;
+	void OnDestroy() override;
 
 public:
 	CSteamGuardDialog(CSteamProto *proto, const char *domain);
@@ -55,7 +55,7 @@ class CSteamTwoFactorDialog : public CSteamDlgBase
 protected:
 	bool OnInitDialog() override;
 	bool OnApply() override;
-	bool OnClose() override;
+	void OnDestroy() override;
 
 public:
 	CSteamTwoFactorDialog(CSteamProto *proto);
@@ -75,14 +75,12 @@ class CSteamCaptchaDialog : public CSteamDlgBase
 	size_t m_captchaImageSize;
 
 	CCtrlEdit m_text;
-	CCtrlButton m_ok;
 
 protected:
 	bool OnInitDialog() override;
-	bool OnClose() override;
+	bool OnApply() override;
+	void OnDestroy() override;
 	INT_PTR DlgProc(UINT msg, WPARAM wParam, LPARAM lParam) override;
-
-	void OnOk(CCtrlButton*);
 
 public:
 	CSteamCaptchaDialog(CSteamProto *proto, const uint8_t *captchaImage, size_t captchaImageSize);

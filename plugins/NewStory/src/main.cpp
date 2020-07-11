@@ -77,22 +77,9 @@ static int evtModulesLoaded(WPARAM, LPARAM)
 	InitFonts();
 	InitNewstoryControl();
 	InitHistory();
+	InitMenus();
 
 	LoadTemplates();
-
-	CMenuItem mi(&g_plugin);
-
-	mi.pszService = MS_HISTORY_SHOWCONTACTHISTORY;
-	mi.name.a = LPGEN("User history");
-	mi.position = 1999990000;
-	mi.hIcon = g_plugin.getIcon(ICO_NEWSTORY);
-	Menu_AddContactMenuItem(&mi);
-
-	mi.pszService = "Newstory/System";
-	mi.name.a = LPGEN("System history");
-	mi.position = 1999990000;
-	mi.hIcon = g_plugin.getIcon(ICO_NEWSTORY);
-	Menu_AddMainMenuItem(&mi);
 	return 0;
 }
 
@@ -110,9 +97,6 @@ int CMPlugin::Load()
 	bMsgGrouping = g_bOptGrouping;
 
 	m_log = RegisterSrmmLog(MODULETITLE, _T(MODULENAME), NewStory_Stub);
-
-	CreateServiceFunction(MS_HISTORY_SHOWCONTACTHISTORY, svcShowNewstory);
-	CreateServiceFunction("Newstory/System", svcShowSystemNewstory);
 
 	HookEvent(ME_OPT_INITIALISE, OptionsInitialize);
 	HookEvent(ME_SYSTEM_MODULESLOADED, evtModulesLoaded);

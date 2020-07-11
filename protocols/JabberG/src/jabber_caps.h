@@ -102,6 +102,9 @@ typedef unsigned __int64 JabberCapsBits;
 #define JABBER_FEAT_VCARD_TEMP                  "vcard-temp"
 #define JABBER_CAPS_VCARD_TEMP                  ((JabberCapsBits)1<<18)
 
+#define JABBER_FEAT_MAM                         "urn:xmpp:mam:2"
+#define JABBER_CAPS_MAM                         ((JabberCapsBits)1<<19)
+
 #define JABBER_FEAT_XHTML                       "http://jabber.org/protocol/xhtml-im"
 #define JABBER_CAPS_XHTML                       ((JabberCapsBits)1<<20)
 
@@ -199,6 +202,7 @@ typedef unsigned __int64 JabberCapsBits;
 #define JABBER_FEAT_JUD                         "jabber:iq:search"
 #define JABBER_FEAT_IDLE                        "urn:xmpp:idle:1"
 #define JABBER_FEAT_SERVER_AVATAR               "storage:client:avatar"
+#define JABBER_FEAT_SID                         "urn:xmpp:sid:0"
 #define JABBER_FEAT_UPLOAD                      "urn:xmpp:http:upload"
 #define JABBER_FEAT_UPLOAD0                     "urn:xmpp:http:upload:0"
 
@@ -216,8 +220,8 @@ typedef unsigned __int64 JabberCapsBits;
 												 JABBER_CAPS_ROSTER_EXCHANGE | JABBER_CAPS_DIRECT_MUC_INVITE | JABBER_CAPS_CHAT_MARKERS | JABBER_CAPS_BITS | JABBER_CAPS_XHTML)
 
 #define JABBER_CAPS_MIRANDA_ALL     (JABBER_CAPS_MIRANDA_PARTIAL | JABBER_CAPS_COMMANDS | \
-                                     JABBER_CAPS_USER_MOOD_NOTIFY | JABBER_CAPS_USER_TUNE_NOTIFY | JABBER_CAPS_USER_ACTIVITY_NOTIFY  \
-									 | JABBER_CAPS_PLATFORMX86 | JABBER_CAPS_PLATFORMX64)
+                                     JABBER_CAPS_USER_MOOD_NOTIFY | JABBER_CAPS_USER_TUNE_NOTIFY | JABBER_CAPS_USER_ACTIVITY_NOTIFY | \
+												 JABBER_CAPS_PLATFORMX86 | JABBER_CAPS_PLATFORMX64)
 
 #define JABBER_XMLNS_FORWARD                    "urn:xmpp:forward:0"
 

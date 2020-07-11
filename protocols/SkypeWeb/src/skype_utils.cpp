@@ -342,10 +342,9 @@ const HtmlEntity htmlEntities[] =
 	{ "zwnj", "\xE2\x80\x8C" }
 };
 
-char *CSkypeProto::RemoveHtml(const char *text)
+std::string RemoveHtml(const std::string &data)
 {
-	std::string new_string = "";
-	std::string data = text;
+	std::string new_string;
 
 	for (std::string::size_type i = 0; i < data.length(); i++) {
 		if (data.at(i) == '<') {
@@ -424,10 +423,10 @@ char *CSkypeProto::RemoveHtml(const char *text)
 		new_string += data.at(i);
 	}
 
-	return mir_strdup(new_string.c_str());
+	return new_string;
 }
 
-const char *CSkypeProto::MirandaToSkypeStatus(int status)
+const char* CSkypeProto::MirandaToSkypeStatus(int status)
 {
 	switch (status) {
 	case ID_STATUS_AWAY:
@@ -558,16 +557,16 @@ INT_PTR CSkypeProto::ParseSkypeUriService(WPARAM, LPARAM lParam)
 		CallService(MS_MSG_SENDMESSAGE, (WPARAM)hContact, NULL);
 		return 0;
 	}
-	
+
 	if (!mir_wstrcmpi(szCommand, L"call")) {
 		MCONTACT hContact = AddContact(_T2A(szJid), true);
 		NotifyEventHooks(g_hCallEvent, (WPARAM)hContact, (LPARAM)0);
 		return 0;
 	}
-	
-	if (!mir_wstrcmpi(szCommand, L"userinfo")) 
+
+	if (!mir_wstrcmpi(szCommand, L"userinfo"))
 		return 0;
-	
+
 	if (!mir_wstrcmpi(szCommand, L"add")) {
 		MCONTACT hContact = FindContact(_T2A(szJid));
 		if (hContact == NULL) {
@@ -604,7 +603,29 @@ INT_PTR CSkypeProto::GlobalParseSkypeUriService(WPARAM wParam, LPARAM lParam)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-JsonReply::JsonReply(const NETLIBHTTPREQUEST *pReply)
+AsyncHttpRequest::AsyncHttpRequest(int type, SkypeHost host, LPCSTR url, MTHttpRequestHandler pFunc) :
+	m_host(host)
+{
+	switch (host) {
+	case HOST_API:       m_szUrl = "https://api.skype.com"; break;
+	case HOST_CONTACTS:  m_szUrl = "https://contacts.skype.com"; break;
+	case HOST_GRAPH:     m_szUrl = "https://skypegraph.skype.com"; break;
+	case HOST_LOGIN:     m_szUrl = "https://login.skype.com"; break;
+	case HOST_DEFAULT:
+		m_szUrl.Format("https://%s/v1", g_plugin.szDefaultServer.c_str());
+		break;
+	}
+
+	if (url)
+		m_szUrl.Append(url);
+	m_pFunc = pFunc;
+	flags = NLHRF_HTTP11 | NLHRF_SSL | NLHRF_DUMPASTEXT;
+	requestType = type;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+JsonReply::JsonReply(NETLIBHTTPREQUEST *pReply)
 {
 	if (pReply == nullptr) {
 		m_errorCode = 500;

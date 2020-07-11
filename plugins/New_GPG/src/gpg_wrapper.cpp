@@ -71,29 +71,28 @@ void pxEexcute_thread(gpg_execution_params *params)
 	PathToAbsoluteW(L"\\", mir_path);
 
 	bp::child *c;
-	bp::ipstream perr, pout;
+	std::future<std::string> pout, perr;
+	boost::asio::io_context ios;
 	if (params->bNoOutput)
-		c = new bp::child(bin_path.c_str(), argv, bp::windows::hide);
+		c = new bp::child(bin_path.c_str(), argv, bp::windows::hide, bp::std_in.close(), ios);
 	else 
-		c = new bp::child(bin_path.c_str(), argv, bp::windows::hide, bp::std_out > pout, bp::std_err > perr);
+		c = new bp::child(bin_path.c_str(), argv, bp::windows::hide, bp::std_in.close(), bp::std_out > pout, bp::std_err > perr, ios);
 
 	params->child = c;
+
+	ios.run();
 	c->wait();
 
 	if (!params->bNoOutput) {
-		std::string s;
-		while (!pout.eof()) {
-			std::getline(pout, s);
+		std::string s = pout.get();
+		if (!s.empty())
 			params->out.Append(s.c_str());
-			params->out.Append("\n");
-		}
 
-		while (!perr.eof()) {
-			std::getline(perr, s);
+		s = perr.get();
+		if (!s.empty())
 			params->out.Append(s.c_str());
-			params->out.Append("\n");
-		}
 
+		params->out.Replace("\r\n", "\n");
 		params->out.Replace("\r\r", "");
 
 		if (globals.debuglog)

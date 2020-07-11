@@ -61,39 +61,52 @@ struct CSkypeProto;
 extern char g_szMirVer[];
 extern HANDLE g_hCallEvent;
 
-#define SKYPE_ENDPOINTS_HOST "client-s.gateway.messenger.live.com"
-
-struct TRInfo
-{
-	std::string socketIo,
-		connId,
-		st,
-		se,
-		instance,
-		ccid,
-		sessId,
-		sig,
-		url;
-	time_t lastRegistrationTime;
-};
-
 struct MessageId
 {
 	ULONGLONG id;
 	HANDLE handle;
 };
 
+struct CMPlugin : public ACCPROTOPLUGIN<CSkypeProto>
+{
+	CMPlugin();
+
+	CMStringA szDefaultServer;
+
+	int Load() override;
+	int Unload() override;
+};
 
 #include "version.h"
 #include "resource.h"
 #include "skype_menus.h"
 #include "skype_dialogs.h"
 #include "skype_options.h"
-#include "skype_trouter.h"
 #include "skype_utils.h"
 #include "skype_db.h"
-#include "http_request.h"
 #include "skype_proto.h"
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+#define SKYPEWEB_CLIENTINFO_NAME "swx-skype.com"
+#define SKYPEWEB_CLIENTINFO_VERSION "908/1.85.0.29"
+
+enum SkypeHost
+{
+	HOST_API,
+	HOST_CONTACTS,
+	HOST_DEFAULT,
+	HOST_GRAPH,
+	HOST_LOGIN,
+	HOST_OTHER
+};
+
+struct AsyncHttpRequest : public MTHttpRequest<CSkypeProto>
+{
+	SkypeHost m_host;
+
+	AsyncHttpRequest(int type, SkypeHost host, LPCSTR url = nullptr, MTHttpRequestHandler pFunc = nullptr);
+};
 
 #include "requests/avatars.h"
 #include "requests/capabilities.h"
@@ -104,70 +117,12 @@ struct MessageId
 #include "requests/history.h"
 #include "requests/login.h"
 #include "requests/messages.h"
-#include "requests/mslogin.h"
 #include "requests/oauth.h"
 #include "requests/poll.h"
 #include "requests/profile.h"
 #include "requests/search.h"
 #include "requests/status.h"
 #include "requests/subscriptions.h"
-#include "requests/trouter.h"
-#include "request_queue.h"
-
-void SkypeHttpResponse(const NETLIBHTTPREQUEST *response, void *arg);
-
-class SkypeResponseDelegateBase
-{
-protected:
-	CSkypeProto *proto;
-public:
-	SkypeResponseDelegateBase(CSkypeProto *ppro) : proto(ppro) {}
-	virtual void Invoke(const NETLIBHTTPREQUEST *) = 0;
-	virtual ~SkypeResponseDelegateBase(){};
-};
-
-class SkypeResponseDelegate : public SkypeResponseDelegateBase
-{
-	SkypeResponseCallback pfnResponseCallback;
-public:
-	SkypeResponseDelegate(CSkypeProto *ppro, SkypeResponseCallback callback) : SkypeResponseDelegateBase(ppro), pfnResponseCallback(callback) {}
-
-	virtual void Invoke(const NETLIBHTTPREQUEST *response) override
-	{
-		(proto->*(pfnResponseCallback))(response);
-	}
-};
-
-class SkypeResponseDelegateWithArg : public SkypeResponseDelegateBase
-{
-	SkypeResponseWithArgCallback pfnResponseCallback;
-	void *arg;
-public:
-	SkypeResponseDelegateWithArg(CSkypeProto *ppro, SkypeResponseWithArgCallback callback, void *p) :
-		SkypeResponseDelegateBase(ppro),
-		pfnResponseCallback(callback),
-		arg(p)
-	{}
-
-	virtual void Invoke(const NETLIBHTTPREQUEST *response) override
-	{
-		(proto->*(pfnResponseCallback))(response, arg);
-	}
-};
-
-template <typename F>
-class SkypeResponseDelegateLambda : public SkypeResponseDelegateBase
-{
-	F lCallback;
-public:
-	SkypeResponseDelegateLambda(CSkypeProto *ppro, F &callback) : SkypeResponseDelegateBase(ppro), lCallback(callback) {}
-
-	virtual void Invoke(const NETLIBHTTPREQUEST *response) override
-	{
-		lCallback(response);
-	}
-};
-
 
 #define MODULE "Skype"
 

@@ -58,13 +58,16 @@ static int GetStatusModeOrdering(int statusMode)
 
 DWORD CompareContacts2_getLMTime(MCONTACT hContact)
 {
-	MEVENT hDbEvent = db_event_last(hContact);
-	while (hDbEvent) {
+	DWORD ret = g_plugin.getDword(hContact, "mf_lastmsg");
+	if (ret != 0)
+		return ret;
+
+	DB::ECPTR pCursor(DB::EventsRev(hContact));
+	while (MEVENT hDbEvent = pCursor.FetchNext()) {
 		DBEVENTINFO dbei = {};
 		db_event_get(hDbEvent, &dbei);
-		if (dbei.eventType == EVENTTYPE_MESSAGE && !(dbei.flags & DBEF_SENT))
+		if ((dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_FILE) && !(dbei.flags & DBEF_SENT))
 			return dbei.timestamp;
-		hDbEvent = db_event_prev(hContact, hDbEvent);
 	}
 	return 0;
 }
@@ -119,7 +122,12 @@ int cliCompareContacts(const ClcContact *contact1, const ClcContact *contact2)
 			break;
 
 		case SORTBY_LASTMSG: // last message
-			r = (int)CompareContacts2_getLMTime(contact2->hContact) - (int)CompareContacts2_getLMTime(contact1->hContact);
+			if (c1->dwLastMsgTime == -1) c1->dwLastMsgTime = CompareContacts2_getLMTime(contact1->hContact);
+			if (c2->dwLastMsgTime == -1) c2->dwLastMsgTime = CompareContacts2_getLMTime(contact2->hContact);
+			if (c1->dwLastMsgTime == c2->dwLastMsgTime)
+				continue;
+
+			r = (c1->dwLastMsgTime < c2->dwLastMsgTime) ? 1 : -1;  // reverse sort order
 			break;
 
 		case SORTBY_PROTO:

@@ -62,12 +62,15 @@ CIcqProto::CIcqProto(const char *aProtoName, const wchar_t *aUserName) :
 
 	// services
 	CreateProtoService(PS_CREATEACCMGRUI, &CIcqProto::CreateAccMgrUI);
+
 	CreateProtoService(PS_GETAVATARCAPS, &CIcqProto::GetAvatarCaps);
 	CreateProtoService(PS_GETAVATARINFO, &CIcqProto::GetAvatarInfo);
 	CreateProtoService(PS_GETMYAVATAR, &CIcqProto::GetAvatar);
+	CreateProtoService(PS_SETMYAVATAR, &CIcqProto::SetAvatar);
+
+	CreateProtoService(PS_MENU_LOADHISTORY, &CIcqProto::OnMenuLoadHistory);
 	CreateProtoService(PS_GETUNREADEMAILCOUNT, &CIcqProto::GetEmailCount);
 	CreateProtoService(PS_GOTO_INBOX, &CIcqProto::GotoInbox);
-	CreateProtoService(PS_SETMYAVATAR, &CIcqProto::SetAvatar);
 
 	// events
 	HookProtoEvent(ME_CLIST_GROUPCHANGE, &CIcqProto::OnGroupChange);
@@ -75,6 +78,13 @@ CIcqProto::CIcqProto(const char *aProtoName, const wchar_t *aUserName) :
 	HookProtoEvent(ME_GC_EVENT, &CIcqProto::GroupchatEventHook);
 	HookProtoEvent(ME_GC_BUILDMENU, &CIcqProto::GroupchatMenuHook);
 	HookProtoEvent(ME_OPT_INITIALISE, &CIcqProto::OnOptionsInit);
+
+	// group chats
+	GCREGISTER gcr = {};
+	gcr.dwFlags = GC_TYPNOTIF | GC_CHANMGR;
+	gcr.ptszDispName = m_tszUserName;
+	gcr.pszModule = m_szModuleName;
+	Chat_Register(&gcr);
 
 	// netlib handle
 	CMStringW descr(FORMAT, TranslateT("%s server connection"), m_tszUserName);
@@ -119,21 +129,6 @@ CIcqProto::~CIcqProto()
 
 void CIcqProto::OnModulesLoaded()
 {
-	GCREGISTER gcr = {};
-	gcr.dwFlags = GC_TYPNOTIF | GC_CHANMGR;
-	gcr.ptszDispName = m_tszUserName;
-	gcr.pszModule = m_szModuleName;
-	Chat_Register(&gcr);
-
-	CMenuItem mi(&g_plugin);
-	SET_UID(mi, 0xffe2c8fc, 0x9c4d, 0x4faf, 0xa2, 0x34, 0x3d, 0x19, 0x43, 0x0d, 0x31, 0x04);
-	mi.pszService = "/LoadHistory";
-	mi.name.a = LPGEN("Load server history");
-	mi.position = -200001004;
-	mi.hIcolibItem = Skin_GetIconHandle(SKINICON_OTHER_HISTORY);
-	Menu_AddContactMenuItem(&mi, m_szModuleName);
-	CreateProtoService(mi.pszService, &CIcqProto::OnMenuLoadHistory);
-
 	HookProtoEvent(ME_USERINFO_INITIALISE, &CIcqProto::OnUserInfoInit);
 }
 
@@ -150,6 +145,11 @@ void CIcqProto::OnContactDeleted(MCONTACT hContact)
 
 	Push(new AsyncHttpRequest(CONN_MAIN, REQUEST_GET, ICQ_API_SERVER "/buddylist/removeBuddy")
 		<< AIMSID(this) << WCHAR_PARAM("buddy", szId) << INT_PARAM("allGroups", 1));
+}
+
+void CIcqProto::OnEventEdited(MCONTACT, MEVENT)
+{
+
 }
 
 INT_PTR CIcqProto::OnMenuLoadHistory(WPARAM hContact, LPARAM)

@@ -13,7 +13,7 @@
 
 #pragma once
 #ifdef MDBX_CONFIG_H
-#include "../config.h"
+#include MDBX_CONFIG_H
 #endif
 
 /* *INDENT-OFF* */
@@ -207,10 +207,13 @@ typedef uint32_t pgno_t;
 #define MAX_PAGENO UINT32_C(0x7FFFffff)
 #define MIN_PAGENO NUM_METAS
 
+#define SAFE64_INVALID_THRESHOLD UINT64_C(0xffffFFFF00000000)
+
 /* A transaction ID. */
 typedef uint64_t txnid_t;
 #define PRIaTXN PRIi64
 #define MIN_TXNID UINT64_C(1)
+#define MAX_TXNID (SAFE64_INVALID_THRESHOLD - 1)
 #define INVALID_TXNID UINT64_MAX
 /* LY: for testing non-atomic 64-bit txnid on 32-bit arches.
  * #define MDBX_TXNID_STEP (UINT32_MAX / 3) */
@@ -250,8 +253,6 @@ typedef union mdbx_safe64 {
 #endif /* __BYTE_ORDER__ */
   };
 } mdbx_safe64_t;
-
-#define SAFE64_INVALID_THRESHOLD UINT64_C(0xffffFFFF00000000)
 
 /* Information about a single database in the environment. */
 typedef struct MDBX_db {
@@ -646,9 +647,16 @@ typedef MDBX_DP *MDBX_DPL;
 #define MDBX_PNL_GRANULATE 1024
 #define MDBX_PNL_INITIAL                                                       \
   (MDBX_PNL_GRANULATE - 2 - MDBX_ASSUME_MALLOC_OVERHEAD / sizeof(pgno_t))
+
+#if MDBX_HUGE_TRANSACTIONS
+#define MDBX_PNL_MAX                                                           \
+  ((1u << 26) - 2 - MDBX_ASSUME_MALLOC_OVERHEAD / sizeof(pgno_t))
+#define MDBX_DPL_TXNFULL (MDBX_PNL_MAX / 2)
+#else
 #define MDBX_PNL_MAX                                                           \
   ((1u << 24) - 2 - MDBX_ASSUME_MALLOC_OVERHEAD / sizeof(pgno_t))
 #define MDBX_DPL_TXNFULL (MDBX_PNL_MAX / 4)
+#endif /* MDBX_HUGE_TRANSACTIONS */
 
 #define MDBX_TXL_GRANULATE 32
 #define MDBX_TXL_INITIAL                                                       \
@@ -681,9 +689,12 @@ typedef MDBX_DP *MDBX_DPL;
  * The information here is mostly static/read-only. There is
  * only a single copy of this record in the environment. */
 typedef struct MDBX_dbx {
-  MDBX_val md_name;       /* name of the database */
-  MDBX_cmp_func *md_cmp;  /* function for comparing keys */
-  MDBX_cmp_func *md_dcmp; /* function for comparing data items */
+  MDBX_val md_name;                /* name of the database */
+  MDBX_cmp_func *md_cmp;           /* function for comparing keys */
+  MDBX_cmp_func *md_dcmp;          /* function for comparing data items */
+  size_t md_klen_min, md_klen_max; /* min/max key length for the database */
+  size_t md_vlen_min,
+      md_vlen_max; /* min/max value/data length for the database */
 } MDBX_dbx;
 
 /* A database transaction.
@@ -705,6 +716,9 @@ struct MDBX_txn {
 #define MDBX_TXN_BEGIN_FLAGS                                                   \
   (MDBX_NOMETASYNC | MDBX_SAFE_NOSYNC | MDBX_MAPASYNC | MDBX_RDONLY |          \
    MDBX_TRYTXN)
+  /* Additional flag for mdbx_sync_locked() */
+#define MDBX_SHRINK_ALLOWED UINT32_C(0x40000000)
+
   /* internal txn flags */
 #define MDBX_TXN_FINISHED 0x01  /* txn is finished or never began */
 #define MDBX_TXN_ERROR 0x02     /* txn is unusable after an error */
@@ -714,6 +728,16 @@ struct MDBX_txn {
   /* most operations on the txn are currently illegal */
 #define MDBX_TXN_BLOCKED                                                       \
   (MDBX_TXN_FINISHED | MDBX_TXN_ERROR | MDBX_TXN_HAS_CHILD)
+
+#define TXN_FLAGS                                                              \
+  (MDBX_TXN_FINISHED | MDBX_TXN_ERROR | MDBX_TXN_DIRTY | MDBX_TXN_SPILLS |     \
+   MDBX_TXN_HAS_CHILD)
+
+#if (TXN_FLAGS & MDBX_TXN_BEGIN_FLAGS) ||                                      \
+    ((MDBX_TXN_BEGIN_FLAGS | TXN_FLAGS) & MDBX_SHRINK_ALLOWED)
+#error "Opps, some flags overlapped or wrong"
+#endif
+
   unsigned mt_flags;
   /* The ID of this transaction. IDs are integers incrementing from 1.
    * Only committed write transactions increment the ID. If a transaction
@@ -726,20 +750,20 @@ struct MDBX_txn {
   MDBX_db *mt_dbs;
   /* Array of sequence numbers for each DB handle */
   unsigned *mt_dbiseqs;
-
-  /* Transaction DB Flags */
-#define DB_DIRTY MDBX_TBL_DIRTY /* DB was written in this txn */
-#define DB_STALE MDBX_TBL_STALE /* Named-DB record is older than txnID */
-#define DB_FRESH MDBX_TBL_FRESH /* Named-DB handle opened in this txn */
-#define DB_CREAT MDBX_TBL_CREAT /* Named-DB handle created in this txn */
-#define DB_VALID 0x10           /* DB handle is valid, see also MDBX_VALID */
-#define DB_USRVALID 0x20        /* As DB_VALID, but not set for FREE_DBI */
-#define DB_DUPDATA 0x40         /* DB is MDBX_DUPSORT data */
-#define DB_AUDITED 0x80         /* Internal flag for accounting during audit */
   /* In write txns, array of cursors for each DB */
   MDBX_cursor **mt_cursors;
+
+  /* Transaction DBI Flags */
+#define DBI_DIRTY MDBX_DBI_DIRTY /* DB was written in this txn */
+#define DBI_STALE MDBX_DBI_STALE /* Named-DB record is older than txnID */
+#define DBI_FRESH MDBX_DBI_FRESH /* Named-DB handle opened in this txn */
+#define DBI_CREAT MDBX_DBI_CREAT /* Named-DB handle created in this txn */
+#define DBI_VALID 0x10           /* DB handle is valid, see also DB_VALID */
+#define DBI_USRVALID 0x20        /* As DB_VALID, but not set for FREE_DBI */
+#define DBI_DUPDATA 0x40         /* DB is MDBX_DUPSORT data */
+#define DBI_AUDITED 0x80         /* Internal flag for accounting during audit */
   /* Array of flags for each DB */
-  uint8_t *mt_dbflags;
+  uint8_t *mt_dbistate;
   /* Number of DB records in use, or 0 when the txn is finished.
    * This number only ever increments until the txn finishes; we
    * don't decrement it when individual DB handles are closed. */
@@ -822,18 +846,26 @@ struct MDBX_cursor {
   MDBX_db *mc_db;
   /* The database auxiliary record for this cursor */
   MDBX_dbx *mc_dbx;
-  /* The mt_dbflag for this database */
-  uint8_t *mc_dbflag;
-  uint16_t mc_snum;               /* number of pushed pages */
-  uint16_t mc_top;                /* index of top page, normally mc_snum-1 */
-                                  /* Cursor state flags. */
-#define C_INITIALIZED 0x01        /* cursor has been initialized and is valid */
-#define C_EOF 0x02                /* No more data */
-#define C_SUB 0x04                /* Cursor is a sub-cursor */
-#define C_DEL 0x08                /* last op was a cursor_del */
-#define C_UNTRACK 0x10            /* Un-track cursor when closing */
-#define C_RECLAIMING 0x20         /* GC lookup is prohibited */
-#define C_GCFREEZE 0x40           /* reclaimed_pglist must not be updated */
+  /* The mt_dbistate for this database */
+  uint8_t *mc_dbistate;
+  unsigned mc_snum; /* number of pushed pages */
+  unsigned mc_top;  /* index of top page, normally mc_snum-1 */
+
+  /* Cursor state flags. */
+#define C_INITIALIZED 0x01 /* cursor has been initialized and is valid */
+#define C_EOF 0x02         /* No more data */
+#define C_SUB 0x04         /* Cursor is a sub-cursor */
+#define C_DEL 0x08         /* last op was a cursor_del */
+#define C_UNTRACK 0x10     /* Un-track cursor when closing */
+#define C_RECLAIMING 0x20  /* GC lookup is prohibited */
+#define C_GCFREEZE 0x40    /* reclaimed_pglist must not be updated */
+
+  /* Cursor checing flags. */
+#define C_COPYING 0x100  /* skip key-value length check (copying simplify) */
+#define C_UPDATING 0x200 /* update/rebalance pending */
+#define C_RETIRING 0x400 /* refs to child pages may be invalid */
+#define C_SKIPORD 0x800  /* don't check keys ordering */
+
   unsigned mc_flags;              /* see mdbx_cursor */
   MDBX_page *mc_pg[CURSOR_STACK]; /* stack of pushed pages */
   indx_t mc_ki[CURSOR_STACK];     /* stack of page indices */
@@ -850,8 +882,8 @@ typedef struct MDBX_xcursor {
   MDBX_db mx_db;
   /* The auxiliary DB record for this Dup DB */
   MDBX_dbx mx_dbx;
-  /* The mt_dbflag for this Dup DB */
-  uint8_t mx_dbflag;
+  /* The mt_dbistate for this Dup DB */
+  uint8_t mx_dbistate;
 } MDBX_xcursor;
 
 typedef struct MDBX_cursor_couple {
@@ -865,12 +897,11 @@ struct MDBX_env {
   uint32_t me_signature;
   /* Failed to update the meta page. Probably an I/O error. */
 #define MDBX_FATAL_ERROR UINT32_C(0x80000000)
-  /* Additional flag for mdbx_sync_locked() */
-#define MDBX_SHRINK_ALLOWED UINT32_C(0x40000000)
   /* Some fields are initialized. */
 #define MDBX_ENV_ACTIVE UINT32_C(0x20000000)
   /* me_txkey is set */
 #define MDBX_ENV_TXKEY UINT32_C(0x10000000)
+#define ENV_INTERNAL_FLAGS (MDBX_FATAL_ERROR | MDBX_ENV_ACTIVE | MDBX_ENV_TXKEY)
   uint32_t me_flags;
   mdbx_mmap_t me_dxb_mmap; /*  The main data file */
 #define me_map me_dxb_mmap.dxb
@@ -913,7 +944,7 @@ struct MDBX_env {
   MDBX_page *me_dpages;        /* list of malloc'd blocks for re-use */
   /* PNL of pages that became unused in a write txn */
   MDBX_PNL me_retired_pages;
-  /* MDBX_DP of pages written during a write txn. Length MDBX_DPL_TXNFULL. */
+  /* MDBX_DP of pages written during a write txn. */
   MDBX_DPL me_dirtylist;
   /* Number of freelist items that can fit in a single overflow page */
   unsigned me_maxgc_ov1page;
@@ -1235,11 +1266,6 @@ MDBX_INTERNAL_FUNC void mdbx_rthc_thread_dtor(void *ptr);
  * Used in pages of type P_BRANCH and P_LEAF without P_LEAF2.
  * We guarantee 2-byte alignment for 'MDBX_node's.
  *
- * mn_lo and mn_hi are used for data size on leaf nodes, and for child
- * pgno on branch nodes.  On 64 bit platforms, mn_flags is also used
- * for pgno.  (Branch nodes have no flags).  Lo and hi are in host byte
- * order in case some accesses can be optimized to 32-bit word access.
- *
  * Leaf node flags describe node contents.  F_BIGDATA says the node's
  * data part is the page number of an overflow page with actual data.
  * F_DUPDATA and F_SUBDATA can be combined giving duplicate data in
@@ -1247,9 +1273,6 @@ MDBX_INTERNAL_FUNC void mdbx_rthc_thread_dtor(void *ptr);
 typedef struct MDBX_node {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   union {
-    struct {
-      uint16_t mn_lo, mn_hi; /* part of data size or pgno */
-    };
     uint32_t mn_dsize;
     uint32_t mn_pgno32;
   };
@@ -1263,9 +1286,6 @@ typedef struct MDBX_node {
   union {
     uint32_t mn_pgno32;
     uint32_t mn_dsize;
-    struct {
-      uint16_t mn_hi, mn_lo; /* part of data size or pgno */
-    };
   };
 #endif /* __BYTE_ORDER__ */
 
@@ -1279,12 +1299,22 @@ typedef struct MDBX_node {
   uint8_t mn_data[/* C99 */]; /* key and data are appended here */
 } MDBX_node;
 
-#define MDBX_VALID 0x8000 /* DB handle is valid, for me_dbflags */
-#define PERSISTENT_FLAGS (0xffff & ~(MDBX_VALID))
-/* mdbx_dbi_open() flags */
-#define VALID_FLAGS                                                            \
+#define DB_PERSISTENT_FLAGS                                                    \
   (MDBX_REVERSEKEY | MDBX_DUPSORT | MDBX_INTEGERKEY | MDBX_DUPFIXED |          \
-   MDBX_INTEGERDUP | MDBX_REVERSEDUP | MDBX_CREATE)
+   MDBX_INTEGERDUP | MDBX_REVERSEDUP)
+
+/* mdbx_dbi_open() flags */
+#define DB_USABLE_FLAGS (DB_PERSISTENT_FLAGS | MDBX_CREATE | MDBX_ACCEDE)
+
+#define DB_VALID 0x8000 /* DB handle is valid, for me_dbflags */
+#define DB_INTERNAL_FLAGS DB_VALID
+
+#if DB_INTERNAL_FLAGS & DB_USABLE_FLAGS
+#error "Opps, some flags overlapped or wrong"
+#endif
+#if DB_PERSISTENT_FLAGS & ~DB_USABLE_FLAGS
+#error "Opps, some flags overlapped or wrong"
+#endif
 
 /* max number of pages to commit in one writev() call */
 #define MDBX_COMMIT_PAGES 64

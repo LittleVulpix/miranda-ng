@@ -133,7 +133,7 @@ static int ackevent(WPARAM, LPARAM lParam)
 		if (item != nullptr && item->hwndErrorDlg == nullptr) {
 			if (pSender != nullptr) {
 				pSender->StopMessageSending();
-				(new CErrorDlg((wchar_t *)pAck->lParam, pSender, item))->Create();
+				pSender->ShowError((wchar_t *)pAck->lParam, item);
 			}
 			else RemoveSendQueueItem(item);
 		}
@@ -149,14 +149,13 @@ static int ackevent(WPARAM, LPARAM lParam)
 	dbei.timestamp = time(0);
 	dbei.cbBlob = (int)mir_strlen(item->sendBuffer) + 1;
 	dbei.pBlob = (PBYTE)item->sendBuffer;
+	dbei.szId = (char *)pAck->lParam;
 
 	MessageWindowEvent evt = { item->hSendId, hContact, &dbei };
 	NotifyEventHooks(g_chatApi.hevPreCreate, 0, (LPARAM)&evt);
 
 	item->sendBuffer = (char *)dbei.pBlob;
-	MEVENT hNewEvent = db_event_add(hContact, &dbei);
-	if (hNewEvent && pAck->lParam)
-		db_event_setId(dbei.szModule, hNewEvent, (char *)pAck->lParam);
+	db_event_add(hContact, &dbei);
 
 	if (item->hwndErrorDlg != nullptr)
 		DestroyWindow(item->hwndErrorDlg);

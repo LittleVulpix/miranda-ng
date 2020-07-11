@@ -50,11 +50,11 @@ struct JabberPasswordDlgParam
 {
 	CJabberProto *pro;
 
-	BOOL   saveOnlinePassword;
-	WORD   dlgResult;
-	wchar_t  onlinePassword[128];
-	HANDLE hEventPasswdDlg;
-	char  *pszJid;
+	BOOL    saveOnlinePassword;
+	WORD    dlgResult;
+	wchar_t onlinePassword[128];
+	HANDLE  hEventPasswdDlg;
+	char   *pszJid;
 };
 
 static INT_PTR CALLBACK JabberPasswordDlgProc(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -328,7 +328,7 @@ LBL_FatalError:
 		// Multiple thread allowed, although not possible :)
 		// thinking again.. multiple thread should not be allowed
 		info.reg_done = false;
-		SendMessage(info.conn.reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 25, (LPARAM)TranslateT("Connecting..."));
+		info.conn.SetProgress(25, TranslateT("Connecting..."));
 		iqIdRegGetReg = -1;
 		iqIdRegSetReg = -1;
 	}
@@ -337,7 +337,7 @@ LBL_FatalError:
 	if ((info.buffer = (char*)mir_alloc(jabberNetworkBufferSize + 1)) == nullptr) {	// +1 is for '\0' when debug logging this buffer
 		debugLogA("Cannot allocate network buffer, thread ended");
 		if (info.bIsReg)
-			SendMessage(info.conn.reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 100, (LPARAM)TranslateT("Error: Not enough memory"));
+			info.conn.SetProgress(100, TranslateT("Error: Not enough memory"));
 		else
 			ProtoBroadcastAck(0, ACKTYPE_LOGIN, ACKRESULT_FAILED, nullptr, LOGINERR_NONETWORK);
 
@@ -361,7 +361,7 @@ LBL_FatalError:
 			if (m_ThreadInfo == &info)
 				ProtoBroadcastAck(0, ACKTYPE_LOGIN, ACKRESULT_FAILED, nullptr, LOGINERR_NONETWORK);
 		}
-		else SendMessage(info.conn.reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 100, (LPARAM)TranslateT("Error: Cannot connect to the server"));
+		else info.conn.SetProgress(100, TranslateT("Error: Cannot connect to the server"));
 
 		debugLogA("Thread ended, connection failed");
 		goto LBL_FatalError;
@@ -375,7 +375,7 @@ LBL_FatalError:
 			if (!info.bIsReg)
 				ProtoBroadcastAck(0, ACKTYPE_LOGIN, ACKRESULT_FAILED, nullptr, LOGINERR_NONETWORK);
 			else
-				SendMessage(info.conn.reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 100, (LPARAM)TranslateT("Error: Cannot connect to the server"));
+				info.conn.SetProgress(100, TranslateT("Error: Cannot connect to the server"));
 
 			info.close();
 			debugLogA("Thread ended, SSL connection failed");
@@ -533,7 +533,7 @@ recvRest:
 		}
 		else {
 			if (!info.reg_done)
-				SendMessage(info.conn.reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 100, (LPARAM)TranslateT("Error: Connection lost"));
+				info.conn.SetProgress(100, TranslateT("Error: Connection lost"));
 			g_pRegInfo = nullptr;
 		}
 	}
@@ -554,7 +554,7 @@ void CJabberProto::PerformRegistration(ThreadData *info)
 	iqIdRegGetReg = SerialNext();
 	info->send(XmlNodeIq("get", iqIdRegGetReg, nullptr) << XQUERY(JABBER_FEAT_REGISTER));
 
-	SendMessage(info->conn.reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 50, (LPARAM)TranslateT("Requesting registration instruction..."));
+	info->conn.SetProgress(50, TranslateT("Requesting registration instruction..."));
 }
 
 void CJabberProto::PerformIqAuth(ThreadData *info)
@@ -627,9 +627,32 @@ void CJabberProto::PerformAuthentication(ThreadData *info)
 		}
 	}
 
-	if (auth == nullptr && m_isScramAvailable) {
-		m_isScramAvailable = false;
-		auth = new TScramAuth(info);
+	if (auth == nullptr && m_isScramSha256PlusAvailable) {
+		m_isScramSha256PlusAvailable = false;
+
+		int len = 0;
+		void *pBuf = Netlib_GetTlsUnique(info->s, len);
+		if (pBuf)
+			auth = new TScramAuth(info, EVP_sha256(), pBuf, len);
+	}
+
+	if (auth == nullptr && m_isScramSha256Available) {
+		m_isScramSha256Available = false;
+		auth = new TScramAuth(info, EVP_sha256());
+	}
+
+	if (auth == nullptr && m_isScramSha1PlusAvailable) {
+		m_isScramSha1PlusAvailable = false;
+
+		int len = 0;
+		void *pBuf = Netlib_GetTlsUnique(info->s, len);
+		if (pBuf)
+			auth = new TScramAuth(info, EVP_sha1(), pBuf, len);
+	}
+
+	if (auth == nullptr && m_isScramSha1Available) {
+		m_isScramSha1Available = false;
+		auth = new TScramAuth(info, EVP_sha1());
 	}
 
 	if (auth == nullptr && m_isMd5Available) {
@@ -702,26 +725,32 @@ void CJabberProto::OnProcessFeatures(const TiXmlElement *node, ThreadData *info)
 		}
 
 		if (!mir_strcmp(pszName, "mechanisms")) {
-			m_isPlainAvailable = false;
-			m_isPlainOldAvailable = false;
-			m_isMd5Available = false;
-			m_isScramAvailable = false;
-			m_isNtlmAvailable = false;
-			m_isSpnegoAvailable = false;
-			m_isKerberosAvailable = false;
-			mir_free(m_gssapiHostName); m_gssapiHostName = nullptr;
+			m_dwAuthMechs = 0;
+			replaceStr(m_gssapiHostName, nullptr);
 
 			areMechanismsDefined = true;
-			//JabberLog("%d mechanisms\n",n->numChild);
+
 			for (auto *c : TiXmlEnum(n)) {
 				if (!mir_strcmp(c->Name(), "mechanism")) {
 					const char *szMechanism = c->GetText();
-					if (!mir_strcmp(szMechanism, "PLAIN"))        m_isPlainOldAvailable = m_isPlainAvailable = true;
-					else if (!mir_strcmp(szMechanism, "DIGEST-MD5"))   m_isMd5Available = true;
-					else if (!mir_strcmp(szMechanism, "SCRAM-SHA-1"))  m_isScramAvailable = true;
-					else if (!mir_strcmp(szMechanism, "NTLM"))         m_isNtlmAvailable = true;
-					else if (!mir_strcmp(szMechanism, "GSS-SPNEGO"))   m_isSpnegoAvailable = true;
-					else if (!mir_strcmp(szMechanism, "GSSAPI"))       m_isKerberosAvailable = true;
+					if (!mir_strcmp(szMechanism, "PLAIN"))
+						m_isPlainOldAvailable = m_isPlainAvailable = true;
+					else if (!mir_strcmp(szMechanism, "DIGEST-MD5"))
+						m_isMd5Available = true;
+					else if (!mir_strcmp(szMechanism, "SCRAM-SHA-1"))
+						m_isScramSha1Available = true;
+					else if (!mir_strcmp(szMechanism, "SCRAM-SHA-1-PLUS"))
+						m_isScramSha1PlusAvailable = true;
+					else if (!mir_strcmp(szMechanism, "SCRAM-SHA-256"))
+						m_isScramSha256Available = true;
+					else if (!mir_strcmp(szMechanism, "SCRAM-SHA-256-PLUS"))
+						m_isScramSha256PlusAvailable = true;
+					else if (!mir_strcmp(szMechanism, "NTLM"))
+						m_isNtlmAvailable = true;
+					else if (!mir_strcmp(szMechanism, "GSS-SPNEGO"))
+						m_isSpnegoAvailable = true;
+					else if (!mir_strcmp(szMechanism, "GSSAPI"))
+						m_isKerberosAvailable = true;
 				}
 				else if (!mir_strcmp(c->Name(), "hostname")) {
 					const char *mech = XmlGetAttr(c, "mechanism");
@@ -730,9 +759,12 @@ void CJabberProto::OnProcessFeatures(const TiXmlElement *node, ThreadData *info)
 				}
 			}
 		}
-		else if (!mir_strcmp(pszName, "register")) isRegisterAvailable = true;
-		else if (!mir_strcmp(pszName, "auth")) m_isAuthAvailable = true;
-		else if (!mir_strcmp(pszName, "session")) m_isSessionAvailable = true;
+		else if (!mir_strcmp(pszName, "register"))
+			isRegisterAvailable = true;
+		else if (!mir_strcmp(pszName, "auth"))
+			m_isAuthAvailable = true;
+		else if (!mir_strcmp(pszName, "session"))
+			m_isSessionAvailable = true;
 		else if (m_bEnableStreamMgmt && !mir_strcmp(pszName, "sm"))
 			m_StrmMgmt.CheckStreamFeatures(n);
 		else if (!mir_strcmp(pszName, "csi") && n->Attribute("xmlns", JABBER_FEAT_CSI))
@@ -747,11 +779,11 @@ void CJabberProto::OnProcessFeatures(const TiXmlElement *node, ThreadData *info)
 		return;
 	}
 
-	if (m_bEnableStreamMgmt && m_StrmMgmt.IsResumeIdPresent()) //resume should be done here
+	// mechanisms are not defined.
+	if (m_bEnableStreamMgmt && m_StrmMgmt.IsResumeIdPresent()) // resume should be done here
 		m_StrmMgmt.CheckState();
 	else {
-		// mechanisms are not defined.
-		if (info->auth) { //We are already logged-in
+		if (info->auth) { // we are already logged-in
 			info->send(
 				XmlNodeIq(AddIQ(&CJabberProto::OnIqResultBind, JABBER_IQ_TYPE_SET))
 				<< XCHILDNS("bind", JABBER_FEAT_BIND)
@@ -759,12 +791,9 @@ void CJabberProto::OnProcessFeatures(const TiXmlElement *node, ThreadData *info)
 
 			if (m_isSessionAvailable)
 				info->bIsSessionAvailable = true;
-
-			return;
 		}
-
-		//mechanisms not available and we are not logged in
-		PerformIqAuth(info);
+		else // mechanisms are not available and we are not logged in
+			PerformIqAuth(info);
 	}
 }
 
@@ -1078,14 +1107,15 @@ void CJabberProto::OnProcessMessage(const TiXmlElement *node, ThreadData *info)
 		return;
 	}
 
+	time_t msgTime = 0;
+
 	// Handle carbons. The message MUST be coming from our bare JID.
 	const TiXmlElement *carbon = nullptr;
 	bool carbonSent = false; //2 cases: received or sent.
 	if (IsMyOwnJID(from)) {
 		carbon = XmlGetChildByTag(node, "received", "xmlns", JABBER_FEAT_CARBONS);
 		if (!carbon) {
-			carbon = XmlGetChildByTag(node, "sent", "xmlns", JABBER_FEAT_CARBONS);
-			if (carbon)
+			if (carbon = XmlGetChildByTag(node, "sent", "xmlns", JABBER_FEAT_CARBONS))
 				carbonSent = true;
 		}
 		if (carbon) {
@@ -1121,6 +1151,24 @@ void CJabberProto::OnProcessMessage(const TiXmlElement *node, ThreadData *info)
 				if (from == nullptr) {
 					debugLogA("no 'to' attribute in carbons, returning");
 					return;
+				}
+			}
+		}
+		else { // check for MAM response
+			if (auto *mamResult = XmlGetChildByTag(node, "result", "xmlns", JABBER_FEAT_MAM)) {
+				auto *xmlForwarded = XmlGetChildByTag(mamResult, "forwarded", "xmlns", JABBER_XMLNS_FORWARD);
+				if (auto *xmlMessage = XmlFirstChild(xmlForwarded, "message")) {
+					node = xmlMessage;
+					type = XmlGetAttr(node, "type");
+					from = XmlGetAttr(node, "from");
+					if (!mir_strcmpi(from, info->fullJID)) {
+						debugLogA("MAM: outgoing message from this machine (%s), ignored", from);
+						return;
+					}
+				}
+				if (auto *xmlDelay = XmlGetChildByTag(xmlForwarded, "delay", "xmlns", JABBER_FEAT_DELAY)) {
+					if (auto *ptszTimeStamp = XmlGetAttr(xmlDelay, "stamp"))
+						msgTime = JabberIsoToUnixTime(ptszTimeStamp);
 				}
 			}
 		}
@@ -1165,12 +1213,16 @@ void CJabberProto::OnProcessMessage(const TiXmlElement *node, ThreadData *info)
 	if (bodyNode != nullptr)
 		szMessage.Append(bodyNode->GetText());
 
+	// check MAM support
+	const char *szMsgId = nullptr;
+	if (auto *n = XmlGetChildByTag(node, "stanza-id", "xmlns", JABBER_FEAT_SID))
+		if (szMsgId = n->Attribute("id"))
+			setString("LastMamId", szMsgId);
+
 	// If message is from a stranger (not in roster), item is nullptr
 	JABBER_LIST_ITEM *item = ListGetItemPtr(LIST_ROSTER, from);
 	if (item == nullptr)
 		item = ListGetItemPtr(LIST_VCARD_TEMP, from);
-
-	time_t msgTime = 0;
 
 	// check chatstates availability
 	if (pFromResource && XmlGetChildByTag(node, "active", "xmlns", JABBER_FEAT_CHATSTATES))
@@ -1287,19 +1339,20 @@ void CJabberProto::OnProcessMessage(const TiXmlElement *node, ThreadData *info)
 				return;
 			}
 
-			// XEP-0027 is not strict enough, different clients have different implementations
-			// additional validation is required
-			char *prolog = "-----BEGIN PGP MESSAGE-----";
-			char *prolog_newline = "\r\n\r\n";
-			char *epilog = "\r\n-----END PGP MESSAGE-----\r\n";
+			if (carbon && carbonSent)
+				szMessage = TranslateU("Unable to decrypt a carbon copy of the encrypted outgoing message");
+			else {
+				// XEP-0027 is not strict enough, different clients have different implementations
+				// additional validation is required
 
-			CMStringA tempstring;
-			if (!strstr(ptszText, prolog))
-				tempstring.Format("%s%s%s%s", prolog, prolog_newline, ptszText, epilog);
-			else
-				tempstring = ptszText;
+				CMStringA tempstring;
+				if (!strstr(ptszText, PGP_PROLOG))
+					tempstring.Format("%s%s%s", PGP_PROLOG, ptszText, PGP_EPILOG);
+				else
+					tempstring = ptszText;
 
-			szMessage += tempstring;
+				szMessage += tempstring;
+			}
 		}
 		else if (!mir_strcmp(pszXmlns, JABBER_FEAT_DELAY) && msgTime == 0) {
 			const char *ptszTimeStamp = XmlGetAttr(xNode, "stamp");
@@ -1365,6 +1418,12 @@ void CJabberProto::OnProcessMessage(const TiXmlElement *node, ThreadData *info)
 		return;
 	}
 
+	// we ignore messages without server id either if MAM is enabled
+	if ((info->jabberServerCaps & JABBER_CAPS_MAM) && m_iMamMode != 0 && szMsgId == nullptr) {
+		debugLogA("MAM is enabled, but there's no stanza-id: ignoting a message");
+		return;
+	}
+
 	szMessage.Replace("\n", "\r\n");
 
 	if (item != nullptr) {
@@ -1398,11 +1457,11 @@ void CJabberProto::OnProcessMessage(const TiXmlElement *node, ThreadData *info)
 	}
 	recv.timestamp = (DWORD)msgTime;
 	recv.szMessage = szMessage.GetBuffer();
-	if (bSendMark) {
-		recv.szMsgId = idStr;
-		recv.lParam = (LPARAM)from;
-	}
-	ProtoChainRecvMsg(hContact, &recv);
+	recv.szMsgId = szMsgId;
+
+	MEVENT hDbEVent = (MEVENT)ProtoChainRecvMsg(hContact, &recv);
+	if (idStr)
+		m_arChatMarks.insert(new CChatMark(hDbEVent, idStr, from));
 }
 
 // XEP-0115: Entity Capabilities
@@ -1848,7 +1907,7 @@ void CJabberProto::OnProcessIq(const TiXmlElement *node)
 void CJabberProto::CancelRegConfig(CJabberFormDlg*, void*)
 {
 	if (g_pRegInfo)
-		SendMessage(g_pRegInfo->conn.reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 100, (LPARAM)TranslateT("Registration canceled"));
+		g_pRegInfo->conn.SetProgress(100, TranslateT("Registration canceled"));
 }
 
 void CJabberProto::SetRegConfig(CJabberFormDlg *pDlg, void *from)
@@ -1886,7 +1945,8 @@ void CJabberProto::OnProcessRegIq(const TiXmlElement *node, ThreadData *info)
 						g_pRegInfo = info;
 
 						auto *pDlg = new CJabberFormDlg(this, xNode, "Jabber register new user", &CJabberProto::SetRegConfig, mir_strdup(XmlGetAttr(node, "from")));
-						pDlg->SetParent(info->conn.reg_hwndDlg);
+						if (info->conn.pDlg)
+							pDlg->SetParent(((CDlgBase*)info->conn.pDlg)->GetHwnd());
 						pDlg->SetCancel(&CJabberProto::CancelRegConfig);
 						pDlg->Display();
 						return;
@@ -1906,18 +1966,18 @@ void CJabberProto::OnProcessRegIq(const TiXmlElement *node, ThreadData *info)
 			query << XCHILD("username", info->conn.username);
 			info->send(iq);
 
-			SendMessage(info->conn.reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 75, (LPARAM)TranslateT("Sending registration information..."));
+			info->conn.SetProgress(75, TranslateT("Sending registration information..."));
 		}
 		// RECVED: result of the registration process
 		// ACTION: account registration successful
 		else if (id == iqIdRegSetReg) {
 			info->send("</stream:stream>");
-			SendMessage(info->conn.reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 100, (LPARAM)TranslateT("Registration successful"));
+			info->conn.SetProgress(100, TranslateT("Registration successful"));
 			info->reg_done = true;
 		}
 	}
 	else if (!mir_strcmp(type, "error")) {
-		SendMessage(info->conn.reg_hwndDlg, WM_JABBER_REGDLG_UPDATE, 100, (LPARAM)JabberErrorMsg(node).c_str());
+		info->conn.SetProgress(100, JabberErrorMsg(node));
 		info->reg_done = true;
 		info->send("</stream:stream>");
 	}

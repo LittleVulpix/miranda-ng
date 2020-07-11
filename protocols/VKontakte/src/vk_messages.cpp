@@ -154,16 +154,6 @@ INT_PTR CVkProto::SvcMarkMessagesAsRead(WPARAM hContact, LPARAM)
 	return 0;
 }
 
-void CVkProto::MarkMessagesRead(const CMStringA &mids)
-{
-	debugLogA("CVkProto::MarkMessagesRead (mids)");
-	if (!IsOnline() || mids.IsEmpty())
-		return;
-
-	Push(new AsyncHttpRequest(this, REQUEST_GET, "/method/messages.markAsRead.json", true, &CVkProto::OnReceiveSmth, AsyncHttpRequest::rpLow)
-		<< CHAR_PARAM("message_ids", mids));
-}
-
 void CVkProto::MarkMessagesRead(const MCONTACT hContact)
 {
 	debugLogA("CVkProto::MarkMessagesRead (hContact)");
@@ -188,7 +178,7 @@ void CVkProto::RetrieveMessagesByIds(const CMStringA &mids)
 	if (!IsOnline() || mids.IsEmpty())
 		return;
 
-	Push(new AsyncHttpRequest(this, REQUEST_GET, "/method/execute.RetrieveMessagesByIds", true, &CVkProto::OnReceiveMessages, AsyncHttpRequest::rpHigh)
+	Push(new AsyncHttpRequest(this, REQUEST_GET, "/method/execute.RetrieveMessagesConversationByIds", true, &CVkProto::OnReceiveMessages, AsyncHttpRequest::rpHigh)
 		<< CHAR_PARAM("mids", mids)
 	);
 }
@@ -199,7 +189,7 @@ void CVkProto::RetrieveUnreadMessages()
 	if (!IsOnline())
 		return;
 
-	Push(new AsyncHttpRequest(this, REQUEST_GET, "/method/execute.RetrieveUnreadMessages", true, &CVkProto::OnReceiveDlgs, AsyncHttpRequest::rpHigh));
+	Push(new AsyncHttpRequest(this, REQUEST_GET, "/method/execute.RetrieveUnreadConversations", true, &CVkProto::OnReceiveDlgs, AsyncHttpRequest::rpHigh));
 }
 
 void CVkProto::OnReceiveMessages(NETLIBHTTPREQUEST *reply, AsyncHttpRequest *pReq)
@@ -222,63 +212,89 @@ void CVkProto::OnReceiveMessages(NETLIBHTTPREQUEST *reply, AsyncHttpRequest *pRe
 
 	debugLogA("CVkProto::OnReceiveMessages numMessages = %d", numMessages);
 
-	for (auto &jnMsg : jnMsgs) {
+	if (jnResponse["conv"]) {
+		const JSONNode& jnConversation = jnResponse["conv"]["items"];
+		for (auto& jnItem : jnConversation) {
+			const JSONNode& jnPeer = jnItem["peer"];
+			if (!jnPeer)
+				break;
+
+			CMStringW wszPeerType(jnPeer["type"].as_mstring());
+			int iUserId = jnPeer["id"].as_int();
+
+			if (wszPeerType == L"user" || wszPeerType == L"group") {
+				MCONTACT hContact = FindUser(iUserId, true);
+				setDword(hContact, "in_read", jnItem["in_read"].as_int());
+				setDword(hContact, "out_read", jnItem["out_read"].as_int());
+				if (m_vkOptions.iMarkMessageReadOn == MarkMsgReadOn::markOnReceive)
+					MarkMessagesRead(hContact);
+			}
+			else {
+				MCONTACT hContact = FindChat(iUserId % VK_CHAT_FLAG);
+				MarkMessagesRead(hContact);
+			}
+		}
+	}
+
+	for (auto& jnMsg : jnMsgs) {
 		if (!jnMsg) {
 			debugLogA("CVkProto::OnReceiveMessages pMsg == nullptr");
 			break;
 		}
 
 		UINT mid = jnMsg["id"].as_int();
-		CMStringW wszBody(jnMsg["body"].as_mstring());
+		CMStringW wszBody(jnMsg["text"].as_mstring());
 		UINT datetime = jnMsg["date"].as_int();
 		int isOut = jnMsg["out"].as_int();
-		int isRead = jnMsg["read_state"].as_int();
-		int uid = jnMsg["user_id"].as_int();
+		int uid = jnMsg["peer_id"].as_int();
 
 		MCONTACT hContact = 0;
-		int chat_id = jnMsg["chat_id"].as_int();
+
+		int chat_id = uid / VK_CHAT_FLAG ? uid % VK_CHAT_FLAG : 0;
 		if (chat_id == 0)
 			hContact = FindUser(uid, true);
 
 		char szMid[40];
 		_itoa(mid, szMid, 10);
-		if (m_vkOptions.iMarkMessageReadOn == MarkMsgReadOn::markOnReceive || chat_id != 0) {
-			if (!mids.IsEmpty())
-				mids.AppendChar(',');
-			mids.Append(szMid);
-		}
 
 		bool bUseServerReadFlag = m_vkOptions.bSyncReadMessageStatusFromServer ? true : !m_vkOptions.bMesAsUnread;
 
 		if (chat_id != 0) {
 			debugLogA("CVkProto::OnReceiveMessages chat_id != 0");
-			CMStringW action_chat = jnMsg["action"].as_mstring();
-			int action_mid = _wtoi(jnMsg["action_mid"].as_mstring());
+			CMStringW action_chat = jnMsg["action"]["type"].as_mstring();
+			int action_mid = _wtoi(jnMsg["action"]["member_id"].as_mstring());
 			if ((action_chat == L"chat_kick_user") && (action_mid == m_myUserId))
 				KickFromChat(chat_id, uid, jnMsg, jnFUsers);
 			else {
 				MCONTACT chatContact = FindChat(chat_id);
 				if (chatContact && getBool(chatContact, "kicked", true))
 					db_unset(chatContact, m_szModuleName, "kicked");
-				AppendChatMessage(chat_id, jnMsg, jnFUsers, false);
+				AppendChatConversationMessage(chat_id, jnMsg, jnFUsers, false);
 			}
 			continue;
 		}
 
 		const JSONNode& jnFwdMessages = jnMsg["fwd_messages"];
-		if (jnFwdMessages) {
+		if (jnFwdMessages && !jnFwdMessages.empty()) {
 			CMStringW wszFwdMessages = GetFwdMessages(jnFwdMessages, jnFUsers, m_vkOptions.BBCForAttachments());
 			if (!wszBody.IsEmpty())
 				wszFwdMessages = L"\n" + wszFwdMessages;
 			wszBody += wszFwdMessages;
 		}
 
+		const JSONNode& jnReplyMessages = jnMsg["reply_message"];
+		if (jnReplyMessages && !jnReplyMessages.empty()) {
+			CMStringW wszReplyMessages = GetFwdMessages(jnReplyMessages, jnFUsers, m_vkOptions.BBCForAttachments());
+			if (!wszBody.IsEmpty())
+				wszReplyMessages = L"\n" + wszReplyMessages;
+			wszBody += wszReplyMessages;
+		}
+
 		CMStringW wszBodyNoAttachments = wszBody;
 
-
 		CMStringW wszAttachmentDescr;
-		const JSONNode &jnAttachments = jnMsg["attachments"];
-		if (jnAttachments) {
+		const JSONNode& jnAttachments = jnMsg["attachments"];
+		if (jnAttachments && !jnAttachments.empty()) {
 			wszAttachmentDescr = GetAttachmentDescr(jnAttachments, m_vkOptions.BBCForAttachments());
 
 			if (wszAttachmentDescr == L"== FilterAudioMessages ==") {
@@ -292,9 +308,12 @@ void CVkProto::OnReceiveMessages(NETLIBHTTPREQUEST *reply, AsyncHttpRequest *pRe
 			wszBody += wszAttachmentDescr;
 		}
 
-		if (m_vkOptions.bAddMessageLinkToMesWAtt && (jnAttachments || jnFwdMessages))
+		if (m_vkOptions.bAddMessageLinkToMesWAtt && ((jnAttachments && !jnAttachments.empty()) || (jnFwdMessages && !jnFwdMessages.empty()) || (jnReplyMessages && !jnReplyMessages.empty())))
 			wszBody += SetBBCString(TranslateT("Message link"), m_vkOptions.BBCForAttachments(), vkbbcUrl,
 				CMStringW(FORMAT, L"https://vk.com/im?sel=%d&msgid=%d", uid, mid));
+
+		int iReadMsg = getDword(hContact, "in_read", 0);
+		int isRead = (mid <= iReadMsg);
 
 		time_t update_time = (time_t)jnMsg["update_time"].as_int();
 		bool bEdited = (update_time != 0);
@@ -313,7 +332,7 @@ void CVkProto::OnReceiveMessages(NETLIBHTTPREQUEST *reply, AsyncHttpRequest *pRe
 			CMStringW wszOldMsg;
 			if (GetMessageFromDb(mid, datetime, wszOldMsg))
 				wszBody += SetBBCString(TranslateT("\nOriginal message:\n"), m_vkOptions.BBCForAttachments(), vkbbcB) +
-					wszOldMsg;
+				wszOldMsg;
 		}
 
 		PROTORECVEVENT recv = {};
@@ -357,9 +376,6 @@ void CVkProto::OnReceiveMessages(NETLIBHTTPREQUEST *reply, AsyncHttpRequest *pRe
 			ProtoChainRecvMsg(hContact, &recv);
 		}
 	}
-
-	if (!mids.IsEmpty())
-		MarkMessagesRead(mids);
 }
 
 void CVkProto::OnReceiveDlgs(NETLIBHTTPREQUEST *reply, AsyncHttpRequest *pReq)
@@ -409,73 +425,84 @@ void CVkProto::OnReceiveDlgs(NETLIBHTTPREQUEST *reply, AsyncHttpRequest *pReq)
 
 	CMStringA szGroupIds;
 
-	for (auto &it : jnDlgs) {
+	for (auto& it : jnDlgs) {
 		if (!it)
 			break;
-		int numUnread = it["unread"].as_int();
-		const JSONNode &jnDlg = it["message"];
-		if (!jnDlg)
+
+		const JSONNode& jnConversation = it["conversation"];
+		const JSONNode& jnLastMessage = it["last_message"];
+
+		if (!jnConversation)
 			break;
 
-		int uid = 0;
+		int iUnreadCount = jnConversation["unread_count"].as_int();
+
+		const JSONNode& jnPeer = jnConversation["peer"];
+		if (!jnPeer)
+			break;
+
+		int iUserId = 0;
 		MCONTACT hContact(0);
+		CMStringW wszPeerType(jnPeer["type"].as_mstring());
 
-		int chatid = jnDlg["chat_id"].as_int();
-
-		if (!chatid) {
-			uid = jnDlg["user_id"].as_int();
-			int iSearchId = (uid < 0) ? 1000000000 - uid : uid;
+		if (wszPeerType == L"user" || wszPeerType == L"group") {
+			iUserId = jnPeer["id"].as_int();
+			int iSearchId = (wszPeerType == L"group") ?  (1000000000 - iUserId) : iUserId;
 			int iIndex = lufUsers.indexOf((HANDLE)iSearchId);
-			debugLogA("CVkProto::OnReceiveDlgs UserId = %d, iIndex = %d, numUnread = %d", uid, iIndex, numUnread);
 
-			if (m_vkOptions.bLoadOnlyFriends && numUnread == 0 && iIndex == -1)
+			debugLogA("CVkProto::OnReceiveDlgs UserId = %d, iIndex = %d, numUnread = %d", iUserId, iIndex, iUnreadCount);
+
+			if (m_vkOptions.bLoadOnlyFriends && iUnreadCount == 0 && iIndex == -1)
 				continue;
 
-			hContact = FindUser(uid, true);
-			debugLogA("CVkProto::OnReceiveDlgs add UserId = %d", uid);
+			hContact = FindUser(iUserId, true);
+			debugLogA("CVkProto::OnReceiveDlgs add UserId = %d", iUserId);
 
 			if (IsGroupUser(hContact))
-				szGroupIds.AppendFormat(szGroupIds.IsEmpty() ? "%d" : ",%d", -1 * uid);
+				szGroupIds.AppendFormat(szGroupIds.IsEmpty() ? "%d" : ",%d", -1 * iUserId);
+
+			setDword(hContact, "in_read", jnConversation["in_read"].as_int());
+			setDword(hContact, "out_read", jnConversation["out_read"].as_int());
 
 			if (g_bMessageState) {
-				bool isOut = jnDlg["out"].as_bool();
-				bool isRead = jnDlg["read_state"].as_bool();
+				bool bIsOut = jnLastMessage["out"].as_bool();
+				bool bIsRead = (jnLastMessage["id"].as_int() <= jnConversation["in_read"].as_int());
 
-				if (isRead && isOut)
+				if (bIsRead && bIsOut)
 					CallService(MS_MESSAGESTATE_UPDATE, hContact, MRD_TYPE_DELIVERED);
 			}
 		}
 
-		if (chatid) {
-			debugLogA("CVkProto::OnReceiveDlgs chatid = %d", chatid);
-			if (m_chats.find((CVkChatInfo*)&chatid) == nullptr)
-				AppendChat(chatid, jnDlg);
+		if (wszPeerType == L"chat") {
+			int iChatId = jnPeer["local_id"].as_int();
+			debugLogA("CVkProto::OnReceiveDlgs chatid = %d", iChatId);
+			if (m_chats.find((CVkChatInfo*)&iChatId) == nullptr)
+				AppendConversationChat(iChatId, it);
 		}
 		else if (m_vkOptions.iSyncHistoryMetod) {
-			int mid = jnDlg["id"].as_int();
+			int iMessageId = jnLastMessage["id"].as_int();
 			m_bNotifyForEndLoadingHistory = false;
 
-			if (getDword(hContact, "lastmsgid", -1) == -1 && numUnread && !getBool(hContact, "ActiveHistoryTask")) {
+			if (getDword(hContact, "lastmsgid", -1) == -1 && iUnreadCount && !getBool(hContact, "ActiveHistoryTask")) {
 				setByte(hContact, "ActiveHistoryTask", 1);
-				GetServerHistory(hContact, 0, numUnread, 0, 0, true);
+				GetServerHistory(hContact, 0, iUnreadCount, 0, 0, true);
 			}
 			else
-				GetHistoryDlg(hContact, mid);
+				GetHistoryDlg(hContact, iMessageId);
 
-			if (m_vkOptions.iMarkMessageReadOn == MarkMsgReadOn::markOnReceive && numUnread)
+			if (m_vkOptions.iMarkMessageReadOn == MarkMsgReadOn::markOnReceive && iUnreadCount)
 				MarkMessagesRead(hContact);
 		}
-		else if (numUnread && !getBool(hContact, "ActiveHistoryTask")) {
+		else if (iUnreadCount && !getBool(hContact, "ActiveHistoryTask")) {
 
 			m_bNotifyForEndLoadingHistory = false;
 			setByte(hContact, "ActiveHistoryTask", 1);
-			GetServerHistory(hContact, 0, numUnread, 0, 0, true);
+			GetServerHistory(hContact, 0, iUnreadCount, 0, 0, true);
 
 			if (m_vkOptions.iMarkMessageReadOn == MarkMsgReadOn::markOnReceive)
 				MarkMessagesRead(hContact);
 		}
 	}
-
 	lufUsers.destroy();
 	RetrieveUsersInfo();
 	RetrieveGroupInfo(szGroupIds);

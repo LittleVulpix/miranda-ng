@@ -196,6 +196,8 @@ protected:
 	INT_PTR DlgProc(UINT msg, WPARAM wParam, LPARAM lParam) override;
 
 	int  NotifyEvent(int code);
+	bool ProcessFileDrop(HDROP hDrop, MCONTACT hContact);
+	bool PasteFilesAsURL(HDROP hDrop);
 	bool ProcessHotkeys(int key, bool bShift, bool bCtrl, bool bAlt);
 	void RefreshButtonStatus(void);
 	void RunUserMenu(HWND hwndOwner, struct USERINFO *ui, const POINT &pt);

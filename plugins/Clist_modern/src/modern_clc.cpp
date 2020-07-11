@@ -153,17 +153,20 @@ static int clcHookSettingChanged(WPARAM hContact, LPARAM lParam)
 	return 0;
 }
 
-static int clcHookDbEventAdded(WPARAM hContact, LPARAM lParam)
+static int clcHookDbEventAdded(WPARAM hContact, LPARAM hDbEvent)
 {
 	g_CluiData.t_now = time(0);
-	if (hContact && lParam) {
+	if (hContact && hDbEvent) {
 		DBEVENTINFO dbei = {};
-		db_event_get(lParam, &dbei);
-		if (dbei.eventType == EVENTTYPE_MESSAGE && !(dbei.flags & DBEF_SENT)) {
+		db_event_get(hDbEvent, &dbei);
+		if ((dbei.eventType == EVENTTYPE_MESSAGE || dbei.eventType == EVENTTYPE_FILE) && !(dbei.flags & DBEF_SENT)) {
 			g_plugin.setDword(hContact, "mf_lastmsg", dbei.timestamp);
 			ClcCacheEntry *pdnce = Clist_GetCacheEntry(hContact);
-			if (pdnce)
+			if (pdnce) {
 				pdnce->dwLastMsgTime = dbei.timestamp;
+				if (g_CluiData.hasSort(SORTBY_LASTMSG))
+					Clist_Broadcast(CLM_AUTOREBUILD, hContact, 0);
+			}
 		}
 	}
 	return 0;

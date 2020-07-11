@@ -597,7 +597,6 @@ Miranda_WaitOnHandleEx @663
 ??0MDatabaseReadonly@@QEAA@XZ @684 NONAME
 ??_7MDatabaseReadonly@@6B@ @685 NONAME
 ?GetEventById@MDatabaseReadonly@@UEAAIPEBD0@Z @686 NONAME
-?SetEventId@MDatabaseReadonly@@UEAAHPEBDI0@Z @687 NONAME
 ?EditEvent@MDatabaseReadonly@@UEAAHIIPEBUDBEVENTINFO@@@Z @688 NONAME
 g_hevContactAdded @689 NONAME
 g_hevContactDeleted @690 NONAME
@@ -725,7 +724,7 @@ WebSocket_Connect @810 NONAME
 Netlib_Dump @812 NONAME
 ?ProtoBroadcastAsync@PROTO_INTERFACE@@QEAAXIHHPEAX_J@Z @813 NONAME
 ProtoBroadcastAsync @814 NONAME
-?ProcessFileDrop@@YA_NPEAUHDROP__@@I@Z @815 NONAME
+?ProcessFileDrop@CSrmmBaseDialog@@IEAA_NPEAUHDROP__@@I@Z @815 NONAME
 ?ConfirmDelete@Clist@@3V?$CMOption@_N@@A @816 NONAME
 ?HideEmptyGroups@Clist@@3V?$CMOption@_N@@A @817 NONAME
 ?HideOffline@Clist@@3V?$CMOption@_N@@A @818 NONAME
@@ -735,3 +734,10 @@ ProtoBroadcastAsync @814 NONAME
 ?EventCursor@MDatabaseCommon@@UEAAPEAV0DB@@II@Z @822 NONAME
 ?EventCursorRev@MDatabaseCommon@@UEAAPEAVEventCursor@DB@@II@Z @823 NONAME
 Chat_CreateMenu @824 NONAME
+?PasteFilesAsURL@CSrmmBaseDialog@@IEAA_NPEAUHDROP__@@@Z @825 NONAME
+?Proto_GetInstance@@YAPEAUPROTO_INTERFACE@@I@Z @826 NONAME
+?Proto_GetInstance@@YAPEAUPROTO_INTERFACE@@PEBD@Z @827 NONAME
+?OnEventEdited@PROTO_INTERFACE@@UEAAXII@Z @828 NONAME
+?GetChecker@MDatabaseCommon@@UEAAPEAUMIDatabaseChecker@@XZ @829 NONAME
+?GetMenuItem@PROTO_INTERFACE@@QEAAPEAUTMO_IntMenuItem@@W4ProtoMenuItemType@@@Z @830 NONAME
+Netlib_GetTlsUnique @831 NONAME

@@ -32,7 +32,7 @@ void BuildProtoMenus();
 HICON Proto_GetIcon(PROTO_INTERFACE *ppro, int iconIndex);
 
 static bool bModuleInitialized = false;
-static HANDLE hHooks[3];
+static HANDLE hHooks[4];
 
 static int CompareAccounts(const PROTOACCOUNT* p1, const PROTOACCOUNT* p2)
 {
@@ -152,11 +152,15 @@ void WriteDbAccounts()
 
 static int OnContactDeleted(WPARAM hContact, LPARAM)
 {
-	if (hContact) {
-		PROTOACCOUNT *pa = Proto_GetAccount(hContact);
-		if (pa->IsEnabled() && pa->ppro)
-			pa->ppro->OnContactDeleted(hContact);
-	}
+	if (auto *ppro = Proto_GetInstance(hContact))
+		ppro->OnContactDeleted(hContact);
+	return 0;
+}
+
+static int OnEventEdited(WPARAM hContact, LPARAM hDbEvent)
+{
+	if (auto *ppro = Proto_GetInstance(hContact))
+		ppro->OnEventEdited(hContact, hDbEvent);
 	return 0;
 }
 
@@ -172,9 +176,10 @@ static int InitializeStaticAccounts(WPARAM, LPARAM)
 
 		if (!pa->bOldProto)
 			count++;
-	}
 
-	BuildProtoMenus();
+		if (pa->IsVisible())
+			pa->ppro->OnBuildProtoMenu();
+	}
 
 	if (count == 0 && !db_get_b(0, "FirstRun", "AccManager", 0)) {
 		db_set_b(0, "FirstRun", "AccManager", 1);
@@ -223,6 +228,7 @@ int LoadAccountsModule(void)
 	hHooks[0] = HookEvent(ME_SYSTEM_MODULESLOADED, InitializeStaticAccounts);
 	hHooks[1] = HookEvent(ME_SYSTEM_PRESHUTDOWN, UninitializeStaticAccounts);
 	hHooks[2] = HookEvent(ME_DB_CONTACT_DELETED, OnContactDeleted);
+	hHooks[3] = HookEvent(ME_DB_EVENT_EDITED, OnEventEdited);
 	return 0;
 }
 

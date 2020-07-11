@@ -92,6 +92,7 @@ CJabberProto::CJabberProto(const char *aProtoName, const wchar_t *aUserName) :
 	m_bDisableFrame(this, "DisableFrame", true),
 	m_bEnableAvatars(this, "EnableAvatars", true),
 	m_bEnableCarbons(this, "EnableCarbons", true),
+	m_bEnableChatStates(this, "EnableChatStates", true),
 	m_bEnableMsgArchive(this, "EnableMsgArchive", false),
 	m_bEnableRemoteControl(this, "EnableRemoteControl", false),
 	m_bEnableStreamMgmt(this, "UseStreamMgmt", false),
@@ -129,6 +130,7 @@ CJabberProto::CJabberProto(const char *aProtoName, const wchar_t *aUserName) :
 	m_bUseSSL(this, "UseSSL", false),
 	m_bUseTLS(this, "UseTLS", true),
 
+	m_iMamMode(this, "MamMode", 0),
 	m_iConnectionKeepAliveInterval(this, "ConnectionKeepAliveInterval", 60000),
 	m_iConnectionKeepAliveTimeout(this, "ConnectionKeepAliveTimeout", 50000)
 {
@@ -165,6 +167,7 @@ CJabberProto::CJabberProto(const char *aProtoName, const wchar_t *aUserName) :
 	CreateProtoService(PS_MENU_REQAUTH, &CJabberProto::OnMenuHandleRequestAuth);
 	CreateProtoService(PS_MENU_GRANTAUTH, &CJabberProto::OnMenuHandleGrantAuth);
 	CreateProtoService(PS_MENU_REVOKEAUTH, &CJabberProto::OnMenuHandleRevokeAuth);
+	CreateProtoService(PS_MENU_LOADHISTORY, &CJabberProto::OnMenuLoadHistory);
 
 	CreateProtoService(JS_DB_GETEVENTTEXT_CHATSTATES, &CJabberProto::OnGetEventTextChatStates);
 	CreateProtoService(JS_DB_GETEVENTTEXT_PRESENCE, &CJabberProto::OnGetEventTextPresence);
@@ -206,6 +209,17 @@ CJabberProto::CJabberProto(const char *aProtoName, const wchar_t *aUserName) :
 		OmemoInitDevice();
 	}
 
+	// group chats
+	GCREGISTER gcr = {};
+	gcr.dwFlags = GC_TYPNOTIF | GC_CHANMGR;
+	gcr.ptszDispName = m_tszUserName;
+	gcr.pszModule = m_szModuleName;
+	Chat_Register(&gcr);
+
+	HookProtoEvent(ME_GC_EVENT, &CJabberProto::JabberGcEventHook);
+	HookProtoEvent(ME_GC_BUILDMENU, &CJabberProto::JabberGcMenuHook);
+
+	// resident settings
 	db_set_resident(m_szModuleName, DBSETTING_XSTATUSID);
 	db_set_resident(m_szModuleName, DBSETTING_XSTATUSNAME);
 	db_set_resident(m_szModuleName, DBSETTING_XSTATUSMSG);
@@ -271,15 +285,6 @@ void CJabberProto::OnModulesLoaded()
 	ConsoleInit();
 	InitInfoFrame();
 
-	GCREGISTER gcr = {};
-	gcr.dwFlags = GC_TYPNOTIF | GC_CHANMGR;
-	gcr.ptszDispName = m_tszUserName;
-	gcr.pszModule = m_szModuleName;
-	Chat_Register(&gcr);
-
-	HookProtoEvent(ME_GC_EVENT, &CJabberProto::JabberGcEventHook);
-	HookProtoEvent(ME_GC_BUILDMENU, &CJabberProto::JabberGcMenuHook);
-
 	StatusIconData sid = {};
 	sid.szModule = m_szModuleName;
 	sid.hIcon = IcoLib_GetIconByHandle(m_hProtoIcon);
@@ -329,8 +334,6 @@ void CJabberProto::OnShutdown()
 {
 	m_bShutdown = true;
 
-	UI_SAFE_CLOSE_HWND(m_hwndAgentRegInput);
-	UI_SAFE_CLOSE_HWND(m_hwndRegProgress);
 	UI_SAFE_CLOSE_HWND(m_hwndJabberChangePassword);
 	UI_SAFE_CLOSE_HWND(m_hwndJabberAddBookmark);
 	UI_SAFE_CLOSE_HWND(m_hwndPrivacyRule);
@@ -341,6 +344,7 @@ void CJabberProto::OnShutdown()
 	UI_SAFE_CLOSE(m_pDlgJabberJoinGroupchat);
 	UI_SAFE_CLOSE(m_pDlgNotes);
 
+	AgentShutdown();
 	MucShutdown();
 
 	m_iqManager.ExpireAll();
@@ -601,6 +605,8 @@ INT_PTR CJabberProto::GetCaps(int type, MCONTACT hContact)
 		dwFlags = PF4_FORCEAUTH | PF4_NOCUSTOMAUTH | PF4_NOAUTHDENYREASON | PF4_SUPPORTTYPING | PF4_AVATARS | PF4_READNOTIFY;
 		if (m_bUseHttpUpload || m_bInlinePictures)
 			dwFlags |= PF4_OFFLINEFILES;
+		if (m_ThreadInfo && (m_ThreadInfo->jabberServerCaps & JABBER_CAPS_MAM))
+			dwFlags |= PF4_SERVERMSGID;
 		return dwFlags;		
 		
 	case PFLAG_UNIQUEIDTEXT:
@@ -883,22 +889,7 @@ HANDLE CJabberProto::SendFile(MCONTACT hContact, const wchar_t *szDescription, w
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
-// receives a message
-
-MEVENT CJabberProto::RecvMsg(MCONTACT hContact, PROTORECVEVENT *pre)
-{
-	MEVENT res = CSuper::RecvMsg(hContact, pre);
-	if (pre->szMsgId)
-		m_arChatMarks.insert(new CChatMark(res, pre->szMsgId, (const char*)pre->lParam));
-	
-	return res;
-}
-
-////////////////////////////////////////////////////////////////////////////////////////
 // JabberSendMessage - sends a message
-
-static char PGP_PROLOG[] = "-----BEGIN PGP MESSAGE-----\r\n\r\n";
-static char PGP_EPILOG[] = "\r\n-----END PGP MESSAGE-----\r\n";
 
 int CJabberProto::SendMsg(MCONTACT hContact, int unused_unknown, const char *pszSrc)
 {
@@ -963,7 +954,7 @@ int CJabberProto::SendMsg(MCONTACT hContact, int unused_unknown, const char *psz
 	if (jcb & JABBER_RESOURCE_CAPS_ERROR)
 		jcb = JABBER_RESOURCE_CAPS_NONE;
 
-	if (jcb & JABBER_CAPS_CHATSTATES)
+	if (m_bEnableChatStates && (jcb & JABBER_CAPS_CHATSTATES))
 		m << XCHILDNS("active", JABBER_FEAT_CHATSTATES);
 
 	m << XATTR("to", szClientJid);
@@ -1207,7 +1198,7 @@ int CJabberProto::UserIsTyping(MCONTACT hContact, int type)
 
 	XmlNode m("message"); XmlAddAttr(m, "to", szClientJid);
 
-	if (jcb & JABBER_CAPS_CHATSTATES) {
+	if (m_bEnableChatStates && (jcb & JABBER_CAPS_CHATSTATES)) {
 		m << XATTR("type", "chat") << XATTRID(SerialNext());
 		switch (type) {
 		case PROTOTYPE_SELFTYPING_OFF:

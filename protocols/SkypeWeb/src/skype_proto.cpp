@@ -24,14 +24,11 @@ CSkypeProto::CSkypeProto(const char* protoName, const wchar_t* userName) :
 	m_GCCreateDialogs(1),
 	m_OutMessages(3, PtrKeySortT),
 	m_bThreadsTerminated(false),
-	m_TrouterConnection(nullptr),
 	m_opts(this),
 	m_impl(*this),
-	m_szServer(mir_strdup(SKYPE_ENDPOINTS_HOST))
+	m_requests(1)
 {
 	InitNetwork();
-
-	requestQueue = new RequestQueue(m_hNetlibUser);
 
 	CreateProtoService(PS_CREATEACCMGRUI, &CSkypeProto::OnAccountManagerInit);
 	CreateProtoService(PS_GETAVATARINFO, &CSkypeProto::SvcGetAvatarInfo);
@@ -41,9 +38,7 @@ CSkypeProto::CSkypeProto(const char* protoName, const wchar_t* userName) :
 
 	CreateProtoService(PS_MENU_REQAUTH, &CSkypeProto::OnRequestAuth);
 	CreateProtoService(PS_MENU_GRANTAUTH, &CSkypeProto::OnGrantAuth);
-
-	CreateProtoService("/IncomingCallCLE", &CSkypeProto::OnIncomingCallCLE);
-	CreateProtoService("/IncomingCallPP", &CSkypeProto::OnIncomingCallPP);
+	CreateProtoService(PS_MENU_LOADHISTORY, &CSkypeProto::GetContactHistory);
 
 	HookProtoEvent(ME_OPT_INITIALISE, &CSkypeProto::OnOptionsInit);
 	HookProtoEvent(ME_DB_EVENT_MARKED_READ, &CSkypeProto::OnDbEventRead);
@@ -56,25 +51,23 @@ CSkypeProto::CSkypeProto(const char* protoName, const wchar_t* userName) :
 	g_plugin.addSound("skype_call_canceled", L"SkypeWeb", LPGENW("Incoming call canceled"));
 
 	m_hPollingThread = ForkThreadEx(&CSkypeProto::PollingThread, NULL, NULL);
-	m_hTrouterThread = ForkThreadEx(&CSkypeProto::TRouterThread, NULL, NULL);
+
+	InitGroupChatModule();
 }
 
 CSkypeProto::~CSkypeProto()
 {
-	requestQueue->Stop();
-	delete requestQueue; requestQueue = nullptr;
+	StopQueue();
+	if (m_hRequestQueueThread) {
+		WaitForSingleObject(m_hRequestQueueThread, INFINITE);
+		m_hRequestQueueThread = nullptr;
+	}
 
-	UnInitNetwork();
 	UninitPopups();
 
 	if (m_hPollingThread) {
 		WaitForSingleObject(m_hPollingThread, INFINITE);
 		m_hPollingThread = nullptr;
-	}
-
-	if (m_hTrouterThread) {
-		WaitForSingleObject(m_hTrouterThread, INFINITE);
-		m_hTrouterThread = nullptr;
 	}
 }
 
@@ -86,14 +79,13 @@ void CSkypeProto::OnModulesLoaded()
 
 	InitDBEvents();
 	InitPopups();
-	InitGroupChatModule();
 }
 
 void CSkypeProto::OnShutdown()
 {
 	debugLogA(__FUNCTION__);
 
-	requestQueue->Stop();
+	StopQueue();
 
 	m_bThreadsTerminated = true;
 
@@ -120,26 +112,34 @@ INT_PTR CSkypeProto::GetCaps(int type, MCONTACT)
 
 int CSkypeProto::SetAwayMsg(int, const wchar_t *msg)
 {
-	PushRequest(new SetStatusMsgRequest(msg ? T2Utf(msg) : "", this));
+	if (IsOnline())
+		PushRequest(new SetStatusMsgRequest(msg ? T2Utf(msg) : ""));
 	return 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void CSkypeProto::OnReceiveAwayMsg(NETLIBHTTPREQUEST *response, AsyncHttpRequest *pRequest)
+{
+	JsonReply reply(response);
+	if (reply.error())
+		return;
+
+	MCONTACT hContact = DWORD_PTR(pRequest->pUserInfo);
+	auto &root = reply.data();
+	if (JSONNode &mood = root["mood"]) {
+		CMStringW str = mood.as_mstring();
+		ProtoBroadcastAck(hContact, ACKTYPE_AWAYMSG, ACKRESULT_SUCCESS, (HANDLE)1, (LPARAM)str.c_str());
+	}
+	else {
+		ProtoBroadcastAck(hContact, ACKTYPE_AWAYMSG, ACKRESULT_SUCCESS, (HANDLE)1, 0);
+	}
 }
 
 HANDLE CSkypeProto::GetAwayMsg(MCONTACT hContact)
 {
-	PushRequest(new GetProfileRequest(this, getId(hContact)), [this, hContact](const NETLIBHTTPREQUEST *response) {
-		JsonReply reply(response);
-		if (reply.error())
-			return;
-
-		auto &root = reply.data();
-		if (JSONNode &mood = root["mood"]) {
-			CMStringW str = mood.as_mstring();
-			this->ProtoBroadcastAck(hContact, ACKTYPE_AWAYMSG, ACKRESULT_SUCCESS, (HANDLE)1, (LPARAM)str.c_str());
-		}
-		else {
-			this->ProtoBroadcastAck(hContact, ACKTYPE_AWAYMSG, ACKRESULT_SUCCESS, (HANDLE)1, 0);
-		}
-	});
+	auto *pReq = new GetProfileRequest(this, hContact);
+	pReq->m_pFunc = &CSkypeProto::OnReceiveAwayMsg;
 	return (HANDLE)1;
 }
 
@@ -186,7 +186,7 @@ int CSkypeProto::Authorize(MEVENT hDbEvent)
 	if (hContact == INVALID_CONTACT_ID)
 		return 1;
 
-	PushRequest(new AuthAcceptRequest(this, getId(hContact)));
+	PushRequest(new AuthAcceptRequest(getId(hContact)));
 	return 0;
 }
 
@@ -196,7 +196,7 @@ int CSkypeProto::AuthDeny(MEVENT hDbEvent, const wchar_t*)
 	if (hContact == INVALID_CONTACT_ID)
 		return 1;
 
-	PushRequest(new AuthDeclineRequest(this, getId(hContact)));
+	PushRequest(new AuthDeclineRequest(getId(hContact)));
 	return 0;
 }
 
@@ -210,7 +210,7 @@ int CSkypeProto::AuthRequest(MCONTACT hContact, const wchar_t *szMessage)
 	if (hContact == INVALID_CONTACT_ID)
 		return 1;
 
-	PushRequest(new AddContactRequest(this, getId(hContact), T2Utf(szMessage)));
+	PushRequest(new AddContactRequest(getId(hContact), T2Utf(szMessage)));
 	return 0;
 }
 
@@ -219,7 +219,7 @@ int CSkypeProto::GetInfo(MCONTACT hContact, int)
 	if (isChatRoom(hContact))
 		return 1;
 
-	PushRequest(new GetProfileRequest(this, getId(hContact)), &CSkypeProto::LoadProfile, (void*)hContact);
+	PushRequest(new GetProfileRequest(this, hContact));
 	return 0;
 }
 
@@ -255,12 +255,12 @@ int CSkypeProto::SetStatus(int iNewStatus)
 	m_iDesiredStatus = iNewStatus;
 
 	if (iNewStatus == ID_STATUS_OFFLINE) {
-		if (m_iStatus > ID_STATUS_CONNECTING + 1) {
-			SendRequest(new DeleteEndpointRequest(this));
-		}
+		if (m_iStatus > ID_STATUS_CONNECTING + 1 && m_szId)
+			PushRequest(new DeleteEndpointRequest(this));
+
 		m_iStatus = m_iDesiredStatus = ID_STATUS_OFFLINE;
 		// logout
-		requestQueue->Stop();
+		StopQueue();
 
 		CloseDialogs();
 		ProtoBroadcastAck(NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE)old_status, ID_STATUS_OFFLINE);
@@ -275,12 +275,10 @@ int CSkypeProto::SetStatus(int iNewStatus)
 		if (old_status == ID_STATUS_CONNECTING)
 			return 0;
 
-		if (old_status == ID_STATUS_OFFLINE && m_iStatus == ID_STATUS_OFFLINE) {
+		if (old_status == ID_STATUS_OFFLINE && m_iStatus == ID_STATUS_OFFLINE)
 			Login();
-		}
-		else {
-			SendRequest(new SetStatusRequest(MirandaToSkypeStatus(m_iDesiredStatus), this), &CSkypeProto::OnStatusChanged);
-		}
+		else
+			PushRequest(new SetStatusRequest(MirandaToSkypeStatus(m_iDesiredStatus)));
 	}
 
 	ProtoBroadcastAck(NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE)old_status, m_iStatus);
@@ -289,7 +287,7 @@ int CSkypeProto::SetStatus(int iNewStatus)
 
 int CSkypeProto::UserIsTyping(MCONTACT hContact, int type)
 {
-	SendRequest(new SendTypingRequest(getId(hContact), type, this));
+	PushRequest(new SendTypingRequest(getId(hContact), type));
 	return 0;
 }
 
@@ -321,9 +319,15 @@ int CSkypeProto::RecvContacts(MCONTACT hContact, PROTORECVEVENT* pre)
 
 	// memcpy(pCurBlob + 1, szMessageId, mir_strlen(szMessageId));
 
-	AddEventToDb(hContact, EVENTTYPE_CONTACTS, pre->timestamp, (pre->flags & PREF_CREATEREAD) ? DBEF_READ : 0, cbBlob, pBlob);
+	DBEVENTINFO dbei = {};
+	dbei.szModule = m_szModuleName;
+	dbei.timestamp = pre->timestamp;
+	dbei.eventType = EVENTTYPE_CONTACTS;
+	dbei.cbBlob = cbBlob;
+	dbei.pBlob = pBlob;
+	dbei.flags = (pre->flags & PREF_CREATEREAD) ? DBEF_READ : 0;
+	db_event_add(hContact, &dbei);
 
 	mir_free(pBlob);
-
 	return 0;
 }
