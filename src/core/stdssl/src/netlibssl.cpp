@@ -754,19 +754,40 @@ int NetlibSslWrite(SslHandle *ssl, const char *buf, int num)
 static void* NetlibSslUnique(SslHandle *ssl, int *cbLen)
 {
 	*cbLen = 0;
-	if (!IsWinVer7Plus()) // XP doesn't support that functionality
-		return nullptr;
 
 	SEC_CHANNEL_BINDINGS bindings;
 	SECURITY_STATUS scRet = g_pSSPI->QueryContextAttributesW(&ssl->hContext, SECPKG_ATTR_UNIQUE_BINDINGS, &bindings);
-	if (scRet != SEC_E_OK)
+	if (scRet != SEC_E_OK) {
+		Netlib_Logf(nullptr, "NetlibSslUnique() failed with error %08x", scRet);
 		return nullptr;
+	}
 
-	LPBYTE pBuf = LPBYTE(bindings.dwInitiatorOffset);
-	bindings = *(SEC_CHANNEL_BINDINGS *)bindings.dwInitiatorOffset;
-	pBuf += bindings.dwApplicationDataOffset;
-	if (memcmp(pBuf, "tls-unique:", 11))
+	BYTE *pBuf;
+	if (!IsBadReadPtr((void*)bindings.cbInitiatorLength, sizeof(bindings)))
+		pBuf = (BYTE *)bindings.cbInitiatorLength;
+	else if(!IsBadReadPtr((void *)bindings.dwInitiatorOffset, sizeof(bindings)))
+		pBuf = (BYTE *)bindings.dwInitiatorOffset;
+	else {
+		char tmp[sizeof(bindings)*2 + 1];
+		bin2hex(&bindings, sizeof(bindings), tmp);
+		Netlib_Logf(nullptr, "Failed bindings: %s", tmp);
 		return nullptr;
+	}
+
+	bindings = *(SEC_CHANNEL_BINDINGS *)pBuf;
+	pBuf += bindings.dwApplicationDataOffset;
+	if (memcmp(pBuf, "tls-unique:", 11)) {
+		char tmp[sizeof(bindings) * 2 + 1];
+		bin2hex(&bindings, sizeof(bindings), tmp);
+		Netlib_Logf(nullptr, "NetlibSslUnique() failed: bad buffer: %s", tmp);
+
+		if (!IsBadReadPtr(pBuf, bindings.cbApplicationDataLength)) {
+			ptrA buf((char*)mir_alloc(bindings.cbApplicationDataLength*2 + 1));
+			bin2hex(pBuf, bindings.cbApplicationDataLength, buf);
+			Netlib_Logf(nullptr, "buffer: %s", buf.get());
+		}
+		return nullptr;
+	}
 
 	pBuf += 11; bindings.cbApplicationDataLength -= 11;
 	*cbLen = bindings.cbApplicationDataLength;
