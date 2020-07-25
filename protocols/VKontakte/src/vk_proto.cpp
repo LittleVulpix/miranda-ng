@@ -78,6 +78,8 @@ CVkProto::CVkProto(const char *szModuleName, const wchar_t *pwszUserName) :
 	gcr.pszModule = m_szModuleName;
 	Chat_Register(&gcr);
 
+	CreateProtoService(PS_MENU_LOADHISTORY, &CVkProto::SvcGetAllServerHistoryForContact);
+
 	CreateProtoService(PS_LEAVECHAT, &CVkProto::OnLeaveChat);
 	CreateProtoService(PS_JOINCHAT, &CVkProto::OnJoinChat);
 	HookProtoEvent(ME_GC_EVENT, &CVkProto::OnChatEvent);
@@ -501,7 +503,7 @@ INT_PTR CVkProto::GetCaps(int type, MCONTACT)
 		return 4096;
 
 	case PFLAG_UNIQUEIDTEXT:
-		return (INT_PTR)"VKontakte ID";
+		return (INT_PTR)L"VKontakte ID";
 	}
 	return 0;
 }

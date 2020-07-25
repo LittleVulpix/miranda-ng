@@ -44,7 +44,8 @@ bool CDiscordProto::GatewayThreadWorker()
 {
 	NETLIBHTTPHEADER hdrs[] =
 	{
-		{ "Sec-WebSocket-Key", "KFShSwLlp4E6C7JZc5h4sg==" },
+		{ "Origin", "https://discord.com" },
+		{ "Sec-WebSocket-Key", "xkGAFcWD1fSJp6o0tceQOg==" },
 		{ 0, 0 }
 	};
 
