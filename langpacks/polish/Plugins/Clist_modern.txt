@@ -2,7 +2,7 @@
 ;============================================================
 ;  File: Clist_modern.dll
 ;  Plugin: Modern contact list
-;  Version: 0.9.1.9
+;  Version: 0.9.1.11
 ;  Authors: Artem Shpynov, Ricardo Pescuma Domenecci and Anton Senko based on clist_mw by Bethoven
 ;============================================================
 [Displays contacts, event notifications, protocol status with advanced visual modifications. Supported multi-window modifications, enhanced metacontact cooperation.]
@@ -56,8 +56,6 @@ Pobierz więcej skórek
 Dostępne tryby widoku
 [Include protocols]
 Uwzględnione protokoły
-[New]
-Nowy
 [Include groups]
 Uwzględnione grupy
 [Show contacts in groups]
@@ -160,20 +158,10 @@ Użyj Opcje -> Kontakty -> Ignorowanie by pokazać kontakty.
 Czy na pewno chcesz usunąć %s?
 [This will erase all history and settings for this contact!]
 To usunie wszystkie ustawienia i historię tego kontaktu!
-[Hide offline users]
-Ukryj rozłączonych
-[Hide empty groups]
-Ukryj puste grupy
-[Disable groups]
-Wyłącz grupy
-[Ask before deleting contacts]
-Pytaj przed usunięciem kontaktów
-[Don't move offline user to bottom]
-Nie przesuwaj rozłączonych na dół
-[Contact list]
-Lista kontaktów
 [Contact list sorting]
 Sortowanie kontaktów
+[Don't move offline user to bottom]
+Nie przesuwaj rozłączonych na dół
 [1st:]
 1:
 [2nd:]
@@ -182,8 +170,8 @@ Sortowanie kontaktów
 3:
 [Place offline users out of groups]
 Umieść rozłączonych poza grupami
-[Gamma correction]
-Korekcja Gamma
+[Selection mode]
+Tryb wyboru
 [Default]
 Domyślny
 [Full selection]
@@ -192,8 +180,8 @@ Pełne zaznaczenie
 Częściowe zaznaczenie
 [No selection]
 Brak zaznaczenia
-[Selection mode]
-Tryb wyboru
+[Gamma correction]
+Korekcja Gamma
 [Bring to front if covered]
 Przesuń na wierzch, jeśli zakryty
 [Hide contact list after]
@@ -258,8 +246,6 @@ Pokazuj zaznaczenie na nieaktywnej liście
 Przezroczyste podświetlenie zaznaczenia
 [Dim idle contacts]
 Przygaś bezczynne kontakty
-['Hide offline' means to hide:]
-"Ukryj rozłączonych" tzn.:
 [Groups]
 Grupy
 [Draw a line alongside group names]
@@ -630,6 +616,8 @@ Zmiana metakontaktów (przesuwanie)
 Skórki
 [Modern contact list]
 Modern contact list
+[Contact list]
+Lista kontaktów
 [Avatar overlay]
 Otoczka awatara
 [Status overlay]
@@ -893,6 +881,8 @@ Szukaj kontaktu
 Włącz/Wyłącz grupy
 [Use groups]
 Pokaż grupy
+[Disable groups]
+Wyłącz grupy
 [Enable/Disable sounds]
 Włącz/Wyłącz dźwięki
 [Enable sounds]
@@ -908,6 +898,8 @@ Tło paska narzędzi
 [Toolbar upgrade]
 Aktualizacja paska narzędzi
 ;file \plugins\Clist_modern\src\modern_viewmodebar.cpp
+[All contacts]
+Wszystkie kontakty
 [Ungrouped contacts]
 Niepogrupowane kontakty
 [And]
@@ -926,22 +918,30 @@ Godzin
 Dni
 [Configuring view mode: %s]
 Konfigurowanie trybu widoku: %s
-[All contacts]
-Wszystkie kontakty
+[Add view mode]
+
+[Rename view mode]
+
+[Remove view mode]
+
 [Filtering]
 Filtrowanie
 [*** All contacts ***]
 *** Wszystkie kontakty ***
 [Configure view modes]
 Ustaw tryb widoku
-[Really delete this view mode? This cannot be undone]
-Na pewno chcesz usunąć ten tryb widoku? Nie można tego cofnąć.
-[Delete a view mode]
-Usuwanie trybu widoku
+[Enter view mode name]
+
 [A view mode with this name does already exist]
 Tryb widoku o podanej nazwie już istnieje
 [Duplicate name]
 Zduplikowana nazwa
+[Enter new view mode name]
+
+[Really delete this view mode? This cannot be undone]
+Na pewno chcesz usunąć ten tryb widoku? Nie można tego cofnąć.
+[Delete a view mode]
+Usuwanie trybu widoku
 [Setup view modes...]
 Ustaw tryby widoku...
 [Select a view mode]

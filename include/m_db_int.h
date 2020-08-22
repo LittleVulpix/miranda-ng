@@ -39,10 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 struct DBCHeckCallback
 {
-	int    cbSize;
 	DWORD  spaceProcessed, spaceUsed;
-	HANDLE hOutFile;
-	bool   bCheckOnly, bBackup, bAggressive, bEraseHistory, bMarkRead, bConvertUtf;
 
 	void (*pfnAddLogMessage)(int type, const wchar_t *ptszFormat, ...);
 };
@@ -50,7 +47,7 @@ struct DBCHeckCallback
 interface MIDatabaseChecker
 {
 	STDMETHOD_(BOOL, Start)(DBCHeckCallback *callback) PURE;
-	STDMETHOD_(BOOL, CheckDb)(int phase, int firstTime) PURE;
+	STDMETHOD_(BOOL, CheckDb)(int phase) PURE;
 	STDMETHOD_(VOID, Destroy)() PURE;
 };
 
@@ -283,8 +280,10 @@ public:
 // makeDatabase() error codes
 #define EMKPRF_CREATEFAILED 1   // for some reason CreateFile() didnt like something
 
-#define MDB_CAPS_COMPACT 0x0001 // database can be compacted
-#define MDB_CAPS_CREATE  0x0002 // new database can be created
+#define MDB_CAPS_CREATE  0x0001 // new database can be created
+#define MDB_CAPS_COMPACT 0x0002 // database can be compacted
+#define MDB_CAPS_CHECK   0x0004 // database can be checked
+
 
 struct DATABASELINK
 {

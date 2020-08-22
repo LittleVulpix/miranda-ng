@@ -19,17 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\cleaning.cpp" />
-    <ClCompile Include="src\fileaccess.cpp" />
-    <ClCompile Include="src\finished.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\openerror.cpp" />
     <ClCompile Include="src\progress.cpp" />
-    <ClCompile Include="src\selectdb.cpp" />
     <ClCompile Include="src\stdafx.cxx">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\welcome.cpp" />
     <ClCompile Include="src\wizard.cpp" />
     <ClCompile Include="src\worker.cpp" />
   </ItemGroup>

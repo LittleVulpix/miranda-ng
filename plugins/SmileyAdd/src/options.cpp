@@ -37,7 +37,6 @@ void OptionsType::Save(void)
 	g_plugin.setByte("AnimateDlg", AnimateDlg);
 	g_plugin.setByte("InputSmileys", InputSmileys);
 	g_plugin.setByte("DCursorSmiley", DCursorSmiley);
-	g_plugin.setByte("DisableCustom", DisableCustom);
 	g_plugin.setByte("HQScaling", HQScaling);
 	g_plugin.setDword("MaxCustomSmileySize", MaxCustomSmileySize);
 	g_plugin.setDword("MinSmileySize", MinSmileySize);
@@ -57,7 +56,6 @@ void OptionsType::Load(void)
 	AnimateDlg = g_plugin.getByte("AnimateDlg", TRUE) != 0;
 	InputSmileys = g_plugin.getByte("InputSmileys", TRUE) != 0;
 	DCursorSmiley = g_plugin.getByte("DCursorSmiley", FALSE) != 0;
-	DisableCustom = g_plugin.getByte("DisableCustom", FALSE) != 0;
 	HQScaling = g_plugin.getByte("HQScaling", FALSE) != 0;
 
 	SelWndBkgClr = g_plugin.getDword("SelWndBkgClr", GetSysColor(COLOR_WINDOW));
@@ -180,7 +178,7 @@ class COptionsDialog : public CDlgBase
 		tvi.item.mask = TVIF_TEXT | TVIF_IMAGE | TVIF_STATE | TVIF_SELECTEDIMAGE | TVIF_PARAM;
 		tvi.item.stateMask = TVIS_STATEIMAGEMASK | TVIS_SELECTED;
 
-		SmileyCategoryListType::SmileyCategoryVectorType &smc = *tmpsmcat.GetSmileyCategoryList();
+		auto &smc = *tmpsmcat.GetSmileyCategoryList();
 		for (int i = 0; i < smc.getCount(); i++) {
 			if (smc[i].IsVisible()) {
 				tvi.item.pszText = (wchar_t *)smc[i].GetDisplayName().c_str();
@@ -226,7 +224,7 @@ class COptionsDialog : public CDlgBase
 		bool useOne = !chkStdPack.GetState();
 		bool usePhysProto = chkUsePhys.GetState();
 
-		SmileyCategoryListType::SmileyCategoryVectorType &smc = *tmpsmcat.GetSmileyCategoryList();
+		auto &smc = *tmpsmcat.GetSmileyCategoryList();
 		for (auto &it : smc) {
 			bool visiblecat = usePhysProto ? !it->IsAcc() : !it->IsPhysProto();
 			bool visible = useOne ? !it->IsProto() : visiblecat;
@@ -318,7 +316,6 @@ public:
 		CheckDlgButton(m_hwnd, IDC_ANIMATEDLG, opt.AnimateDlg ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(m_hwnd, IDC_INPUTSMILEYS, opt.InputSmileys ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(m_hwnd, IDC_DCURSORSMILEY, opt.DCursorSmiley ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(m_hwnd, IDC_DISABLECUSTOM, opt.DisableCustom ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(m_hwnd, IDC_HQSCALING, opt.HQScaling ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(m_hwnd, IDC_SORTING_HORIZONTAL, opt.HorizontalSorting ? BST_CHECKED : BST_UNCHECKED);
 
@@ -336,7 +333,7 @@ public:
 
 		tmpsmcat = g_SmileyCategories;
 
-		SmileyCategoryListType::SmileyCategoryVectorType &smc = *g_SmileyCategories.GetSmileyCategoryList();
+		auto &smc = *g_SmileyCategories.GetSmileyCategoryList();
 		for (auto &it : smc) {
 			HICON hIcon = nullptr;
 			if (it->IsProto()) {
@@ -382,7 +379,6 @@ public:
 		opt.AnimateDlg = IsDlgButtonChecked(m_hwnd, IDC_ANIMATEDLG) == BST_CHECKED;
 		opt.InputSmileys = IsDlgButtonChecked(m_hwnd, IDC_INPUTSMILEYS) == BST_CHECKED;
 		opt.DCursorSmiley = IsDlgButtonChecked(m_hwnd, IDC_DCURSORSMILEY) == BST_CHECKED;
-		opt.DisableCustom = IsDlgButtonChecked(m_hwnd, IDC_DISABLECUSTOM) == BST_CHECKED;
 		opt.HQScaling = IsDlgButtonChecked(m_hwnd, IDC_HQSCALING) == BST_CHECKED;
 		opt.HorizontalSorting = IsDlgButtonChecked(m_hwnd, IDC_SORTING_HORIZONTAL) == BST_CHECKED;
 
@@ -393,7 +389,7 @@ public:
 
 		// Cleanup database
 		CMStringW empty;
-		SmileyCategoryListType::SmileyCategoryVectorType &smc = *g_SmileyCategories.GetSmileyCategoryList();
+		auto &smc = *g_SmileyCategories.GetSmileyCategoryList();
 		for (auto &it : smc)
 			if (tmpsmcat.GetSmileyCategory(it->GetName()) == nullptr)
 				opt.WritePackFileName(empty, it->GetName());
@@ -459,8 +455,6 @@ public:
 		stwp->xPosition = rect.left;
 		stwp->yPosition = rect.bottom + 4;
 		stwp->direction = 1;
-		stwp->hContact = 0;
-
 		mir_forkThread<SmileyToolWindowParam>(SmileyToolThread, stwp);
 	}
 

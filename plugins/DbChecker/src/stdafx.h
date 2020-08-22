@@ -28,8 +28,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <time.h>
 
 #include <newpluginapi.h>
+#include <m_clist.h>
 #include <m_database.h>
 #include <m_db_int.h>
+#include <m_genmenu.h>
 #include <m_langpack.h>
 #include <win2k.h>
 
@@ -40,18 +42,28 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define WZN_PAGECHANGING  (WM_USER+1221)
 #define WZN_CANCELCLICKED (WM_USER+1222)
 
-struct DbToolOptions
+struct DbToolOptions : public MZeroedObject
 {
-	wchar_t filename[MAX_PATH];
-	wchar_t workingFilename[MAX_PATH];
-	wchar_t outputFilename[MAX_PATH];
-	wchar_t backupFilename[MAX_PATH];
+	DbToolOptions()
+	{
+		hEventRun = CreateEvent(nullptr, TRUE, TRUE, nullptr);
+		hEventAbort = CreateEvent(nullptr, TRUE, FALSE, nullptr);
+	}
+
+	~DbToolOptions()
+	{
+		if (bOwnsDb)
+			delete db;
+		CloseHandle(hEventAbort);
+		CloseHandle(hEventRun);
+	}
+
 	MDatabaseCommon *db;
 	MIDatabaseChecker *dbChecker;
-	HANDLE hOutFile;
 	DWORD error;
-	int bCheckOnly, bBackup, bAggressive;
-	int bEraseHistory, bMarkRead, bConvertUtf;
+	HANDLE hEventRun, hEventAbort;
+	bool bFinished, bAutoExit, bOwnsDb;
+	wchar_t filename[MAX_PATH];
 };
 
 struct CMPlugin : public PLUGIN<CMPlugin>
@@ -62,24 +74,16 @@ struct CMPlugin : public PLUGIN<CMPlugin>
 	int Unload() override;
 };
 
-extern DbToolOptions opts;
-extern HANDLE hEventRun, hEventAbort;
 extern int errorCount;
 extern LRESULT wizardResult;
-extern bool bServiceMode, bLaunchMiranda, bShortMode, bAutoExit;
 
 int DoMyControlProcessing(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam, INT_PTR *bReturn);
 
-INT_PTR CALLBACK SelectDbDlgProc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam);
-INT_PTR CALLBACK CleaningDlgProc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam);
-INT_PTR CALLBACK ProgressDlgProc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam);
-INT_PTR CALLBACK FileAccessDlgProc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK WizardDlgProc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam);
-INT_PTR CALLBACK FinishedDlgProc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam);
-INT_PTR CALLBACK WelcomeDlgProc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK ProgressDlgProc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK OpenErrorDlgProc(HWND hdlg, UINT message, WPARAM wParam, LPARAM lParam);
 
-int OpenDatabase(HWND hdlg, INT iNextPage);
+int OpenDatabase(HWND hdlg);
 
 #define STATUS_CLASSMASK  0x0f
 void AddToStatus(int flags, const wchar_t* fmt, ...);

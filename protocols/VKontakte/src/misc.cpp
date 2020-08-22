@@ -800,9 +800,10 @@ char* CVkProto::GetStickerId(const char *Msg, int &stickerid)
 	char *retMsg = nullptr;
 
 	int iRes = 0;
-	const char *tmpMsg = strstr(Msg, "[sticker:");
+	const char *tmpMsg = strstr(Msg, "[sticker");
 	if (tmpMsg)
-		iRes = sscanf(tmpMsg, "[sticker:%d]", &stickerid);
+		iRes = sscanf(tmpMsg, "[sticker:%d]", &stickerid) == 1 ? 1 : sscanf(tmpMsg, "[sticker-%d]", &stickerid);
+
 	if (iRes == 1) {
 		char HeadMsg[32] = { 0 };
 		mir_snprintf(HeadMsg, "[sticker:%d]", stickerid);
@@ -1270,29 +1271,64 @@ CMStringW CVkProto::GetAttachmentDescr(const JSONNode &jnAttachments, BBCSupport
 				continue;
 			res.Empty(); // sticker is not really an attachment, so we don't want all that heading info
 
-			if (m_vkOptions.bStikersAsSmyles) {
-				int id = jnSticker["sticker_id"].as_int();
-				res.AppendFormat(L"[sticker:%d]", id);
-			}
-			else {
-				CMStringW wszLink, wszLink128, wszLinkLast;
-				const JSONNode& jnImages = jnSticker[m_vkOptions.bStickerBackground ? "images_with_background" : "images"];
-				for (auto& jnImage : jnImages) {
-					if (jnImage["width"].as_int() == (int)m_vkOptions.iStickerSize) {
-						wszLink = jnImage["url"].as_mstring();
-						break;
-					}
+			CMStringW wszLink, wszLink128, wszLinkLast, wszUrl;
+			const JSONNode& jnImages = jnSticker[m_vkOptions.bStickerBackground ? "images_with_background" : "images"];
 
-					if (jnImage["width"].as_int() == 128) // default size
-						wszLink128 = jnImage["url"].as_mstring();
+			int iStickerId = jnSticker["sticker_id"].as_int();
 
-					wszLinkLast = jnImage["url"].as_mstring();
+			for (auto& jnImage : jnImages) {
+				if (jnImage["width"].as_int() == (int)m_vkOptions.iStickerSize) {
+					wszLink = jnImage["url"].as_mstring();
+					break;
 				}
 
-				if (m_vkOptions.iIMGBBCSupport && iBBC != bbcNo)
-					res += SetBBCString(wszLink.IsEmpty() ? (wszLink128.IsEmpty() ? wszLinkLast : wszLink128) : wszLink, iBBC, vkbbcImg);
+				if (jnImage["width"].as_int() == 128) // default size
+					wszLink128 = jnImage["url"].as_mstring();
+
+				wszLinkLast = jnImage["url"].as_mstring();
 			}
 
+			wszUrl = wszLink.IsEmpty() ? (wszLink128.IsEmpty() ? wszLinkLast : wszLink128) : wszLink;
+
+			if (!m_vkOptions.bStikersAsSmileys)
+				res += SetBBCString(wszUrl, iBBC, vkbbcImg);
+			else if (m_vkOptions.bUseStikersAsStaticSmileys)
+				res.AppendFormat(L"[sticker:%d]", iStickerId);
+			else {
+				if (ServiceExists(MS_SMILEYADD_LOADCONTACTSMILEYS)) {
+					CMStringW wszPath(FORMAT, L"%s\\%S\\Stickers", VARSW(L"%miranda_avatarcache%").get(), m_szModuleName);
+					CreateDirectoryTreeW(wszPath);
+
+					bool bSuccess = false;
+					CMStringW wszFileName(FORMAT, L"%s\\[sticker-%d].png", wszPath.c_str(), iStickerId);
+
+					if (GetFileAttributesW(wszFileName) == INVALID_FILE_ATTRIBUTES) {
+						T2Utf szUrl(wszUrl);
+						NETLIBHTTPREQUEST req = {};
+						req.cbSize = sizeof(req);
+						req.flags = NLHRF_NODUMP | NLHRF_SSL | NLHRF_HTTP11 | NLHRF_REDIRECT;
+						req.requestType = REQUEST_GET;
+						req.szUrl = szUrl;
+
+						NETLIBHTTPREQUEST* pReply = Netlib_HttpTransaction(m_hNetlibUser, &req);
+						if (pReply != nullptr && pReply->resultCode == 200 && pReply->pData && pReply->dataLength) {
+							bSuccess = true;
+							FILE* out = _wfopen(wszFileName, L"wb");
+							fwrite(pReply->pData, 1, pReply->dataLength, out);
+							fclose(out);
+						}
+					}
+					else bSuccess = true;
+
+					if (bSuccess) {
+						res.AppendFormat(L"[sticker-%d]",  iStickerId);
+
+						SMADD_CONT cont = { 1, m_szModuleName, wszFileName };
+						CallService(MS_SMILEYADD_LOADCONTACTSMILEYS, 0, LPARAM(&cont));
+					}
+					else res += SetBBCString(TranslateT("Sticker"), iBBC, vkbbcUrl, wszUrl);
+				}
+			}
 		}
 		else if (wszType == L"link") {
 			const JSONNode& jnLink = jnAttach["link"];

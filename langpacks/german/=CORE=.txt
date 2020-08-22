@@ -1,7 +1,7 @@
 ;============================================================
 ;  File: miranda32/64.exe
 ;  Module: Miranda Core
-;  Version: 0.95.12
+;  Version: 0.95.13
 ;============================================================
 ;file \src\core\stdautoaway\res\resource.rc
 [Become idle if the following is left unattended:]
@@ -66,14 +66,6 @@ Unter Einstellungen -> Kontakte -> Ignorieren Kontakt wieder einblenden.
 Soll Kontakt %s wirklich gelöscht werden ?
 [This will erase all history and settings for this contact!]
 Damit werden der Verlauf und die Einstellungen des Kontakts gelöscht!
-[Hide offline users]
-Offline-Kontakte ausblenden
-[Hide empty groups]
-Leere Gruppen ausblenden
-[Disable groups]
-Gruppenfunktion ausschalten
-[Ask before deleting contacts]
-Vor Löschen von Kontakten fragen
 [Sort contacts by name]
 Kontakte nach Name sortieren
 [Sort contacts by status]
@@ -100,14 +92,14 @@ Sekunden, wenn Status unterschiedlich
 Mehrere Icons anzeigen
 [Only when statuses differ]
 Nur, wenn Status untersch.
-[Contact list]
-Kontaktliste
 [System tray icon]
 Systemtray-Icon
 [System tray icon when using multiple protocols]
 Systemtray-Icon bei Benutzung mehrerer Protokolle
 [Contact list sorting]
 Sortierung der Kontaktliste
+[Don't move offline user to bottom]
+Offline-Kontakte nicht nach unten setzen
 [Window]
 Fenster
 [Always on top]
@@ -170,8 +162,6 @@ Markierung immer anzeigen
 Transparente Markierung
 [Dim idle contacts]
 Untätige Kontakte abblenden
-['Hide offline' means to hide:]
-'Offline-Kontakte verstecken':
 [Groups]
 Gruppen
 [Draw a line alongside group names]
@@ -196,10 +186,10 @@ Sanfter Bildlauf
 Zeit:
 [milliseconds]
 Millisekunden
-[Left margin:]
-Linker Rand:
 [Hide vertical scroll bar]
 Vertikale Bildlaufleiste ausblenden
+[Left margin:]
+Linker Rand:
 [Row height:]
 Zeilenhöhe:
 [Gamma correction]
@@ -1104,6 +1094,8 @@ Als Standard setzen und Nachrichtenfenster öffnen
 Unterkontaktkontextmenü anzeigen
 [Show user information]
 Benutzerinformationen anzeigen
+[Contact list]
+Kontaktliste
 [Display subcontact nickname]
 Unterkontakt-Nicknamen anzeigen
 [Display subcontact display name]
@@ -1152,10 +1144,38 @@ S&chließen
 Über Miranda NG
 [Credits >]
 Dank an >
-[Hidden window]
-Verstecktes Fenster
+[Hide offline users]
+Offline-Kontakte ausblenden
+[Hide empty groups]
+Leere Gruppen ausblenden
+[Enable groups]
+Gruppen aktivieren
+[Ask before deleting contacts]
+Vor Löschen von Kontakten fragen
+[Remove temporary contacts on exit]
+
+['Hide offline' means to hide:]
+'Offline-Kontakte verstecken':
+[Default settings for known event types]
+Standardeinstellungen für bekannte Ereignis-Typen
+[Show when filter is active]
+Zeige, wenn Filter aktiv ist
+[Popup]
+Popup
 [Tray]
 Tray
+[Sound]
+Klanghinweis
+[Log to file]
+In Datei speichern
+[Show icons in tray only when the chat room is not active]
+Icon nur im Tray anzeigen, wenn Chatfenster nicht aktiv
+[Highlight event]
+Hebe Ereignis hervor
+[Show popups only when the chat room is not active]
+Popup nur wenn Chatfenster nicht aktiv
+[Hidden window]
+Verstecktes Fenster
 [&Hide/Show]
 Zeigen/&Ausblenden
 [E&xit]
@@ -1246,6 +1266,7 @@ Untätigkeit
 '%s'-N&achricht lesen
 [Re&ad status message]
 St&atusnachricht lesen
+;file \src\core\stdaway\src\options.cpp
 ;file \src\core\stdaway\src\sendmsg.cpp
 [I've been away since %time%.]
 Ich bin nicht da seit %time%.
@@ -1310,6 +1331,8 @@ Hintergrund Liste
 ;file \src\core\stdclist\src\clistopts.cpp
 [Global]
 Global
+[General]
+Allgemein
 ;file \src\core\stdclist\src\cluiopts.cpp
 ;file \src\core\stdcrypt\src\encrypt.cpp
 [Standard crypto provider]
@@ -1474,28 +1497,6 @@ Benutzername im Nachrichtenverlauf auf 20 Zeichen beschränken
 Farben aus der Verlaufsanzeige entfernen
 [Enable the 'event filter' for new rooms]
 Ereignisfilter für neue Räume aktivieren
-[Show topic changes]
-Themenänderungen anzeigen
-[Show users joining]
-Beitretende Benutzer anzeigen
-[Show users disconnecting]
-Benutzer, die getrennt wurden, anzeigen
-[Show messages]
-Nachrichten anzeigen
-[Show actions]
-Aktionen anzeigen
-[Show users leaving]
-Verlassende Benutzer anzeigen
-[Show users being kicked]
-Benutzer, die gekickt werden, anzeigen
-[Show notices]
-Notizen anzeigen
-[Show users changing name]
-Nicknamenänderungen anzeigen
-[Show information messages]
-Informationsnachrichten anzeigen
-[Show status changes of users]
-Statusänderungen von Benutzern anzeigen
 [Show icon for topic changes]
 Icon für Themenänderungen anzeigen
 [Show icon for users joining]
@@ -1520,58 +1521,6 @@ Icon für Namensänderungen anzeigen
 Icon für Informationsnachrichten anzeigen
 [Show icon for status changes]
 Icon für Statusänderungen anzeigen
-[Show icons in tray only when the chat room is not active]
-Icon nur im Tray anzeigen, wenn Chatfenster nicht aktiv
-[Show icon in tray for topic changes]
-Trayicon für Themenänderungen anzeigen
-[Show icon in tray for users joining]
-Trayicon für beitretende Benutzer anzeigen
-[Show icon in tray for users disconnecting]
-Trayicon anzeigen, wenn Benutzer Verbindung unterbricht
-[Show icon in tray for messages]
-Trayicon für Nachrichten anzeigen
-[Show icon in tray for actions]
-Trayicon für Aktionen anzeigen
-[Show icon in tray for highlights]
-Trayicon für Hervorhebungen anzeigen
-[Show icon in tray for users leaving]
-Trayicon für verlassende Benutzer anzeigen
-[Show icon in tray for users kicking other user]
-Trayicon anzeigen, wenn Benutzer gekickt wird
-[Show icon in tray for notices]
-Trayicon für Notizen anzeigen
-[Show icon in tray for name changes]
-Trayicon bei Namensänderung anzeigen
-[Show icon in tray for information messages]
-Trayicon für Informationsnachrichten anzeigen
-[Show icon in tray for status changes]
-Trayicon für Statusänderungen anzeigen
-[Show popups only when the chat room is not active]
-Popup nur wenn Chatfenster nicht aktiv
-[Show popup for topic changes]
-Popup für Titeländerungen
-[Show popup for users joining]
-Popup für beitretende Benutzer anzeigen
-[Show popup for users disconnecting]
-Popup anzeigen, wenn Benutzer Verbindung unterbricht
-[Show popup for messages]
-Popup für Nachrichten anzeigen
-[Show popup for actions]
-Popup für Aktionen anzeigen
-[Show popup for highlights]
-Popup für Hervorhebungen anzeigen
-[Show popup for users leaving]
-Popup für verlassende Benutzer anzeigen
-[Show popup for users kicking other user]
-Popup anzeigen, wenn Benutzer gekickt wird
-[Show popup for notices]
-Popup für Notizen anzeigen
-[Show popup for name changes]
-Popup für Namensänderungen anzeigen
-[Show popup for information messages]
-Popup für Informationsnachrichten anzeigen
-[Show popup for status changes]
-Popup für Statusänderungen anzeigen
 [Window icon]
 Fenstericon
 [Bold]
@@ -1646,16 +1595,8 @@ Gruppenchatverlauf
 Aussehen und Funktionen des Chatfensters
 [Appearance of the message log]
 Aussehen des Verlaufsfensters
-[Default events to show in new chat rooms if the 'event filter' is enabled]
-Ereignisse, die standardmäßig angezeigt werden, wenn Ereignisfilter aktiv.
 [Icons to display in the message log]
 Folgende Icons im Verlaufsfenster anzeigen
-[Icons to display in the tray]
-Folgende Icons im Tray anzeigen
-[Popups to display]
-Folgende Popups anzeigen
-[General]
-Allgemein
 [Chat log]
 Chatverlauf
 [Chat]
@@ -2012,10 +1953,10 @@ Sie sind %s beigetreten
 Sie sind nun bekannt als %s
 [%s kicked %s]
 %s hat %s gekickt
-[Notice from %s: ]
-Notiz von %s:\s
-[The topic is '%s%s']
-Das Thema ist '%s%s'
+[Notice from %s]
+Notiz von %s
+[The topic is '%s']
+Das Thema ist '%s'
 [ (set by %s on %s)]
  (gesetzt von %s am %s)
 [ (set by %s)]
@@ -2091,8 +2032,6 @@ Das Thema wurde geändert
 %s hat %s verlassen
 [%s kicked %s from %s]
 %s kickt %s aus %s
-[Notice from %s]
-Notiz von %s
 [Topic change in %s]
 Themenänderung in %s
 [Information in %s]
@@ -2101,28 +2040,13 @@ Informationen in %s
 %s aktiviert '%s' Status für %s in %s
 [%s disables '%s' status for %s in %s]
 %s deaktiviert '%s' Status für %s in %s
-[%s says: %s]
-%s sagt: %s
-[%s has left (%s)]
-%s ist gegangen (%s)
-[%s has disconnected (%s)]
-%s wurde getrennt (%s)
-[%s kicked %s (%s)]
-%s kickt %s (%s)
-[Notice from %s: %s]
-Notiz von %s: %s
-[The topic is '%s']
-Das Thema ist '%s'
-[The topic is '%s' (set by %s)]
-Das Thema ist '%s' (gesetzt von %s)
+[%s says]
+%s sagt
 [Chat rooms]
 Chaträume
-[Look up '%s':]
-Suche nach '%s'
-[No word to look up]
-Kein Wort zum Nachschlagen
-[&Message %s]
-&Nachricht an %s
+;file \src\mir_app\src\chat_ui.cpp
+[Events and filters]
+Ereignisse und Filter
 ;file \src\mir_app\src\clcitems.cpp
 ;file \src\mir_app\src\clistgroups.cpp
 [New group]
@@ -2142,6 +2066,9 @@ Diese Gruppe
 Verbinden
 [Connecting (attempt %d)]
 Verbinden (%d. Versuch)
+;file \src\mir_app\src\clistopts.cpp
+[Common]
+Allgemein
 ;file \src\mir_app\src\clistsettings.cpp
 [(Unknown contact)]
 (Unbekannter Kontakt)
@@ -2371,6 +2298,8 @@ Kontaktliste ein/ausblenden
 Nachricht lesen
 [Open Options page]
 Einstellungsdialog öffnen
+[Toggle groups]
+Gruppen ausblenden
 [Open logging options]
 Logeinstellungen öffnen
 [Open 'Find user' dialog]
@@ -2618,6 +2547,8 @@ Sind Sie sich sicher, dass Sie das Profil "%s" entfernen möchten?
 Starten
 [Compact]
 Komprimieren
+[Check database]
+Datenbank prüfen
 [Size]
 Größe
 [Created]
@@ -2628,6 +2559,15 @@ Geändert
 Meine Profile
 [New profile]
 Neues Profil
+;file \src\mir_app\src\proto_interface.cpp
+[Request authorization]
+Autorisierung anfragen
+[Grant authorization]
+Autorisierung gewähren
+[Revoke authorization]
+Autorisierung widerrufen
+[Load server history]
+
 ;file \src\mir_app\src\proto_opts.cpp
 [WARNING! The account is going to be deleted. It means that all its settings, contacts and histories will be also erased.\n\nAre you absolutely sure?]
 WARNUNG! Das Konto wird gelöscht. Das heißt, dass all seine Einstellungen, Kontakte und Verläufe ebenfalls gelöscht werden.\n\nSind Sie sich absolut sicher?
@@ -2682,13 +2622,6 @@ Kontenname muss einmalig sein. Bitte geben Sie einen einmaligen Namen ein.
 [&Accounts...]
 &Konten...
 ;file \src\mir_app\src\proto_order.cpp
-;file \src\mir_app\src\proto_utils.cpp
-[Request authorization]
-Autorisierung anfragen
-[Grant authorization]
-Autorisierung gewähren
-[Revoke authorization]
-Autorisierung widerrufen
 ;file \src\mir_app\src\searchresults.cpp
 [Could not start a search on '%s', there was a problem - is %s connected?]
 Miranda kann für das Protokoll '%s' keine Suche starten, ist das Protokoll %s online?
@@ -2760,8 +2693,6 @@ Ein
 Aus
 [Password]
 Passwort
-[Unused]
-Ungenutzt
 [Frames]
 Frames
 [Add group]
@@ -2788,6 +2719,8 @@ WAV-Dateien
 [Unselect all]
 Alle abwählen
 ;file \src\mir_app\src\srmm_base.cpp
+[&Message %s]
+&Nachricht an %s
 [Nickname]
 Nickname
 [Unique ID]
@@ -2795,6 +2728,11 @@ Unique ID
 ;file \src\mir_app\src\srmm_log.cpp
 [Log viewer]
 Verlaufsbetrachter
+;file \src\mir_app\src\srmm_log_rtf.cpp
+[Look up '%s':]
+Suche nach '%s'
+[No word to look up]
+Kein Wort zum Nachschlagen
 ;file \src\mir_app\src\srmm_toolbar.cpp
 [<Separator>]
 <Trennlinie>

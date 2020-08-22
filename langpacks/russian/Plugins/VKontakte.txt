@@ -2,7 +2,7 @@
 ;============================================================
 ;  File: VKontakte.dll
 ;  Plugin: VKontakte protocol
-;  Version: 0.1.11.2
+;  Version: 0.1.11.3
 ;  Authors: Miranda NG team
 ;============================================================
 [VKontakte protocol support for Miranda NG.]
@@ -206,7 +206,7 @@ URL:
 [Visit profile icon]
 Профиль на сайте
 [Load server history icon]
-Загрузка истории с сайта
+Загрузка истории с сервера
 [Add to friend list icon]
 Добавить в список друзей
 [Delete from friend list icon]

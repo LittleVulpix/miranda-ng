@@ -231,6 +231,14 @@ public:
 /////////////////////////////////////////////////////////////////////////////////////////
 // Profile selector
 
+static int numMessages[5];
+
+static void stubAddMessage(int iType, const wchar_t *, ...)
+{
+	if (iType < 5)
+		numMessages[iType]++;
+}
+
 class CChooseProfileDlg : public CDlgBase
 {
 	CCtrlButton &m_btnOk;
@@ -318,7 +326,7 @@ class CChooseProfileDlg : public CDlgBase
 	void DeleteProfile(const LVITEM &item)
 	{
 		CMStringW wszMessage(FORMAT, TranslateT("Are you sure you want to remove profile \"%s\"?"), item.pszText);
-		if (IDYES != MessageBox(nullptr, wszMessage, L"Miranda NG", MB_YESNO | MB_TASKMODAL | MB_ICONWARNING))
+		if (IDYES != MessageBoxW(nullptr, wszMessage, L"Miranda NG", MB_YESNO | MB_TASKMODAL | MB_ICONWARNING))
 			return;
 
 		wszMessage.Format(L"%s\\%s%c", m_pd->ptszProfileDir, item.pszText, 0);
@@ -332,14 +340,25 @@ class CChooseProfileDlg : public CDlgBase
 		m_profileList.DeleteItem(item.iItem);
 	}
 
+	void CheckProfile(const wchar_t *profile)
+	{
+		CMStringW wszFullName(FORMAT, L"%s\\%s\\%s.dat", m_pd->ptszProfileDir, profile, profile);
+
+		if (TryLoadPlugin(plugin_checker, false))
+			CallService(MS_DB_CHECKPROFILE, (WPARAM)wszFullName.c_str(), 0);
+		else
+			Plugin_Uninit(plugin_checker);
+	}
+
 	void CompactProfile(DATABASELINK *dblink, const wchar_t *profile)
 	{
 		CMStringW wszFullName(FORMAT, L"%s\\%s\\%s.dat", m_pd->ptszProfileDir, profile, profile);
 
-		MDatabaseCommon *db = dblink->Load(wszFullName, false);
-		if (db != nullptr) {
+		if (auto *db = dblink->Load(wszFullName, false)) {
 			db->Compact();
 			delete db;
+			
+			MessageBoxW(nullptr, TranslateT("Database compacted successfully"), L"Miranda NG", MB_OK | MB_ICONINFORMATION);
 		}
 	}
 
@@ -413,9 +432,20 @@ class CChooseProfileDlg : public CDlgBase
 		}
 
 		DATABASELINK *dblink = (DATABASELINK*)item.lParam;
-		if (dblink != nullptr && dblink->capabilities & MDB_CAPS_COMPACT) {
-			AppendMenu(hMenu, MF_STRING, 3, TranslateT("Compact"));
-			AppendMenu(hMenu, MF_SEPARATOR, 0, nullptr);
+		if (dblink != nullptr) {
+			bool bAdded = false;
+			if (dblink->capabilities & MDB_CAPS_COMPACT) {
+				AppendMenu(hMenu, MF_STRING, 3, TranslateT("Compact"));
+				bAdded = true;
+			}
+
+			if (plugin_checker && (dblink->capabilities & MDB_CAPS_CHECK)) {
+				AppendMenu(hMenu, MF_STRING, 4, TranslateT("Check database"));
+				bAdded = true;
+			}
+
+			if (bAdded)
+				AppendMenu(hMenu, MF_SEPARATOR, 0, nullptr);
 		}
 
 		AppendMenu(hMenu, MF_STRING, 2, TranslateT("Delete"));
@@ -431,6 +461,10 @@ class CChooseProfileDlg : public CDlgBase
 
 		case 3:
 			CompactProfile(dblink, profile);
+			break;
+
+		case 4:
+			CheckProfile(profile);
 			break;
 		}
 		DestroyMenu(hMenu);

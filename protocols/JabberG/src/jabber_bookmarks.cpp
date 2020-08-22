@@ -178,8 +178,7 @@ public:
 	{
 		SetMinSize(451, 320);
 
-		m_lvBookmarks.OnItemActivate = Callback(this, &CJabberDlgBookmarks::lvBookmarks_OnDoubleClick);
-		m_lvBookmarks.OnDoubleClick = Callback(this, &CJabberDlgBookmarks::btnEdit_OnClick);
+		m_lvBookmarks.OnDoubleClick = Callback(this, &CJabberDlgBookmarks::lvBookmarks_OnDoubleClick);
 
 		m_btnAdd.OnClick = Callback(this, &CJabberDlgBookmarks::btnAdd_OnClick);
 		m_btnEdit.OnClick = Callback(this, &CJabberDlgBookmarks::btnEdit_OnClick);
@@ -368,14 +367,20 @@ public:
 		if (!mir_strcmpi(item->type, "conference")) {
 			m_lvBookmarks.SetItemState(iItem, 0, LVIS_SELECTED); // Unselect the item
 
-																				  /* some hack for using bookmark to transport not under XEP-0048 */
+			// some hack for using bookmark to transport not under XEP-0048
 			if (!strchr(item->jid, '@'))
 				//the room name is not provided let consider that it is transport and send request to registration
 				m_proto->RegisterAgent(nullptr, item->jid);
 			else {
+				if (auto *pRoom = m_proto->ListGetItemPtr(LIST_CHATROOM, item->jid))
+					if (pRoom->hContact != 0) {
+						Clist_ContactDoubleClicked(pRoom->hContact);
+						return;
+					}
+
 				char *room = NEWSTR_ALLOCA(item->jid);
 				char *server = strchr(room, '@');
-				*(server++) = 0;
+				*server++ = 0;
 
 				if (item->nick && *item->nick)
 					m_proto->GroupchatJoinRoom(server, room, item->nick, item->password);

@@ -2,7 +2,7 @@
 ;============================================================
 ;  File: TabSRMM.dll
 ;  Plugin: TabSRMM
-;  Version: 3.6.0.4
+;  Version: 3.6.1.3
 ;  Authors: The Miranda developers team and contributors
 ;============================================================
 [IM and group chat module for Miranda NG.]
@@ -63,20 +63,6 @@ Nombre maxi d'évènements dans la fenêtre de message
 [Group chat nick list row height (pixels)]
 
 [Open log file base folder]
-
-[Default settings for known event types]
-
-[Show when filter is active]
-
-[Log to file]
-
-[Show popup]
-
-[Notify in tray]
-
-[Suppress tray notifications for focused channel windows]
-
-[Highlight event]
 
 [Line markers in the message log]
 
@@ -142,8 +128,6 @@ secondes
 Nombre d'entrées dans l'historique
 [entries]
 entrées
-[Options marked with an asterisk (*) will only take effect after Miranda has been restarted.]
-(*) nécessite le redémarrage de Miranda-IM pour prendre effet.
 [More about advanced tweaks]
 En savoir plus sur les réglages avancés
 [Revert to (safe) defaults]
@@ -200,8 +184,6 @@ Ignorer l'envoi de timeouts
 Charger uniquement l'historique en cours
 [Use private splitter position]
 Position personnalisée du diviseur
-[Contact is a favorite contact]
-Ce contact est dans les favoris
 [Always trim message log to]
 Toujours fixer à
 [events]
@@ -664,28 +646,6 @@ Pour ce contact
 Paramètres généraux
 [Force off]
 Désactiver
-[Recent sessions]
-Sessions récentes
-[Favorites]
-Favoris
-[Show the tray icon]
-
-[Disable all event notifications]
-Désactiver toutes les notifications d'évènement
-[Don't create windows automatically]
-Ne pas créer de fenêtre automatiquement
-[Hide all message containers]
-Cacher tous les conteneurs
-[Restore all message containers]
-Restaurer tous les conteneurs
-[Don't play sounds]
-Aucun sons
-[Be "super quiet"]
-Être "super silencieux"
-[Add contact to favorites]
-Ajouter aux favoris
-[Remove contact from favorites]
-Enlever des favoris
 [Set position for this session]
 Régler la position pour cette session
 [Set and save for all sessions]
@@ -793,33 +753,6 @@ Masquer la liste de noms
 Filtres d'évènements - clic droit pour configurer, gauche pour activer/désactiver
 [Channel manager]
 Manager de canaux
-;file \plugins\TabSRMM\src\chat_log.cpp
-[%s has joined]
-%s est arrivé
-[You have joined %s]
-Vous avez rejoint %s
-[%s has left]
-%s est sorti
-[%s has disconnected]
-%s s'est déconnecté
-[%s is now known as %s]
-%s est devenu %s
-[You are now known as %s]
-Vous êtes connu en tant que %s
-[%s kicked %s]
-%s a exclu %s
-[Notice from %s: ]
-Notice de %s :\s
-[The topic is '%s%s']
-Le sujet est '%s%s'
-[ (set by %s on %s)]
-
-[ (set by %s)]
- (réglé par %s)
-[%s enables '%s' status for %s]
-
-[%s disables '%s' status for %s]
-
 ;file \plugins\TabSRMM\src\chat_main.cpp
 [Message sessions]
 Sessions de message
@@ -1072,6 +1005,12 @@ Retirer la couleur des messages dans le journal
 
 [Scale down icons to 10x10 pixels in the chat log]
 Réduire les icônes à 10x10 pixels dans la fenêtre de chat
+[No markers]
+
+[Show as icons]
+
+[Show as text symbols]
+
 [nick of current contact (if defined)]
 
 [protocol name of current contact (if defined). Account name is used when protocol supports multiple accounts]
@@ -1126,17 +1065,9 @@ Réduire les icônes à 10x10 pixels dans la fenêtre de chat
 Tous les fichiers
 [Select folder]
 Sélectionnez un répertoire
-[No markers]
-
-[Show as icons]
-
-[Show as text symbols]
-
 [Settings]
 Paramètres
 [Log formatting]
-
-[Events and filters]
 
 [Highlighting]
 
@@ -1146,6 +1077,8 @@ Paramètres
 ;file \plugins\TabSRMM\src\container.cpp
 [Message session...]
 Session de message...
+[Message from %s]
+Message de %s
 [Default container]
 
 [Attach to]
@@ -1233,8 +1166,6 @@ Afficher un aperçu de l'évènement
 Ne pas annoncer d'évènement si la boite de message est ouverte
 [Don't announce events from RSS protocols]
 Ne pas annoncer les évènements des protocoles RSS
-[Enable the system tray icon]
-Activer l'icône systray
 [Merge new events for the same contact into existing popup]
 
 [Show headers]
@@ -1288,8 +1219,6 @@ Dernière réception : le %s à %s
 
 [%s is typing a message]
 %s écrit un message
-[Auto scrolling is disabled, %d message(s) queued (press F12 to enable it)]
-
 ;file \plugins\TabSRMM\src\globals.cpp
 [Instant messages]
 Messages instantanés
@@ -1309,16 +1238,10 @@ Sortant
 Autre
 [TabSRMM: typing]
 
-[TabSRMM session list]
-Liste des sessions TabSRMM
-[TabSRMM menu]
-Menu TabSRMM
 [&Messaging settings...]
 
 [&Send later job list...]
 
-[Message from %s]
-Message de %s
 [signed off.]
 déconnecté.
 [signed on and is now %s.]
@@ -1641,6 +1564,14 @@ Couper automatiquement les longs messages (expérimental, utiliser avec précaut
 
 [Automatically copy selected text]
 Copier le texte sélectionné
+[Test contact]
+Test : Contact
+[Template set editor]
+Éditeur de modèles
+[This will reset the template set to the default built-in templates. Are you sure you want to do this?]
+Ceci remettra tous vos modèles à l'état d'origine. Êtes-vous sûr de vouloir continuer ?
+[Template set was successfully reset, please close and reopen all message windows. This template editor window will now close.]
+Le modèle a été remis à zéro avec succès, veuillez fermer puis réouvrir toutes les fenêtres de message. Cet éditeur de modèle va se fermer.
 [Message log appearance]
 Apparence de l'historique récent
 [Support for external plugins]
@@ -1727,7 +1658,7 @@ Ajouter les contacts hors ligne à la liste de l'envoi groupé
 
 [Close current tab on send]
 Fermer l'onglet en cours dés l'envoi
-[Enable unattended send (experimental feature, required for multisend and send later) (*)]
+[Enable unattended send (experimental feature, required for multisend and send later)]
 
 [Show client description in info panel]
 
@@ -1806,8 +1737,6 @@ Flèche vers la gauche
 Flèche vers la droite
 [Up Arrow]
 Flèche vers le haut
-[Session List]
-Liste de session
 [Frame 1]
 Image 1
 [Frame 2]
@@ -1926,12 +1855,6 @@ Fenêtre du serveur
 
 [Error message]
 
-[Template set editor]
-Éditeur de modèles
-[This will reset the template set to the default built-in templates. Are you sure you want to do this?]
-Ceci remettra tous vos modèles à l'état d'origine. Êtes-vous sûr de vouloir continuer ?
-[Template set was successfully reset, please close and reopen all message windows. This template editor window will now close.]
-Le modèle a été remis à zéro avec succès, veuillez fermer puis réouvrir toutes les fenêtres de message. Cet éditeur de modèle va se fermer.
 ;file \plugins\TabSRMM\src\themeio.cpp
 [TabSRMM themes]
 
@@ -1952,7 +1875,6 @@ Le modèle a été remis à zéro avec succès, veuillez fermer puis réouvrir t
 Tous les conteneurs doivent être fermés avant de changer le skin\nVoulez-vous les fermer ?
 [Change skin]
 Changer le skin
-;file \plugins\TabSRMM\src\trayicon.cpp
 ;file \plugins\TabSRMM\src\typingnotify.cpp
 [Disable &typing notification]
 Désactiver la &notification de frappe
@@ -1972,6 +1894,8 @@ Activer la &notification de frappe
 ;file \plugins\TabSRMM\src\utils.cpp
 [TabSRMM message (%s)]
 Message TabSRMM (%s)
+[Save file|Unable to save temporary file]
+
 [Edit user notes|You are editing the user notes. Click the button again or use the hotkey (default: Alt+N) to save the notes and return to normal messaging mode]
 
 [Missing component|The icon pack is missing. Please install it to the default icons folder.\n\nNo icons will be available]

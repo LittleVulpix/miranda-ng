@@ -149,7 +149,7 @@ void CMsgDialog::CloseTab()
 		m_pContainer->m_hwndActive = GetTabWindow(m_hwndParent, i);
 
 		RECT rc;
-		SendMessage(m_pContainer->m_hwnd, DM_QUERYCLIENTAREA, 0, (LPARAM)& rc);
+		m_pContainer->QueryClientArea(rc);
 		SetWindowPos(m_pContainer->m_hwndActive, HWND_TOP, rc.left, rc.top, (rc.right - rc.left), (rc.bottom - rc.top), SWP_SHOWWINDOW);
 		ShowWindow(m_pContainer->m_hwndActive, SW_SHOW);
 		SetForegroundWindow(m_pContainer->m_hwndActive);
@@ -693,8 +693,8 @@ void CMsgDialog::GetMyNick()
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
-// retrieve both buddys and my own UIN for a message session and store them in the message window *dat
-// respects metacontacts and uses the current protocol if the contact is a MC
+// retrieve both buddys and my own UIN for a message session and store them in the message 
+// window *dat respects metacontacts and uses the current protocol if the contact is a MC
 
 void CMsgDialog::GetMYUIN()
 {
@@ -703,6 +703,14 @@ void CMsgDialog::GetMYUIN()
 		wcsncpy_s(m_myUin, uid, _TRUNCATE);
 	else
 		m_myUin[0] = 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// returns the status of Send button
+
+LRESULT CMsgDialog::GetSendButtonState()
+{
+	return m_btnOk.SendMsg(BUTTONGETSTATEID, TRUE, 0);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -1963,9 +1971,9 @@ void CMsgDialog::UpdateSaveAndSendButton()
 	gtxl.flags = GTL_DEFAULT | GTL_PRECISE | GTL_NUMBYTES;
 
 	int len = SendDlgItemMessage(m_hwnd, IDC_SRMM_MESSAGE, EM_GETTEXTLENGTHEX, (WPARAM)&gtxl, 0);
-	if (len && GetSendButtonState(m_hwnd) == PBS_DISABLED)
+	if (len && GetSendButtonState() == PBS_DISABLED)
 		EnableSendButton(true);
-	else if (len == 0 && GetSendButtonState(m_hwnd) != PBS_DISABLED)
+	else if (len == 0 && GetSendButtonState() != PBS_DISABLED)
 		EnableSendButton(false);
 
 	if (len) {          // looks complex but avoids flickering on the button while typing.
@@ -2329,25 +2337,6 @@ void CMsgDialog::UpdateWindowState(UINT msg)
 		if (m_bDeferredScroll) {
 			m_bDeferredScroll = false;
 			DM_ScrollToBottom(0, 1);
-		}
-
-		if (m_iLogMode == WANT_IEVIEW_LOG) {
-			HWND hwndLog = m_pLog->GetHwnd();
-
-			RECT rcRTF;
-			GetWindowRect(hwndLog, &rcRTF);
-			rcRTF.left += 20;
-			rcRTF.top += 20;
-
-			POINT pt;
-			pt.x = rcRTF.left;
-			pt.y = rcRTF.top;
-
-			if (M.GetByte("subclassIEView", 0)) {
-				mir_subclassWindow(hwndLog, IEViewSubclassProc);
-				SetWindowPos(hwndLog, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_DRAWFRAME);
-				RedrawWindow(hwndLog, nullptr, nullptr, RDW_FRAME | RDW_INVALIDATE | RDW_UPDATENOW);
-			}
 		}
 	}
 

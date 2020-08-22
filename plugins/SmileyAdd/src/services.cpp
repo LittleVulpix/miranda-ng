@@ -24,11 +24,10 @@ LIST<void> menuHandleArray(5);
 
 //implementation of service functions
 
-SmileyPackType* GetSmileyPack(const char *proto, MCONTACT hContact, SmileyPackCType **smlc)
+SmileyPackType* FindSmileyPack(const char *proto, MCONTACT hContact, SmileyPackCType **smlc)
 {
-	hContact = DecodeMetaContact(hContact);
 	if (smlc)
-		*smlc = opt.DisableCustom ? nullptr : g_SmileyPackCStore.GetSmileyPack(hContact);
+		*smlc = g_SmileyPackCStore.GetSmileyPack(proto);
 
 	if (proto != nullptr && IsBadStringPtrA(proto, 10))
 		return nullptr;
@@ -80,14 +79,13 @@ SmileyPackType* GetSmileyPack(const char *proto, MCONTACT hContact, SmileyPackCT
 	return g_SmileyCategories.GetSmileyPack(categoryName);
 }
 
-
 INT_PTR ReplaceSmileysCommand(WPARAM, LPARAM lParam)
 {
 	SMADD_RICHEDIT3 *smre = (SMADD_RICHEDIT3*)lParam;
 	if (smre == nullptr)
 		return FALSE;
 
-	SMADD_RICHEDIT3 smrec = { 0 };
+	SMADD_RICHEDIT3 smrec = {};
 	memcpy(&smrec, smre, min(smre->cbSize, sizeof(smrec)));
 
 	static const CHARRANGE selection = { 0, LONG_MAX };
@@ -95,8 +93,7 @@ INT_PTR ReplaceSmileysCommand(WPARAM, LPARAM lParam)
 	else if (smrec.rangeToReplace->cpMax < 0) smrec.rangeToReplace->cpMax = LONG_MAX;
 
 	SmileyPackCType *smcp = nullptr;
-	SmileyPackType *SmileyPack = GetSmileyPack(smrec.Protocolname, smrec.hContact,
-		(smrec.flags & (SAFLRE_OUTGOING | SAFLRE_NOCUSTOM)) ? nullptr : &smcp);
+	SmileyPackType *SmileyPack = FindSmileyPack(smrec.Protocolname, smrec.hContact, (smrec.flags & SAFLRE_NOCUSTOM) ? nullptr : &smcp);
 
 	ReplaceSmileys(smre->hwndRichEditControl, SmileyPack, smcp, *smrec.rangeToReplace,
 		smrec.hContact == 0, false, false, (smre->flags & SAFLRE_FIREVIEW) ? true : false);
@@ -104,40 +101,11 @@ INT_PTR ReplaceSmileysCommand(WPARAM, LPARAM lParam)
 	return TRUE;
 }
 
-
-INT_PTR ShowSmileySelectionCommand(WPARAM, LPARAM lParam)
-{
-	SMADD_SHOWSEL3 *smaddInfo = (SMADD_SHOWSEL3*)lParam;
-
-	if (smaddInfo == nullptr) return FALSE;
-	HWND parent = smaddInfo->hwndParent;
-	MCONTACT hContact = smaddInfo->hContact;
-
-	SmileyToolWindowParam *stwp = new SmileyToolWindowParam;
-	stwp->pSmileyPack = GetSmileyPack(smaddInfo->Protocolname, hContact);
-	stwp->hContact = hContact;
-
-	stwp->hWndParent = parent;
-	stwp->hWndTarget = smaddInfo->hwndTarget;
-	stwp->targetMessage = smaddInfo->targetMessage;
-	stwp->targetWParam = smaddInfo->targetWParam;
-	stwp->xPosition = smaddInfo->xPosition;
-	stwp->yPosition = smaddInfo->yPosition;
-	stwp->direction = smaddInfo->Direction;
-
-	mir_forkThread<SmileyToolWindowParam>(SmileyToolThread, stwp);
-
-	return TRUE;
-}
-
-
 static int GetInfoCommandE(SMADD_INFO2 *smre, bool retDup)
 {
 	if (smre == nullptr) return FALSE;
-	MCONTACT hContact = smre->hContact;
 
-	SmileyPackType *SmileyPack = GetSmileyPack(smre->Protocolname, hContact);
-
+	SmileyPackType *SmileyPack = FindSmileyPack(smre->Protocolname);
 	if (SmileyPack == nullptr || SmileyPack->SmileyCount() == 0) {
 		smre->ButtonIcon = nullptr;
 		smre->NumberOfSmileys = 0;
@@ -158,12 +126,10 @@ static int GetInfoCommandE(SMADD_INFO2 *smre, bool retDup)
 	return TRUE;
 }
 
-
 INT_PTR GetInfoCommand(WPARAM, LPARAM lParam)
 {
 	return GetInfoCommandE((SMADD_INFO2*)lParam, false);
 }
-
 
 INT_PTR GetInfoCommand2(WPARAM, LPARAM lParam)
 {
@@ -175,15 +141,12 @@ INT_PTR GetInfoCommand2(WPARAM, LPARAM lParam)
 INT_PTR ParseTextBatch(WPARAM, LPARAM lParam)
 {
 	SMADD_BATCHPARSE2 *smre = (SMADD_BATCHPARSE2*)lParam;
-
-	if (smre == nullptr) return FALSE;
-	MCONTACT hContact = smre->hContact;
+	if (smre == nullptr)
+		return FALSE;
 
 	SmileyPackCType *smcp = nullptr;
-	SmileyPackType *SmileyPack = GetSmileyPack(smre->Protocolname, hContact,
-		(smre->flag & (SAFL_OUTGOING | SAFL_NOCUSTOM)) ? nullptr : &smcp);
-
 	SmileysQueueType smllist;
+	SmileyPackType *SmileyPack = FindSmileyPack(smre->Protocolname, smre->hContact, (smre->flag & (SAFL_OUTGOING | SAFL_NOCUSTOM)) ? nullptr : &smcp);
 
 	if (smre->flag & SAFL_UNICODE)
 		LookupAllSmileys(SmileyPack, smcp, smre->wstr, smllist, false);
@@ -266,7 +229,7 @@ INT_PTR CustomCatMenu(WPARAM hContact, LPARAM lParam)
 
 int RebuildContactMenu(WPARAM wParam, LPARAM)
 {
-	SmileyCategoryListType::SmileyCategoryVectorType &smc = *g_SmileyCategories.GetSmileyCategoryList();
+	auto &smc = *g_SmileyCategories.GetSmileyCategoryList();
 
 	char *protnam = Proto_GetBaseAccountName(wParam);
 	bool haveMenu = IsSmileyProto(protnam);
@@ -357,20 +320,33 @@ INT_PTR ReloadPack(WPARAM, LPARAM lParam)
 
 INT_PTR LoadContactSmileys(WPARAM, LPARAM lParam)
 {
-	if (opt.DisableCustom) return 0;
-
 	SMADD_CONT *cont = (SMADD_CONT*)lParam;
 
 	switch (cont->type) {
 	case 0:
-		g_SmileyPackCStore.AddSmileyPack(cont->hContact, cont->path);
-		NotifyEventHooks(hEvent1, (WPARAM)cont->hContact, 0);
+		g_SmileyPackCStore.AddSmileyPack(cont->pszModule, cont->path);
+		NotifyEventHooks(hEvent1, (WPARAM)cont->pszModule, 0);
 		break;
 
 	case 1:
-		g_SmileyPackCStore.AddSmiley(cont->hContact, cont->path);
-		NotifyEventHooks(hEvent1, (WPARAM)cont->hContact, 0);
+		g_SmileyPackCStore.AddSmiley(cont->pszModule, cont->path);
+		NotifyEventHooks(hEvent1, (WPARAM)cont->pszModule, 0);
 		break;
+
+	case 2:
+		WIN32_FIND_DATAW findData;
+		CMStringW wszPath(cont->path);
+		HANDLE hFind = FindFirstFileW(wszPath, &findData);
+		if (hFind != INVALID_HANDLE_VALUE) {
+			int idx = wszPath.ReverseFind('\\');
+			if (idx != -1)
+				wszPath.Truncate(idx+1);
+
+			do {
+				CMStringW wszFileName = wszPath + findData.cFileName;
+				g_SmileyPackCStore.AddSmiley(cont->pszModule, wszFileName);
+			} while (FindNextFileW(hFind, &findData));
+		}
 	}
 	return 0;
 }

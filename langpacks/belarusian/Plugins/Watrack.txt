@@ -7,6 +7,8 @@
 ;============================================================
 [Paste played music info into message window or status text]
 Устаўляе інфармацыю пра прайграваную музыку ў вакно гутаркі ці ў статуснае паведамленне
+[Basic]
+Галоўныя
 [Clear xStatus before set new one]
 Чысціць xСтатус перад устаноўкай новага
 [Emulate Multimedia keys]
@@ -373,8 +375,6 @@ VBR ці пуста
 Выводзіць "Variables" у ANSI
 [FPS (Frames per second)]
 FPS (кадраў у секунду)
-[If Variables service used, returned value will be in ANSI encoding (default is UTF8)]
-Калі выкарыстоўваецца плагін Variables, якія вяртаюцца значэнні будуць у кадоўцы ANSI (па змаўчанні - UTF8)
 [Save settings in INI-file]
 Захоўваць налады ў файле
 [VBR or not]
@@ -655,4 +655,6 @@ WATrack статус
 [Check unknown formats]
 
 [Check unknown file formats if player gives info.]
+
+[Oops, something wrong!]
 

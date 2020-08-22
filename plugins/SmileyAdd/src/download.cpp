@@ -43,7 +43,7 @@ bool InternetDownloadFile(const char *szUrl, char *szDest, HNETLIBCONN &hHttpDwn
 {
 	int result = 0xBADBAD;
 	char *szRedirUrl = nullptr;
-	NETLIBHTTPREQUEST nlhr = { 0 };
+	NETLIBHTTPREQUEST nlhr = {};
 
 	// initialize the netlib request
 	nlhr.cbSize = sizeof(nlhr);
@@ -132,7 +132,7 @@ void __cdecl SmileyDownloadThread(void*)
 
 			CMStringW fname(dlQueue[0].fname);
 			if (dlQueue[0].needext) {
-				fname += GetImageExt(fname);
+				fname += ProtoGetAvatarExtension(ProtoGetAvatarFileFormat(fname));
 				needext = true;
 			}
 			_wrename(dlQueue[0].fname.c_str(), fname.c_str());
@@ -142,7 +142,7 @@ void __cdecl SmileyDownloadThread(void*)
 		dlQueue.remove(0);
 	}
 	dlQueue.destroy();
-	if (hHttpDwnl) Netlib_CloseHandle(hHttpDwnl);
+	Netlib_CloseHandle(hHttpDwnl);
 	threadRunning = false;
 	ReleaseMutex(g_hDlMutex);
 

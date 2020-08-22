@@ -7,6 +7,8 @@
 ;============================================================
 [Paste played music info into message window or status text]
 Vkládá informace o přehrávané hudbě do komunikačního okna nebo zprávy stavu
+[Basic]
+Obecné
 [Clear xStatus before set new one]
 Před nastavením rozšířeného stavu nastavit prázdný
 [Emulate Multimedia keys]
@@ -373,8 +375,6 @@ celková délka (sek.)
 
 [FPS (Frames per second)]
 
-[If Variables service used, returned value will be in ANSI encoding (default is UTF8)]
-
 [Save settings in INI-file]
 
 [VBR or not]
@@ -655,4 +655,6 @@ Zakázat WATrack
 [Check unknown formats]
 
 [Check unknown file formats if player gives info.]
+
+[Oops, something wrong!]
 

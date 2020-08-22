@@ -122,7 +122,8 @@ public:
 
 	// oauth
 	void OnOAuthStart(NETLIBHTTPREQUEST *response, AsyncHttpRequest *pRequest);
-	void OnOAuthAuthorize(NETLIBHTTPREQUEST *response, AsyncHttpRequest *pRequest);
+	void OnOAuthConfirm(NETLIBHTTPREQUEST* response, AsyncHttpRequest* pRequest);
+	void OnOAuthAuthorize(NETLIBHTTPREQUEST* response, AsyncHttpRequest* pRequest);
 	void OnOAuthEnd(NETLIBHTTPREQUEST *response, AsyncHttpRequest *pRequest);
 
 	void OnASMObjectCreated(NETLIBHTTPREQUEST *response, AsyncHttpRequest *pRequest);
@@ -183,8 +184,6 @@ private:
 	INT_PTR __cdecl SvcSetMyAvatar(WPARAM, LPARAM);
 
 	// requests
-	void InitNetwork();
-	
 	bool m_isTerminated = true;
 	mir_cs m_requestQueueLock;
 	LIST<AsyncHttpRequest> m_requests;

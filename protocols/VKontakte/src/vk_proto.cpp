@@ -112,9 +112,24 @@ void CVkProto::OnModulesLoaded()
 	InitPopups();
 	InitMenus();
 	InitDBCustomEvents();
+	InitSmileys();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
+
+void CVkProto::InitSmileys()
+{
+	if (!m_vkOptions.bStikersAsSmileys)
+		return;
+
+	if (m_vkOptions.bUseStikersAsStaticSmileys)
+		return;
+
+	CMStringW wszPath(FORMAT, L"%s\\%S\\Stickers\\*.png", VARSW(L"%miranda_avatarcache%").get(), m_szModuleName);
+	SMADD_CONT cont = { 2, m_szModuleName, wszPath };
+	CallService(MS_SMILEYADD_LOADCONTACTSMILEYS, 0, LPARAM(&cont));
+}
+
 // Menu support
 
 void CVkProto::OnBuildProtoMenu()
@@ -669,7 +684,7 @@ void CVkProto::OnContactDeleted(MCONTACT hContact)
 	CMStringA code(FORMAT, "var userID=\"%d\";", userID);
 
 	if (param->bDeleteDialog)
-		code += "API.messages.deleteConversation({\"user_id\":userID,count:10000});";
+		code += "API.messages.deleteConversation({\"peer_id\":userID});";
 
 	if (param->bDeleteFromFriendlist)
 		code += "API.friends.delete({\"user_id\":userID});";

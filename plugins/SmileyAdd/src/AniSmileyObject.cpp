@@ -22,7 +22,6 @@ class CAniSmileyObject;
 
 class CAniSmileyObject : public ISmileyBase, public MZeroedObject
 {
-private:
 	typedef enum { animStdOle, animDrctRichEd, animHpp } AnimType;
 
 	POINTL      m_rectOrig;
@@ -87,7 +86,7 @@ public:
 		if (m_hwnd == nullptr)
 			return;
 
-		REOBJECT reObj = { 0 };
+		REOBJECT reObj = {};
 		reObj.cbStruct = sizeof(reObj);
 		{
 			CComPtr<IRichEditOle> RichEditOle;

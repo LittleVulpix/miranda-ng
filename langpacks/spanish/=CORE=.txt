@@ -1,7 +1,7 @@
 ;============================================================
 ;  File: miranda32/64.exe
 ;  Module: Miranda Core
-;  Version: 0.95.12
+;  Version: 0.95.13
 ;============================================================
 ;file \src\core\stdautoaway\res\resource.rc
 [Become idle if the following is left unattended:]
@@ -66,14 +66,6 @@ Usar Opciones -> Contactos -> Ignorar Para mostrar los contactos.
 ¿Está seguro de que desea eliminar a %s?
 [This will erase all history and settings for this contact!]
 ¡Esto borrará toda el historial y los valores de este contacto!
-[Hide offline users]
-Ocultar usuarios fuera de línea
-[Hide empty groups]
-Ocultar grupos vacíos
-[Disable groups]
-Desactivar grupos
-[Ask before deleting contacts]
-Preguntar antes de eliminar
 [Sort contacts by name]
 Ordenar contactos por nombre
 [Sort contacts by status]
@@ -100,14 +92,14 @@ segundos, cuando el estado cambia
 Mostrar varios iconos
 [Only when statuses differ]
 Sólo cuando el estado cambia
-[Contact list]
-Lista de contactos
 [System tray icon]
 Icono de la bandeja de sistema
 [System tray icon when using multiple protocols]
 Icono de la bandeja del sistema cuando se usan múltiples protocolos
 [Contact list sorting]
 Orden de la lista de contacto
+[Don't move offline user to bottom]
+No mover usuario fuera de línea al final
 [Window]
 Ventana
 [Always on top]
@@ -170,8 +162,6 @@ Mostrar selección aún si la lista no está enfocada
 Hacer selección resaltada translúcida
 [Dim idle contacts]
 Oscurecer contactos inactivos
-['Hide offline' means to hide:]
-'Ocultar fuera de línea' es:
 [Groups]
 Grupos
 [Draw a line alongside group names]
@@ -196,10 +186,10 @@ Desplazar lista de problemas
 Tiempo:
 [milliseconds]
 milisegundos
-[Left margin:]
-Margen izquierdo:
 [Hide vertical scroll bar]
 Ocultar barra de desplazamiento vertical
+[Left margin:]
+Margen izquierdo:
 [Row height:]
 Alto de fila:
 [Gamma correction]
@@ -1104,6 +1094,8 @@ Contactos
 
 [Show user information]
 
+[Contact list]
+Lista de contactos
 [Display subcontact nickname]
 
 [Display subcontact display name]
@@ -1152,10 +1144,38 @@ Usted fue añadido
 Acerca de Miranda NG
 [Credits >]
 Créditos >
-[Hidden window]
+[Hide offline users]
+Ocultar usuarios fuera de línea
+[Hide empty groups]
+Ocultar grupos vacíos
+[Enable groups]
 
+[Ask before deleting contacts]
+Preguntar antes de eliminar
+[Remove temporary contacts on exit]
+
+['Hide offline' means to hide:]
+'Ocultar fuera de línea' es:
+[Default settings for known event types]
+
+[Show when filter is active]
+
+[Popup]
+Ventana emergente
 [Tray]
 Bandeja
+[Sound]
+
+[Log to file]
+
+[Show icons in tray only when the chat room is not active]
+Mostrar iconos en la bandeja sólo cuando el chat no está activo
+[Highlight event]
+
+[Show popups only when the chat room is not active]
+Mostrar ventanas emergentes cuando el chat no está activo
+[Hidden window]
+
 [&Hide/Show]
 &Mostrar/Ocultar
 [E&xit]
@@ -1246,6 +1266,7 @@ Inactivo
 Leer %s mensaje(s)
 [Re&ad status message]
 Leer mens&aje de estado
+;file \src\core\stdaway\src\options.cpp
 ;file \src\core\stdaway\src\sendmsg.cpp
 [I've been away since %time%.]
 He estado fuera desde %time%.
@@ -1310,6 +1331,8 @@ Lista de fondos
 ;file \src\core\stdclist\src\clistopts.cpp
 [Global]
 Global
+[General]
+General
 ;file \src\core\stdclist\src\cluiopts.cpp
 ;file \src\core\stdcrypt\src\encrypt.cpp
 [Standard crypto provider]
@@ -1474,28 +1497,6 @@ Añadir ':' a los nombres de usuario auto-completado
 Quitar los colores de los mensajes en el registro
 [Enable the 'event filter' for new rooms]
 Habilitar el "filtro de eventos" para nuevas salas
-[Show topic changes]
-Mostar cambios recientes de tema
-[Show users joining]
-Mostrar usuarios entrando
-[Show users disconnecting]
-Mostrar usuarios que se desconectan
-[Show messages]
-Mostrar mensajes
-[Show actions]
-Mostrar acciones
-[Show users leaving]
-Mostrar usuarios que salen
-[Show users being kicked]
-Mostrar usuarios sacados
-[Show notices]
-Mostrar avisos
-[Show users changing name]
-Mostrar usuarios cambiando nombre
-[Show information messages]
-Mostrar mensajes de información
-[Show status changes of users]
-Mostrar cambios de estado de usuarios
 [Show icon for topic changes]
 Mostrar icono de cambios de temas
 [Show icon for users joining]
@@ -1520,58 +1521,6 @@ Mostrar icono de cambio de nombre
 Mostrar icono de mensajes de información
 [Show icon for status changes]
 Mostrar icono de cambia de estado
-[Show icons in tray only when the chat room is not active]
-Mostrar iconos en la bandeja sólo cuando el chat no está activo
-[Show icon in tray for topic changes]
-Mostrar icono en la bandeja de cambios de temas
-[Show icon in tray for users joining]
-Mostrar icono en la bandeja para los usuarios que estan entrando
-[Show icon in tray for users disconnecting]
-Mostrar icono en la bandeja para los usuarios que se estan desconectando
-[Show icon in tray for messages]
-Mostrar icono en la bandeja para mensajes
-[Show icon in tray for actions]
-Mostrar icono en la bandeja para acciones
-[Show icon in tray for highlights]
-Mostrar icono en la bandeja para destacados
-[Show icon in tray for users leaving]
-Mostrar icono en la bandeja para los usuarios que estan saliendo
-[Show icon in tray for users kicking other user]
-Mostrar icono en la bandeja para los usuarios sacados por otro usuario
-[Show icon in tray for notices]
-Mostrar icono en la bandeja de notificaciones
-[Show icon in tray for name changes]
-Mostrar icono en la bandeja para el cambio de nombres
-[Show icon in tray for information messages]
-Mostrar icono en la bandeja para mensajes de información
-[Show icon in tray for status changes]
-Mostrar icono en la bandeja para los cambios de estado
-[Show popups only when the chat room is not active]
-Mostrar ventanas emergentes cuando el chat no está activo
-[Show popup for topic changes]
-Mostrar ventana emergente para cambios temáticos
-[Show popup for users joining]
-Mostrar ventana emergente para los usuarios que estan entrando
-[Show popup for users disconnecting]
-Mostrar ventana emergente para los usuarios que se desconectan
-[Show popup for messages]
-Mostrar ventana emergente para mensajes
-[Show popup for actions]
-Mostrar ventana emergente para acciones
-[Show popup for highlights]
-Mostrar ventana emergente para destacados
-[Show popup for users leaving]
-Mostrar ventana emergente para los usuarios que estan saliendo
-[Show popup for users kicking other user]
-Mostrar ventana emergente para usuarios sacados por otro usuario
-[Show popup for notices]
-Mostrar ventana emergente para notificaciones
-[Show popup for name changes]
-Mostrar ventana emergente para cambios de nombre
-[Show popup for information messages]
-Mostrar ventana emergente para mensajes de información
-[Show popup for status changes]
-Mostrar ventana emergente para cambios de estado
 [Window icon]
 Icono de ventana
 [Bold]
@@ -1646,16 +1595,8 @@ Registro de Grupo de Chats
 Apariencia y funcionalidad de ventanas de chat
 [Appearance of the message log]
 Apariencia del registro de mensajes
-[Default events to show in new chat rooms if the 'event filter' is enabled]
-Eventos predeterminados a mostrar en nuevas salas de chat, si está activado el 'filtro de eventos'
 [Icons to display in the message log]
 Iconos a mostrar en el registro de mensajes
-[Icons to display in the tray]
-Iconos a mostrar en la bandeja
-[Popups to display]
-Ventanas emergentes mostrar
-[General]
-General
 [Chat log]
 Registro de chat
 [Chat]
@@ -2012,10 +1953,10 @@ Te has unido a %s
 Usted ahora se conoce como %s
 [%s kicked %s]
 %s sacado %s
-[Notice from %s: ]
-Aviso de %s:\s
-[The topic is '%s%s']
-El tema es '%s%s'
+[Notice from %s]
+Aviso de %s
+[The topic is '%s']
+El tema es '%s'
 [ (set by %s on %s)]
  (establecido por %s el %s)
 [ (set by %s)]
@@ -2091,8 +2032,6 @@ El tema ha sido cambiado
 %s ha dejado %s
 [%s kicked %s from %s]
 %s echado %s de %s
-[Notice from %s]
-Aviso de %s
 [Topic change in %s]
 Tema cambiado en %s
 [Information in %s]
@@ -2101,28 +2040,13 @@ Información en %s
 %s habilita '%s' de estado para %s en %s
 [%s disables '%s' status for %s in %s]
 %s deshabilita '%s' de estado para %s en %s
-[%s says: %s]
-%s dice: %s
-[%s has left (%s)]
-%s ha dejado (%s)
-[%s has disconnected (%s)]
-%s se ha desconectado (%s)
-[%s kicked %s (%s)]
-%s echado %s (%s)
-[Notice from %s: %s]
-Aviso de %s: %s
-[The topic is '%s']
-El tema es '%s'
-[The topic is '%s' (set by %s)]
-El tema es '%s' (establecido por %s)
+[%s says]
+%s dice
 [Chat rooms]
 
-[Look up '%s':]
-Buscar '%s':
-[No word to look up]
-Ni una palabra para buscar
-[&Message %s]
-&Mensaje %s
+;file \src\mir_app\src\chat_ui.cpp
+[Events and filters]
+
 ;file \src\mir_app\src\clcitems.cpp
 ;file \src\mir_app\src\clistgroups.cpp
 [New group]
@@ -2141,6 +2065,9 @@ Este grupo
 [Connecting]
 Conectando
 [Connecting (attempt %d)]
+
+;file \src\mir_app\src\clistopts.cpp
+[Common]
 
 ;file \src\mir_app\src\clistsettings.cpp
 [(Unknown contact)]
@@ -2371,6 +2298,8 @@ Mostrar/Ocultar lista de contactos
 Leer mensaje
 [Open Options page]
 Abrir opciones de página
+[Toggle groups]
+
 [Open logging options]
 Abrir opciones de registro
 [Open 'Find user' dialog]
@@ -2618,6 +2547,8 @@ Problema al crear el perfil
 Ejecutar
 [Compact]
 
+[Check database]
+
 [Size]
 Tamaño
 [Created]
@@ -2628,6 +2559,15 @@ Modificado
 Mis perfiles
 [New profile]
 Nuevo perfil
+;file \src\mir_app\src\proto_interface.cpp
+[Request authorization]
+Solicitar autorización
+[Grant authorization]
+Conceder autorización
+[Revoke authorization]
+Revocar autorización
+[Load server history]
+
 ;file \src\mir_app\src\proto_opts.cpp
 [WARNING! The account is going to be deleted. It means that all its settings, contacts and histories will be also erased.\n\nAre you absolutely sure?]
 ¡ADVERTENCIA! La cuenta se va a eliminar. Esto significa que todos sus ajustes, contactos y las historias serán también borrados.\n\n¿Estás absolutamente seguro?
@@ -2682,13 +2622,6 @@ El nombre de la cuenta tiene que ser único. Por favor ingrese el nombre único.
 [&Accounts...]
 &Cuentas...
 ;file \src\mir_app\src\proto_order.cpp
-;file \src\mir_app\src\proto_utils.cpp
-[Request authorization]
-Solicitar autorización
-[Grant authorization]
-Conceder autorización
-[Revoke authorization]
-Revocar autorización
 ;file \src\mir_app\src\searchresults.cpp
 [Could not start a search on '%s', there was a problem - is %s connected?]
 No se pudo iniciar una búsqueda en '%s', Ha habido un problema - ¿esta %s conectado?
@@ -2760,8 +2693,6 @@ Encendido
 Apagado
 [Password]
 Contraseña
-[Unused]
-
 [Frames]
 Marcos
 [Add group]
@@ -2788,6 +2719,8 @@ Archivos WAV
 [Unselect all]
 
 ;file \src\mir_app\src\srmm_base.cpp
+[&Message %s]
+&Mensaje %s
 [Nickname]
 Apodo
 [Unique ID]
@@ -2795,6 +2728,11 @@ ID único
 ;file \src\mir_app\src\srmm_log.cpp
 [Log viewer]
 
+;file \src\mir_app\src\srmm_log_rtf.cpp
+[Look up '%s':]
+Buscar '%s':
+[No word to look up]
+Ni una palabra para buscar
 ;file \src\mir_app\src\srmm_toolbar.cpp
 [<Separator>]
 <Separador>

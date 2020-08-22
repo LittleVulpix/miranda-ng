@@ -85,8 +85,8 @@ Parametr
 Wartość
 [Use LastResult]
 Użyj ostatniego wyniku
-[UTF8 encoding]
-Kodowanie UTF8
+[UTF-8 encoding]
+Kodowanie UTF-8
 [Function call]
 Wywołanie funkcji
 [Function name]
@@ -691,8 +691,8 @@ Włącza lub wyłącza okienka typu popup (może być porzucone)
 wynik wywołania usługi protokołu
 [Send a general request through the protocol chain for a contact]
 Wyślij ogólne zapytanie poprzez łańcuch protokołu dla kontaktu
-[str, account name]
-str, nazwa konta
+[account name (string)]
+
 [Return account name associated to contact (no need to free it)]
 Zwróć nazwę konta powiązanego z kontaktem (nie ma potrzeby jej uwalniania)
 [displays the Account Manager]
@@ -757,7 +757,7 @@ zgłoś nazwę pliku
 int 0, w przypadku niepowodzenia
 [Create report from log and run it (if option is set). If wParam or lParam is empty then file names from options are used.]
 Utwórz raport z dziennika i otwórz go (jeśli opcja jest ustawiona). Jeśli lParam lub wParam są puste, użyte zostaną nazwy plików określone w opcjach.
-[display birthdays window]
+[Display birthdays window]
 Wyświetl okno urodzin
 [Manage Jabber Bookmarks]
 Zarządzaj zakładkami Jabbera

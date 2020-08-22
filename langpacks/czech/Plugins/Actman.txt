@@ -85,7 +85,7 @@ parametr
 Hodnota
 [Use LastResult]
 
-[UTF8 encoding]
+[UTF-8 encoding]
 
 [Function call]
 
@@ -691,7 +691,7 @@ Zobrazit text
 
 [Send a general request through the protocol chain for a contact]
 
-[str, account name]
+[account name (string)]
 
 [Return account name associated to contact (no need to free it)]
 
@@ -757,7 +757,7 @@ Název souboru
 
 [Create report from log and run it (if option is set). If wParam or lParam is empty then file names from options are used.]
 
-[display birthdays window]
+[Display birthdays window]
 
 [Manage Jabber Bookmarks]
 

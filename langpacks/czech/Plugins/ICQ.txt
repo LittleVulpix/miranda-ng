@@ -2,7 +2,7 @@
 ;============================================================
 ;  File: ICQ.dll
 ;  Plugin: ICQ-WIM protocol
-;  Version: 0.95.11.8
+;  Version: 0.95.12.1
 ;  Authors: George Hazan
 ;============================================================
 [ICQ protocol support for Miranda NG.]
@@ -37,7 +37,7 @@ Odeslat pozvánku k diskusi
 [Cancel]
 Zrušit
 [Account registration]
-
+Registrace účtu
 [Enter full phone number]
 
 [Send me registration code via SMS]

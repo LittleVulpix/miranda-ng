@@ -252,6 +252,8 @@ public:
 	void SetPassword(const wchar_t *ptszPassword);
 
 	int  CheckEvents1(void);
+	int  CheckEvents2(void);
+	int  CheckEvents3(void);
 
 	__forceinline LPSTR GetMenuTitle() const { return m_bUsesPassword ? (char*)LPGEN("Change/remove password") : (char*)LPGEN("Set password"); }
 
@@ -309,7 +311,7 @@ protected:
 	}
 
 	STDMETHODIMP_(BOOL)     Start(DBCHeckCallback *callback);
-	STDMETHODIMP_(BOOL)     CheckDb(int phase, int firstTime);
+	STDMETHODIMP_(BOOL)     CheckDb(int phase);
 	STDMETHODIMP_(VOID)     Destroy();
 
 	DBCHeckCallback *cb;

@@ -7,6 +7,8 @@
 ;============================================================
 [Paste played music info into message window or status text]
 Fügt Infos über die abgespielte Musik im Nachrichtenfenster oder in die Statusnachricht ein.
+[Basic]
+Allgemein
 [Clear xStatus before set new one]
 xStatus zurücksetzen, bevor ein neuer gesetzt wird.
 [Emulate Multimedia keys]
@@ -373,8 +375,6 @@ Player
 "Variables" ANSI-Ausgabe
 [FPS (Frames per second)]
 FPS (Frames pro Sekunde)
-[If Variables service used, returned value will be in ANSI encoding (default is UTF8)]
-Wenn Variables verwendet wird, wird der Wert in ANSI zurückgegeben (Standard ist UTF8)
 [Save settings in INI-file]
 Einstellungen in INI-Datei speichern
 [VBR or not]
@@ -656,3 +656,5 @@ WATrack deaktivieren
 Unbekannte Formate überprüfen
 [Check unknown file formats if player gives info.]
 Unbekannte Formate überprüfen, falls der Player Informationen angibt.
+[Oops, something wrong!]
+

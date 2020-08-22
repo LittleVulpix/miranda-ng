@@ -1,4 +1,5 @@
 [Paste played music info into message window or status text]
+[Basic]
 [Clear xStatus before set new one]
 [Emulate Multimedia keys]
 [xStatus will be cleared before text changing and restored with new text later.]
@@ -181,7 +182,6 @@
 [player]
 ["Variables" ANSI output]
 [FPS (Frames per second)]
-[If Variables service used, returned value will be in ANSI encoding (default is UTF8)]
 [Save settings in INI-file]
 [VBR or not]
 [video codec]
@@ -313,3 +313,4 @@
 [Disable WATrack]
 [Check unknown formats]
 [Check unknown file formats if player gives info.]
+[Oops, something wrong!]

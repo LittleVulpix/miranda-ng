@@ -2,14 +2,12 @@
 ;============================================================
 ;  File: Twitter.dll
 ;  Plugin: Twitter protocol
-;  Version: 1.3.1.2
+;  Version: 1.3.1.3
 ;  Authors: dentist, omniwolf, Thief
 ;============================================================
 [Twitter protocol support for Miranda NG.]
 Twitter-Unterstützung für Miranda NG.
 ;file \protocols\Twitter\res\twitter.rc
-[Server:]
-Server:
 [Create a new Twitter account]
 Erstelle ein neues Twitterkonto
 [Default group:]
@@ -28,8 +26,6 @@ Abbrechen
 Div. Einstellungen
 [Use group chat for Twitter feed]
 Gruppenchat für Twitter-Feed verwenden
-[Base URL:]
-Basis-URL:
 [Polling rate:]
 Abrufrate:
 [Once every]
@@ -89,6 +85,8 @@ Kann Netlib-Verbindung für %s nicht initialisieren.
 %s Avatarverbindung
 [Twitter (avatars)]
 Twitter (Avatare)
+[User name]
+Benutzername
 [Send Tweet...]
 Tweet senden...
 [Network]

@@ -1,7 +1,7 @@
 ;============================================================
 ;  File: miranda32/64.exe
 ;  Module: Miranda Core
-;  Version: 0.95.12
+;  Version: 0.95.13
 ;============================================================
 ;file \src\core\stdautoaway\res\resource.rc
 [Become idle if the following is left unattended:]
@@ -66,14 +66,6 @@
 Сигурни ли сте, че желаете контактът "%s" да бъде изтрит?
 [This will erase all history and settings for this contact!]
 Ще бъде изтрита изтрита историята и настройките за контакта!
-[Hide offline users]
-Скриване на контактите "Извън линия"
-[Hide empty groups]
-Скриване на празните групи
-[Disable groups]
-Без групи
-[Ask before deleting contacts]
-Запитване преди изтриване на контакт
 [Sort contacts by name]
 име
 [Sort contacts by status]
@@ -100,14 +92,14 @@
 Всички икони
 [Only when statuses differ]
 Само при различни състояния
-[Contact list]
-Списък с контакти
 [System tray icon]
 Икона в трея
 [System tray icon when using multiple protocols]
 Режим на иконата в трея, когато се използват няколко протокола
 [Contact list sorting]
 Сортиране на списъка с контакти по:
+[Don't move offline user to bottom]
+
 [Window]
 Прозорец
 [Always on top]
@@ -170,8 +162,6 @@
 Полупрозрачност на отличения текст
 [Dim idle contacts]
 Потъмняване на бездействащите контакти
-['Hide offline' means to hide:]
-Скриване като извън линия:
 [Groups]
 Групи
 [Draw a line alongside group names]
@@ -196,10 +186,10 @@
 Време:
 [milliseconds]
 милисекунди
-[Left margin:]
-Ляв ръб:
 [Hide vertical scroll bar]
 Без вертикална лента за придвижване
+[Left margin:]
+Ляв ръб:
 [Row height:]
 Ред (височина):
 [Gamma correction]
@@ -1104,6 +1094,8 @@ Miranda NG се рестартира.\nМоля, изчакайте...
 Да се показва контекстното меню на подконтакта
 [Show user information]
 Информация за потребителя
+[Contact list]
+Списък с контакти
 [Display subcontact nickname]
 Показване прякора на подконтакта
 [Display subcontact display name]
@@ -1152,10 +1144,38 @@ Miranda NG се рестартира.\nМоля, изчакайте...
 Относно Miranda NG
 [Credits >]
 Заслуги >
-[Hidden window]
+[Hide offline users]
+Скриване на контактите "Извън линия"
+[Hide empty groups]
+Скриване на празните групи
+[Enable groups]
+С групи
+[Ask before deleting contacts]
+Запитване преди изтриване на контакт
+[Remove temporary contacts on exit]
 
+['Hide offline' means to hide:]
+Скриване като извън линия:
+[Default settings for known event types]
+Стандартни настройки за видовете събития
+[Show when filter is active]
+Показване при включен филтър
+[Popup]
+Рopup
 [Tray]
 Трей
+[Sound]
+Звук
+[Log to file]
+Запис във файл
+[Show icons in tray only when the chat room is not active]
+Показване на икони в трея само при неактивна чат стая
+[Highlight event]
+Отличаване на събитие
+[Show popups only when the chat room is not active]
+Показване на popups, когато чат стаята е активна
+[Hidden window]
+
 [&Hide/Show]
 Показване/Скриване
 [E&xit]
@@ -1246,6 +1266,7 @@ Google Translate
 Показване на текста "%s"
 [Re&ad status message]
 Показване на текста за състояние
+;file \src\core\stdaway\src\options.cpp
 ;file \src\core\stdaway\src\sendmsg.cpp
 [I've been away since %time%.]
 Отсъствам от %time%.
@@ -1310,6 +1331,8 @@ Google Translate
 ;file \src\core\stdclist\src\clistopts.cpp
 [Global]
 Общо
+[General]
+Основни
 ;file \src\core\stdclist\src\cluiopts.cpp
 ;file \src\core\stdcrypt\src\encrypt.cpp
 [Standard crypto provider]
@@ -1474,28 +1497,6 @@ Google Translate
 Премахване на цветовете от съобщенията в дневника
 [Enable the 'event filter' for new rooms]
 Включване на филтъра за събития в нови стаи
-[Show topic changes]
-Промяна на тема
-[Show users joining]
-Влизане на потребител
-[Show users disconnecting]
-Излизане от мрежата на потребител
-[Show messages]
-Съобщение
-[Show actions]
-Действия
-[Show users leaving]
-Излизане на потребител
-[Show users being kicked]
-Изгонване на потребител
-[Show notices]
-Известия
-[Show users changing name]
-Промяна на прякор
-[Show information messages]
-Информационни съобщения
-[Show status changes of users]
-Промяна на състояние на потребител
 [Show icon for topic changes]
 Смяна на темата (topic)
 [Show icon for users joining]
@@ -1520,58 +1521,6 @@ Google Translate
 Информационни съобщения
 [Show icon for status changes]
 Промяна на състояние
-[Show icons in tray only when the chat room is not active]
-Показване на икони в трея само при неактивна чат стая
-[Show icon in tray for topic changes]
-Промяна на тема (topic)
-[Show icon in tray for users joining]
-Влизане на потребител
-[Show icon in tray for users disconnecting]
-Излизане от мрежата на потребители
-[Show icon in tray for messages]
-Съобщение
-[Show icon in tray for actions]
-Действия
-[Show icon in tray for highlights]
-Отличаване
-[Show icon in tray for users leaving]
-Излизане на потребител
-[Show icon in tray for users kicking other user]
-Потребител изгонва друг потребител
-[Show icon in tray for notices]
-Известие
-[Show icon in tray for name changes]
-Промяна на прякор
-[Show icon in tray for information messages]
-Информационни съобщения
-[Show icon in tray for status changes]
-Промяна на състояние
-[Show popups only when the chat room is not active]
-Показване на popups, когато чат стаята е активна
-[Show popup for topic changes]
-Показване на popups при промяна на тема
-[Show popup for users joining]
-Показване на popups при влизане на потребител
-[Show popup for users disconnecting]
-Показване на popups при излизане от мрежата на потребители
-[Show popup for messages]
-Показване на popups за ново съобщение
-[Show popup for actions]
-Показване на popups за действия
-[Show popup for highlights]
-Показване на popups при отличаване
-[Show popup for users leaving]
-Показване на popups при излизане на потребител
-[Show popup for users kicking other user]
-Показване на popups при изгонване на потребител
-[Show popup for notices]
-Показване на popup за известие
-[Show popup for name changes]
-Показване на popups при промяна на име
-[Show popup for information messages]
-Показване на popups за информационни съобщения
-[Show popup for status changes]
-Показване на popups при промяна на състояние
 [Window icon]
 Икона на прозореца
 [Bold]
@@ -1646,16 +1595,8 @@ Google Translate
 Външен вид и функционалност на чат стаите
 [Appearance of the message log]
 Външен вид на дневника за съобщения
-[Default events to show in new chat rooms if the 'event filter' is enabled]
-Стандартни събития за показване в чат стая при включен "филтър на събития"
 [Icons to display in the message log]
 Икони за изобразяване в дневника за съобщения
-[Icons to display in the tray]
-Икони за изобразяване в трея
-[Popups to display]
-Popups за изобразяване
-[General]
-Основни
 [Chat log]
 Чат дневник
 [Chat]
@@ -2012,10 +1953,10 @@ Popups са изключени
 Сменихте името си на %s
 [%s kicked %s]
 %s изгони %s
-[Notice from %s: ]
-Известие от %s:\s
-[The topic is '%s%s']
-Темата е "%s%s"
+[Notice from %s]
+Известие от %s
+[The topic is '%s']
+Темата е "%s"
 [ (set by %s on %s)]
  (зададена от %s на %s)
 [ (set by %s)]
@@ -2091,8 +2032,6 @@ Popups са изключени
 %s излезе %s
 [%s kicked %s from %s]
 %s изгони %s от %s
-[Notice from %s]
-Известие от %s
 [Topic change in %s]
 Промяна на темата в %s
 [Information in %s]
@@ -2101,28 +2040,13 @@ Popups са изключени
 %s даде статут "%s" на %s в %s
 [%s disables '%s' status for %s in %s]
 %s отне статута "%s" на %s в %s
-[%s says: %s]
-%s каза: %s
-[%s has left (%s)]
-%s излезе (%s)
-[%s has disconnected (%s)]
-%s излезе от мрежата (%s)
-[%s kicked %s (%s)]
-%s изгони %s (%s)
-[Notice from %s: %s]
-Известие от %s: %s
-[The topic is '%s']
-Темата е "%s"
-[The topic is '%s' (set by %s)]
-Темата е "%s" (зададена от %s)
+[%s says]
+%s каза
 [Chat rooms]
 
-[Look up '%s':]
-Търсене за "%s":
-[No word to look up]
-Няма дума за търсене
-[&Message %s]
-Съобщение %s
+;file \src\mir_app\src\chat_ui.cpp
+[Events and filters]
+Събития и филтри
 ;file \src\mir_app\src\clcitems.cpp
 ;file \src\mir_app\src\clistgroups.cpp
 [New group]
@@ -2142,6 +2066,9 @@ Popups са изключени
 Свързване
 [Connecting (attempt %d)]
 Свързване (опит %d)
+;file \src\mir_app\src\clistopts.cpp
+[Common]
+Общи
 ;file \src\mir_app\src\clistsettings.cpp
 [(Unknown contact)]
 (Непознат контакт)
@@ -2371,6 +2298,8 @@ Win +\s
 Прочитане на съобщение
 [Open Options page]
 Отваря "Настройки"
+[Toggle groups]
+Включване/Изключване на групите
 [Open logging options]
 Отваря "Настройки на дневника на мрежовите връзки"
 [Open 'Find user' dialog]
@@ -2618,6 +2547,8 @@ Win +\s
 Изпълнение
 [Compact]
 
+[Check database]
+
 [Size]
 Размер
 [Created]
@@ -2628,6 +2559,15 @@ Win +\s
 Моите профили
 [New profile]
 Нов профил
+;file \src\mir_app\src\proto_interface.cpp
+[Request authorization]
+Молба за упълномощаване
+[Grant authorization]
+Даване на пълномощно
+[Revoke authorization]
+Отнемане на пълномощното
+[Load server history]
+
 ;file \src\mir_app\src\proto_opts.cpp
 [WARNING! The account is going to be deleted. It means that all its settings, contacts and histories will be also erased.\n\nAre you absolutely sure?]
 ВНИМАНИЕ! Акаунтът ще бъде изтрит. Тоест всички негови настройки, контакти и историята ще бъдат изтрити.\n\nНаистина ли желаете това?
@@ -2682,13 +2622,6 @@ ID на акаунта
 [&Accounts...]
 Акаунти...
 ;file \src\mir_app\src\proto_order.cpp
-;file \src\mir_app\src\proto_utils.cpp
-[Request authorization]
-Молба за упълномощаване
-[Grant authorization]
-Даване на пълномощно
-[Revoke authorization]
-Отнемане на пълномощното
 ;file \src\mir_app\src\searchresults.cpp
 [Could not start a search on '%s', there was a problem - is %s connected?]
 Търсенето в "%s" не може да бъде започнато. Свързан ли сте към %s?
@@ -2760,8 +2693,6 @@ ANSI приставка
 Изкл.
 [Password]
 Парола
-[Unused]
-
 [Frames]
 Рамки
 [Add group]
@@ -2788,6 +2719,8 @@ WAV файлове
 [Unselect all]
 
 ;file \src\mir_app\src\srmm_base.cpp
+[&Message %s]
+Съобщение %s
 [Nickname]
 Прякор
 [Unique ID]
@@ -2795,6 +2728,11 @@ WAV файлове
 ;file \src\mir_app\src\srmm_log.cpp
 [Log viewer]
 
+;file \src\mir_app\src\srmm_log_rtf.cpp
+[Look up '%s':]
+Търсене за "%s":
+[No word to look up]
+Няма дума за търсене
 ;file \src\mir_app\src\srmm_toolbar.cpp
 [<Separator>]
 <Разделител>

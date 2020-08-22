@@ -2,7 +2,7 @@
 ;============================================================
 ;  File: Clist_modern.dll
 ;  Plugin: Modern contact list
-;  Version: 0.9.1.9
+;  Version: 0.9.1.11
 ;  Authors: Artem Shpynov, Ricardo Pescuma Domenecci and Anton Senko based on clist_mw by Bethoven
 ;============================================================
 [Displays contacts, event notifications, protocol status with advanced visual modifications. Supported multi-window modifications, enhanced metacontact cooperation.]
@@ -56,8 +56,6 @@
 Налични режими за преглед
 [Include protocols]
 Включени протоколи
-[New]
-Нов
 [Include groups]
 Включени групи
 [Show contacts in groups]
@@ -160,20 +158,10 @@
 Сигурни ли сте, че желаете контактът "%s" да бъде изтрит?
 [This will erase all history and settings for this contact!]
 Ще бъде изтрита изтрита историята и настройките за контакта!
-[Hide offline users]
-Скриване на контактите "Извън линия"
-[Hide empty groups]
-Скриване на празните групи
-[Disable groups]
-Без групи
-[Ask before deleting contacts]
-Запитване преди изтриване на контакт
-[Don't move offline user to bottom]
-
-[Contact list]
-Списък с контакти
 [Contact list sorting]
 Сортиране на списъка с контакти по:
+[Don't move offline user to bottom]
+
 [1st:]
 1ви:
 [2nd:]
@@ -182,8 +170,8 @@
 3ти:
 [Place offline users out of groups]
 
-[Gamma correction]
-Корекция на гамата
+[Selection mode]
+Режим на маркиране
 [Default]
 Стандарт
 [Full selection]
@@ -192,8 +180,8 @@
 Частично маркиране
 [No selection]
 Без маркиране
-[Selection mode]
-Режим на маркиране
+[Gamma correction]
+Корекция на гамата
 [Bring to front if covered]
 Извеждане отпред, ако е покрит
 [Hide contact list after]
@@ -258,8 +246,6 @@ x100 ms
 Полупрозрачност на отличения текст
 [Dim idle contacts]
 Потъмняване на бездействащите контакти
-['Hide offline' means to hide:]
-Скриване като извън линия:
 [Groups]
 Групи
 [Draw a line alongside group names]
@@ -630,6 +616,8 @@ ms между две мигания
 Облици
 [Modern contact list]
 Modern contact list
+[Contact list]
+Списък с контакти
 [Avatar overlay]
 Насложени над аватара икони
 [Status overlay]
@@ -893,6 +881,8 @@ Angeli-Ka (изображения), FYR (шаблон)
 Ползване на групи / Без групи
 [Use groups]
 Ползване на групи
+[Disable groups]
+Без групи
 [Enable/Disable sounds]
 Включване/Изключване на звука
 [Enable sounds]
@@ -908,6 +898,8 @@ Angeli-Ka (изображения), FYR (шаблон)
 [Toolbar upgrade]
 
 ;file \plugins\Clist_modern\src\modern_viewmodebar.cpp
+[All contacts]
+Всички контакти
 [Ungrouped contacts]
 Негрупирани контакти
 [And]
@@ -926,22 +918,30 @@ Angeli-Ka (изображения), FYR (шаблон)
 Дни
 [Configuring view mode: %s]
 Настройвате режим за преглед: %s
-[All contacts]
-Всички контакти
+[Add view mode]
+
+[Rename view mode]
+
+[Remove view mode]
+
 [Filtering]
 Филтриране
 [*** All contacts ***]
 *** Всички контакти ***
 [Configure view modes]
 Настройване на режимите за преглед
-[Really delete this view mode? This cannot be undone]
-Наистина ли желаете режимът за преглед да бъде изтрит? Това действие не може да бъде отменено.
-[Delete a view mode]
-Изтриване на режим за преглед
+[Enter view mode name]
+
 [A view mode with this name does already exist]
 Вече съществува режим за преглед с въведеното име
 [Duplicate name]
 Повтарящо се име
+[Enter new view mode name]
+
+[Really delete this view mode? This cannot be undone]
+Наистина ли желаете режимът за преглед да бъде изтрит? Това действие не може да бъде отменено.
+[Delete a view mode]
+Изтриване на режим за преглед
 [Setup view modes...]
 Настройване на режимите за преглед...
 [Select a view mode]

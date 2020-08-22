@@ -2,7 +2,7 @@
 ;============================================================
 ;  File: Msg_Export.dll
 ;  Plugin: Message export
-;  Version: 3.1.2.4
+;  Version: 3.1.2.6
 ;  Authors: Kennet Nielsen, mod by ring0
 ;============================================================
 [Exports every message, URL or file you receive to a text file.]
@@ -30,20 +30,14 @@ Notka: 0 = bez limitu
 Format czasu
 [Use JSON format for export]
 
-[Use UTF8 in new files]
-UTF8 dla nowych wiadomości
+[Use UTF-8 in new files]
+UTF-8 dla nowych wiadomości
 [Append extra new line]
 Dodatkowa nowa linia
 [Use << and >>]
 Użyj << i >>
-[Auto filename]
-Autonazewnictwo
-[Clear all]
-Wyczyść wszystko
 [Help]
 Pomoc
-[Export all history]
-Eksportuj wszystko
 [Exporting old messages]
 Eksportowanie starych wiadomości
 [History file for %s (%s, format %s)]
@@ -70,10 +64,18 @@ Usuń plik
 Analizuj
 [User &details]
 &Dane kontaktu
-[Export selected]
-Eksportuj zaznaczony
+[Export]
+Eksportuj
 [Set to default filename]
 Ustaw domyślną nazwę pliku
+[Select all]
+Zaznacz wszystko
+[Select none]
+
+[Auto filename]
+Autonazewnictwo
+[Clear all]
+Wyczyść wszystko
 [Copy]
 Kopiuj
 ;file \plugins\Msg_Export\src\FileViewer.cpp
@@ -117,14 +119,14 @@ Wybierz folder docelowy
 Plik
 [Nick]
 Nick
-[Proto]
-Protokół
-[UIN]
-UIN
+[Account]
+Konto
+[User ID]
+ID użytkownika
 [No contacts found to export]
 Nie znaleziono kontaktów do eksportu
-[Export Protocols]
-Eksportuj protokoły
+[Export accounts]
+
 [Message export]
 Eksport wiadomości
 [History]
@@ -179,8 +181,6 @@ O kontakcie
       Historia dla
 [User]
 Użytkownik
-[Protocol]
-Protokół
 [File: ]
 Plik:\s
 [Description: ]

@@ -359,6 +359,7 @@ public:
 	void ShowError()
 	{
 		MessageBox(m_hwnd, TranslateT("Update failed! One of the components wasn't downloaded correctly. Try it again later."), TranslateT("Plugin Updater"), MB_OK | MB_ICONERROR);
+		dwThreadId = 0;
 		Close();
 	}
 };
@@ -463,7 +464,15 @@ static void DlgUpdateSilent(void *param)
 	g_plugin.setByte(DB_SETTING_RESTART_COUNT, 5);
 	g_plugin.setByte(DB_SETTING_NEED_RESTART, 1);
 
+	if (g_plugin.bBackup)
+		CallService(MS_AB_BACKUP, 0, 0);
+
 	// 5) Prepare Restart
+	if (g_plugin.bAutoRestart) {
+		RestartPrompt(0);
+		return;
+	}
+
 	wchar_t tszTitle[100];
 	mir_snwprintf(tszTitle, TranslateT("%d component(s) was updated"), count);
 

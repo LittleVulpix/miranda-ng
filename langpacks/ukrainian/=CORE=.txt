@@ -1,7 +1,7 @@
 ;============================================================
 ;  File: miranda32/64.exe
 ;  Module: Miranda Core
-;  Version: 0.95.12
+;  Version: 0.95.13
 ;============================================================
 ;file \src\core\stdautoaway\res\resource.rc
 [Become idle if the following is left unattended:]
@@ -66,14 +66,6 @@
 Справді видалити %s зі списку?
 [This will erase all history and settings for this contact!]
 Ця дія видалить усю історію і налаштування цього контакту!
-[Hide offline users]
-Сховати відключених
-[Hide empty groups]
-Сховати порожні групи
-[Disable groups]
-Вимкнути групи
-[Ask before deleting contacts]
-Запит перед видаленням
 [Sort contacts by name]
 за ім'ям
 [Sort contacts by status]
@@ -100,14 +92,14 @@
 Декілька значків
 [Only when statuses differ]
 при різних статусах
-[Contact list]
-Список контактів
 [System tray icon]
 Значок у треї
 [System tray icon when using multiple protocols]
 Значки протоколів у треї
 [Contact list sorting]
 Впорядкування списку
+[Don't move offline user to bottom]
+Не переміщати відключених униз
 [Window]
 Вікно
 [Always on top]
@@ -170,8 +162,6 @@
 Напівпрозоре виділення
 [Dim idle contacts]
 Затемняти неактивних користувачів
-['Hide offline' means to hide:]
-Сховати відключених - сховати:
 [Groups]
 Групи
 [Draw a line alongside group names]
@@ -196,10 +186,10 @@
 Час:
 [milliseconds]
 мс
-[Left margin:]
-Ліве поле:
 [Hide vertical scroll bar]
 Сховати смугу прокрутки
+[Left margin:]
+Ліве поле:
 [Row height:]
 Висота рядків:
 [Gamma correction]
@@ -1104,6 +1094,8 @@ UIN, E-mail тощо
 Показувати контекстне меню
 [Show user information]
 Показувати дані користувача
+[Contact list]
+Список контактів
 [Display subcontact nickname]
 Використовувати нік субконтакту
 [Display subcontact display name]
@@ -1152,10 +1144,38 @@ UIN, E-mail тощо
 Про Miranda NG
 [Credits >]
 Автори >
-[Hidden window]
+[Hide offline users]
+Сховати відключених
+[Hide empty groups]
+Сховати порожні групи
+[Enable groups]
+Увімкнути групи
+[Ask before deleting contacts]
+Запит перед видаленням
+[Remove temporary contacts on exit]
 
+['Hide offline' means to hide:]
+Сховати відключених - сховати:
+[Default settings for known event types]
+Налаштування для відомих типів подій
+[Show when filter is active]
+Показувати при ввімк. фільтрі
+[Popup]
+Спливаюче вікно
 [Tray]
 Трей
+[Sound]
+Звук
+[Log to file]
+Запис у файл
+[Show icons in tray only when the chat room is not active]
+Показувати значки лише коли вікно чату неактивне
+[Highlight event]
+Підсвічування
+[Show popups only when the chat room is not active]
+Показувати сплив. вікна лише коли вікно чату неактивне
+[Hidden window]
+
 [&Hide/Show]
 С&ховати/Показати
 [E&xit]
@@ -1246,6 +1266,7 @@ UIN, E-mail тощо
 Читати повідомлення "%s"
 [Re&ad status message]
 Читати статусне повідомлення
+;file \src\core\stdaway\src\options.cpp
 ;file \src\core\stdaway\src\sendmsg.cpp
 [I've been away since %time%.]
 Відійшов о %time%. Скоро повернуся.
@@ -1310,6 +1331,8 @@ UIN, E-mail тощо
 ;file \src\core\stdclist\src\clistopts.cpp
 [Global]
 Глобальні
+[General]
+Загальне
 ;file \src\core\stdclist\src\cluiopts.cpp
 ;file \src\core\stdcrypt\src\encrypt.cpp
 [Standard crypto provider]
@@ -1474,28 +1497,6 @@ UIN, E-mail тощо
 Заборонити кольори в журналі
 [Enable the 'event filter' for new rooms]
 Увімкнути "Фільтр подій" для нових кімнат
-[Show topic changes]
-Зміни теми
-[Show users joining]
-Входи до чату
-[Show users disconnecting]
-Відключення користувачів
-[Show messages]
-Повідомлення
-[Show actions]
-Дії
-[Show users leaving]
-Виходи з чату
-[Show users being kicked]
-Стусани
-[Show notices]
-Приватні повідомлення
-[Show users changing name]
-Зміни ніків
-[Show information messages]
-Інформаційні повідомлення
-[Show status changes of users]
-Зміни статусів
 [Show icon for topic changes]
 Зміни теми
 [Show icon for users joining]
@@ -1519,58 +1520,6 @@ UIN, E-mail тощо
 [Show icon for information messages]
 Інформаційні повідомлення
 [Show icon for status changes]
-Зміни статусів
-[Show icons in tray only when the chat room is not active]
-Показувати значки лише коли вікно чату неактивне
-[Show icon in tray for topic changes]
-Зміни теми
-[Show icon in tray for users joining]
-Входи до чату
-[Show icon in tray for users disconnecting]
-Відключення користувачів
-[Show icon in tray for messages]
-Повідомлення
-[Show icon in tray for actions]
-Дії
-[Show icon in tray for highlights]
-Підсвічені повідомлення
-[Show icon in tray for users leaving]
-Виходи з чату
-[Show icon in tray for users kicking other user]
-Стусани
-[Show icon in tray for notices]
-Приватні повідомлення
-[Show icon in tray for name changes]
-Зміни ніків
-[Show icon in tray for information messages]
-Інформаційні повідомлення
-[Show icon in tray for status changes]
-Зміни статусів
-[Show popups only when the chat room is not active]
-Показувати сплив. вікна лише коли вікно чату неактивне
-[Show popup for topic changes]
-Зміни теми
-[Show popup for users joining]
-Входи до чату
-[Show popup for users disconnecting]
-Відключення користувачів
-[Show popup for messages]
-Повідомлення
-[Show popup for actions]
-Дії
-[Show popup for highlights]
-Підсвічені повідомлення
-[Show popup for users leaving]
-Виходи з чату
-[Show popup for users kicking other user]
-Стусани
-[Show popup for notices]
-Приватні повідомлення
-[Show popup for name changes]
-Зміни ніків
-[Show popup for information messages]
-Інформаційні повідомлення
-[Show popup for status changes]
 Зміни статусів
 [Window icon]
 Значок вікна
@@ -1646,16 +1595,8 @@ UIN, E-mail тощо
 Інтерфейс та функції вікон чатів
 [Appearance of the message log]
 Вигляд журналу повідомлень
-[Default events to show in new chat rooms if the 'event filter' is enabled]
-Показувати в новому вікні, якщо "Фільтр подій" увімкнений
 [Icons to display in the message log]
 Значки в журналі повідомлень
-[Icons to display in the tray]
-Значки в треї
-[Popups to display]
-Спливаючі вікна
-[General]
-Загальне
 [Chat log]
 Журнал чату
 [Chat]
@@ -2012,10 +1953,10 @@ UIN, E-mail тощо
 Ви змінили ім'я на %s
 [%s kicked %s]
 %s вигнав %s
-[Notice from %s: ]
-Приватне повідомлення від %s:\s
-[The topic is '%s%s']
-Тема '%s%s'
+[Notice from %s]
+Приватне повідомлення від %s
+[The topic is '%s']
+Тема '%s'
 [ (set by %s on %s)]
  (встановив %s %s)
 [ (set by %s)]
@@ -2091,8 +2032,6 @@ UIN, E-mail тощо
 %s вийшов з %s
 [%s kicked %s from %s]
 %s вигнав %s з %s
-[Notice from %s]
-Приватне повідомлення від %s
 [Topic change in %s]
 Зміна теми в %s
 [Information in %s]
@@ -2101,28 +2040,13 @@ UIN, E-mail тощо
 %s вмикає статус "%s" для %s у %s
 [%s disables '%s' status for %s in %s]
 %s вимикає статус "%s" для %s у %s
-[%s says: %s]
-%s каже: %s
-[%s has left (%s)]
-%s вийшов (%s)
-[%s has disconnected (%s)]
-%s відключився (%s)
-[%s kicked %s (%s)]
-%s вигнав %s (%s)
-[Notice from %s: %s]
-Приватне повідомлення від %s: %s
-[The topic is '%s']
-Тема: %s
-[The topic is '%s' (set by %s)]
-Тема %s (встановив %s)
+[%s says]
+%s каже
 [Chat rooms]
 Чати
-[Look up '%s':]
-Шукати "%s" у
-[No word to look up]
-Нічого шукати
-[&Message %s]
-&Написати %s
+;file \src\mir_app\src\chat_ui.cpp
+[Events and filters]
+Події та фільтри
 ;file \src\mir_app\src\clcitems.cpp
 ;file \src\mir_app\src\clistgroups.cpp
 [New group]
@@ -2142,6 +2066,9 @@ UIN, E-mail тощо
 З'єднання
 [Connecting (attempt %d)]
 З'єднання (спроба %d)
+;file \src\mir_app\src\clistopts.cpp
+[Common]
+Загальний
 ;file \src\mir_app\src\clistsettings.cpp
 [(Unknown contact)]
 (Невідомий контакт)
@@ -2371,6 +2298,8 @@ Miranda
 Читати повідомлення
 [Open Options page]
 Відкрити налаштування
+[Toggle groups]
+Увімк./вимк. групи
 [Open logging options]
 Опції журналу з'єднань
 [Open 'Find user' dialog]
@@ -2618,6 +2547,8 @@ xСтатус
 Запуск
 [Compact]
 Стиснути
+[Check database]
+Перевірити базу
 [Size]
 Розмір
 [Created]
@@ -2628,6 +2559,15 @@ xСтатус
 Мої профілі
 [New profile]
 Створити профіль
+;file \src\mir_app\src\proto_interface.cpp
+[Request authorization]
+Запитати авторизацію
+[Grant authorization]
+Авторизувати
+[Revoke authorization]
+Відкликати авторизацію
+[Load server history]
+
 ;file \src\mir_app\src\proto_opts.cpp
 [WARNING! The account is going to be deleted. It means that all its settings, contacts and histories will be also erased.\n\nAre you absolutely sure?]
 УВАГА! Обліковий запис буде видалено. Це призведе до повного видалення всіх налаштувань, контактів та історії даного облікового запису.\n\nВи впевнені?
@@ -2682,13 +2622,6 @@ ID облікового запису
 [&Accounts...]
 Облікові записи...
 ;file \src\mir_app\src\proto_order.cpp
-;file \src\mir_app\src\proto_utils.cpp
-[Request authorization]
-Запитати авторизацію
-[Grant authorization]
-Авторизувати
-[Revoke authorization]
-Відкликати авторизацію
 ;file \src\mir_app\src\searchresults.cpp
 [Could not start a search on '%s', there was a problem - is %s connected?]
 Не можу запустити пошук у мережі %s. Перевірте з'єднання з %s.
@@ -2760,8 +2693,6 @@ ANSI-плагін
 Вимк.
 [Password]
 Пароль
-[Unused]
-
 [Frames]
 Фрейми
 [Add group]
@@ -2788,6 +2719,8 @@ ANSI-плагін
 [Unselect all]
 
 ;file \src\mir_app\src\srmm_base.cpp
+[&Message %s]
+&Написати %s
 [Nickname]
 Нік
 [Unique ID]
@@ -2795,6 +2728,11 @@ ANSI-плагін
 ;file \src\mir_app\src\srmm_log.cpp
 [Log viewer]
 
+;file \src\mir_app\src\srmm_log_rtf.cpp
+[Look up '%s':]
+Шукати "%s" у
+[No word to look up]
+Нічого шукати
 ;file \src\mir_app\src\srmm_toolbar.cpp
 [<Separator>]
 <Роздільник>

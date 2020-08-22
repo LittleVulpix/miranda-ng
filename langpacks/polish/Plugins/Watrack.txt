@@ -7,6 +7,8 @@
 ;============================================================
 [Paste played music info into message window or status text]
 Wkleja informacje o odtwarzanych multimediach w oknie rozmowy lub statusie.
+[Basic]
+Podstawowe
 [Clear xStatus before set new one]
 Czyść xStatus przed ustawieniem kolejnego
 [Emulate Multimedia keys]
@@ -373,8 +375,6 @@ odtwarzacz
 "Variables" wyjście ANSI
 [FPS (Frames per second)]
 FPS (klatek na sekundę)
-[If Variables service used, returned value will be in ANSI encoding (default is UTF8)]
-Jeśli używana jest usługa zmiennych, zwrócona wartość zostanie podana w kodowaniu ANSI (domyślnie w UTF8)
 [Save settings in INI-file]
 Zapisz ustawienia w INI
 [VBR or not]
@@ -656,3 +656,5 @@ Wyłącz WATrack
 Sprawdzaj nieznane formaty
 [Check unknown file formats if player gives info.]
 Sprawdzaj nieznane formaty jeżeli odtwarzacz dostarcza informacji. 
+[Oops, something wrong!]
+

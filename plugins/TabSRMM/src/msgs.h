@@ -282,6 +282,7 @@ struct TContainerData : public MZeroedObject
 	void LoadOverrideTheme(void);
 	void LoadThemeDefaults(void);
 	void OptionsDialog(void);
+	void QueryClientArea(RECT &rc);
 	void QueryPending(void);
 	void ReflashContainer(void);
 	void Resize(bool, int newWidth);
@@ -383,6 +384,7 @@ class CMsgDialog : public CSrmmBaseDialog
 	int     FindRTLLocale(void);
 	void    FlashOnClist(MEVENT hEvent, DBEVENTINFO *dbei);
 	void    FlashTab(bool bInvertMode);
+	LRESULT GetSendButtonState();
 	void    GetSendFormat(void);
 	HICON   GetXStatusIcon() const;
 	void    HandlePasteAndSend(void);
@@ -468,6 +470,7 @@ public:
 	bool    m_bEditNotesActive;
 	bool    m_bShowAvatar;
 	bool    m_bSaveBtn, m_bNeedCheckSize;
+	bool    m_bForcedClose;
 	bool    m_bErrorState;
 	bool    m_bDividerWanted, m_bDividerSet;
 	bool    m_bSplitterOverride;
@@ -583,44 +586,44 @@ public:
 		return m_pContainer->IsActive() && m_pContainer->m_hwndActive == m_hwnd;
 	}
 
-	void  DM_OptionsApplied(bool bRemakeLog = true);
-	void  DM_RecalcPictureSize(void);
-	void  DM_ScrollToBottom(WPARAM wParam, LPARAM lParam);
+	void    DM_OptionsApplied(bool bRemakeLog = true);
+	void    DM_RecalcPictureSize(void);
+	void    DM_ScrollToBottom(WPARAM wParam, LPARAM lParam);
+		     
+	void    ActivateTooltip(int iCtrlId, const wchar_t *pwszMessage);
+	void    CheckStatusIconClick(POINT pt, const RECT &rc, int gap, int code);
+	void    DrawStatusIcons(HDC hDC, const RECT &rc, int gap);
+	void    EnableSendButton(bool bMode) const;
+	void    EnableSending(bool bMode) const;
+	void    FormatRaw(CMStringW&, int flags, bool isSent);
+	bool    FormatTitleBar(const wchar_t *szFormat, CMStringW &dest);
+	bool    GetAvatarVisibility(void);
+	void    GetClientIcon(void);
+	HICON   GetMyContactIcon(LPCSTR szSetting);
+	void    GetMyNick(void);
+	HICON   IconFromAvatar(void) const;
+	void    KbdState(bool &isShift, bool &isControl, bool &isAlt);
+	void    LimitMessageText(int iLen);
+	int     LoadLocalFlags(void);
+	bool    MustPlaySound(void) const;
+	void    NotifyDeliveryFailure(void) const;
+	void    RemakeLog(void);
+	void    SaveSplitter(void);
+	void    SelectContainer(void);
+	void    SetDialogToType(void);
+	void    ShowPicture(bool showNewPic);
+	void    SplitterMoved(int x, HWND hwnd);
+	void    SwitchToContainer(const wchar_t *szNewName);
+	int     Typing(int secs);
+	void    UpdateReadChars(void) const;
+	void    UpdateSaveAndSendButton(void);
 
-	void  ActivateTooltip(int iCtrlId, const wchar_t *pwszMessage);
-	void  CheckStatusIconClick(POINT pt, const RECT &rc, int gap, int code);
-	void  DrawStatusIcons(HDC hDC, const RECT &rc, int gap);
-	void  EnableSendButton(bool bMode) const;
-	void  EnableSending(bool bMode) const;
-	void  FormatRaw(CMStringW&, int flags, bool isSent);
-	bool  FormatTitleBar(const wchar_t *szFormat, CMStringW &dest);
-	bool  GetAvatarVisibility(void);
-	void  GetClientIcon(void);
-	HICON GetMyContactIcon(LPCSTR szSetting);
-	void  GetMyNick(void);
-	HICON IconFromAvatar(void) const;
-	void  KbdState(bool &isShift, bool &isControl, bool &isAlt);
-	void  LimitMessageText(int iLen);
-	int   LoadLocalFlags(void);
-	bool  MustPlaySound(void) const;
-	void  NotifyDeliveryFailure(void) const;
-	void  RemakeLog(void);
-	void  SaveSplitter(void);
-	void  SelectContainer(void);
-	void  SetDialogToType(void);
-	void  ShowPicture(bool showNewPic);
-	void  SplitterMoved(int x, HWND hwnd);
-	void  SwitchToContainer(const wchar_t *szNewName);
-	int   Typing(int secs);
-	void  UpdateReadChars(void) const;
-	void  UpdateSaveAndSendButton(void);
-
-	int   MsgWindowDrawHandler(DRAWITEMSTRUCT *dis);
-	int   MsgWindowMenuHandler(int selection, int menuId);
-	int   MsgWindowUpdateMenu(HMENU submenu, int menuID);
-
-	void  RenderToolbarBG(HDC hdc, const RECT &rcWindow) const;
-	void  UpdateToolbarBG(void);
+	int     MsgWindowDrawHandler(DRAWITEMSTRUCT *dis);
+	int     MsgWindowMenuHandler(int selection, int menuId);
+	int     MsgWindowUpdateMenu(HMENU submenu, int menuID);
+		     
+	void    RenderToolbarBG(HDC hdc, const RECT &rcWindow) const;
+	void    UpdateToolbarBG(void);
 };
 
 extern LIST<void> g_arUnreadWindows;
@@ -722,7 +725,6 @@ struct TIconDescW
 #define DM_CHECKSIZE             (TM_USER+37)
 #define DM_FORCEREDRAW           (TM_USER+38)
 #define DM_QUERYHCONTACT         (TM_USER+41)
-#define DM_QUERYCLIENTAREA       (TM_USER+45)
 #define DM_ACTIVATEME            (TM_USER+46)
 #define DM_STATUSMASKSET         (TM_USER+51)
 #define DM_UPDATESTATUSMSG       (TM_USER+53)
