@@ -78,7 +78,7 @@ static SESSION_INFO* GetActiveSession(void)
 // Log manager functions
 //	Necessary to keep track of events in a window log
 
-static LOGINFO *LM_AddEvent(LOGINFO **ppLogListStart, LOGINFO **ppLogListEnd)
+static LOGINFO* LM_AddEvent(LOGINFO **ppLogListStart, LOGINFO **ppLogListEnd)
 {
 	if (!ppLogListStart || !ppLogListEnd)
 		return nullptr;
@@ -897,7 +897,6 @@ static void ResetApi()
 
 	g_chatApi.SetOffline = ::SetOffline;
 	g_chatApi.SetAllOffline = ::SetAllOffline;
-	g_chatApi.AddEvent = ::AddEvent;
 	g_chatApi.FindRoom = ::FindRoom;
 	g_chatApi.DoRtfToTags = ::DoRtfToTags;
 
@@ -910,7 +909,6 @@ static void ResetApi()
 	g_chatApi.DoTrayIcon = ::DoTrayIcon;
 	g_chatApi.DoPopup = ::DoPopup;
 	g_chatApi.ShowPopup = ::ShowPopup;
-	g_chatApi.LogToFile = ::LogToFile;
 	g_chatApi.GetChatLogsFilename = ::GetChatLogsFilename;
 	g_chatApi.Log_SetStyle = ::Log_SetStyle;
 

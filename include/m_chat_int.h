@@ -75,6 +75,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ICON_STATUS4          18
 #define ICON_STATUS5          19
 
+#define CHATMODE_NORMAL        0
+#define CHATMODE_MUTE          1
+#define CHATMODE_UNMUTE        2
+
 //structs
 
 struct SESSION_INFO;
@@ -313,7 +317,6 @@ struct CHAT_MANAGER
 
 	BOOL          (*SetOffline)(MCONTACT hContact, BOOL bHide);
 	BOOL          (*SetAllOffline)(BOOL bHide, const char *pszModule);
-	BOOL          (*AddEvent)(MCONTACT hContact, HICON hIcon, MEVENT hEvent, int type, wchar_t* fmt, ...);
 	MCONTACT      (*FindRoom)(const char *pszModule, const wchar_t *pszRoom);
 
 	char*         (*Log_CreateRTF)(LOGSTREAMDATA *streamData);
@@ -325,7 +328,6 @@ struct CHAT_MANAGER
 	BOOL          (*DoTrayIcon)(SESSION_INFO *si, GCEVENT *gce);
 	BOOL          (*DoPopup)(SESSION_INFO *si, GCEVENT *gce);
 	int           (*ShowPopup)(MCONTACT hContact, SESSION_INFO *si, HICON hIcon, char* pszProtoName, wchar_t* pszRoomName, COLORREF crBkg, const wchar_t* fmt, ...);
-	BOOL          (*LogToFile)(SESSION_INFO *si, GCEVENT *gce);
 	wchar_t*      (*GetChatLogsFilename)(SESSION_INFO *si, time_t tTime);
 	char*         (*Log_SetStyle)(int style);
 

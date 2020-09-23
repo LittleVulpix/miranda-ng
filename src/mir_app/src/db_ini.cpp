@@ -168,7 +168,7 @@ protected:
 public:
 	CWarnIniChangeDlg(warnSettingChangeInfo_t *warnInfo) :
 		CDlgBase(g_plugin, IDD_WARNINICHANGE),
-		m_yes(this, IDYES), m_no(this, IDNO),
+		m_yes(this, IDOK), m_no(this, IDNO),
 		m_noWarn(this, IDC_WARNNOMORE),
 		m_iniName(this, IDC_ININAME), m_settingName(this, IDC_SETTINGNAME),
 		m_newValue(this, IDC_NEWVALUE), m_securityInfo(this, IDC_SECURITYINFO)
@@ -216,13 +216,7 @@ protected:
 
 	void Recycle_OnClick(CCtrlBase*)
 	{
-		ptrW szIniPath(m_iniPath.GetText());
-		SHFILEOPSTRUCT shfo = {};
-		shfo.wFunc = FO_DELETE;
-		shfo.pFrom = szIniPath;
-		szIniPath[mir_wstrlen(szIniPath) + 1] = '\0';
-		shfo.fFlags = FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT | FOF_ALLOWUNDO;
-		SHFileOperation(&shfo);
+		DeleteDirectoryTreeW(ptrW(m_iniPath.GetText()), true);
 		Close();
 	}
 
@@ -553,12 +547,7 @@ static void DoAutoExec(void)
 			if (!mir_wstrcmpi(szOnCompletion, L"delete"))
 				DeleteFile(szIniPath);
 			else if (!mir_wstrcmpi(szOnCompletion, L"recycle")) {
-				SHFILEOPSTRUCT shfo = {};
-				shfo.wFunc = FO_DELETE;
-				shfo.pFrom = szIniPath;
-				szIniPath[mir_wstrlen(szIniPath) + 1] = 0;
-				shfo.fFlags = FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT | FOF_ALLOWUNDO;
-				SHFileOperation(&shfo);
+				DeleteDirectoryTreeW(szIniPath, true);
 			}
 			else if (!mir_wstrcmpi(szOnCompletion, L"rename")) {
 				wchar_t szRenamePrefix[MAX_PATH], szNewPath[MAX_PATH];

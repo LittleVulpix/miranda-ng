@@ -30,18 +30,19 @@ void Srmm_ProcessToolbarHotkey(MCONTACT hContact, INT_PTR iButtonFrom, HWND hwnd
 
 class CLogWindow : public CSrmmLogWindow {};
 
-extern HGENMENU hJoinMenuItem, hLeaveMenuItem;
-extern HPLUGIN g_pChatPlugin;
-extern GlobalLogSettingsBase *g_Settings;
-extern int g_cbSession, g_cbModuleInfo, g_iFontMode;
+extern HPLUGIN  g_pChatPlugin;
+extern int      g_cbSession, g_cbModuleInfo, g_iFontMode;
 extern wchar_t *g_szFontGroup;
-extern mir_cs csChat;
+extern mir_cs   csChat;
 
-extern HCURSOR g_hCurHyperlinkHand;
-extern char* pLogIconBmpBits[14];
-extern LIST<SESSION_INFO> g_arSessions;
+extern DWORD    g_dwDiskLogFlags;
+extern HCURSOR  g_hCurHyperlinkHand;
+extern char*    pLogIconBmpBits[14];
+extern HANDLE   hevSendEvent, hevBuildMenuEvent;
+
 extern MWindowList g_hWindowList;
-extern HANDLE hevSendEvent, hevBuildMenuEvent;
+extern LIST<SESSION_INFO> g_arSessions;
+extern GlobalLogSettingsBase *g_Settings;
 
 extern CMOption<bool> g_bChatTrayInactive, g_bChatPopupInactive;
 
@@ -84,16 +85,12 @@ void          UM_SortKeys(SESSION_INFO *si);
 void          UM_SortUser(SESSION_INFO *si);
 
 // clist.c
-BOOL          AddEvent(MCONTACT hContact, HICON hIcon, MEVENT hEvent, int type, wchar_t* fmt, ...);
 MCONTACT      AddRoom(const char *pszModule, const wchar_t *pszRoom, const wchar_t *pszDisplayName, int iType);
 MCONTACT      FindRoom(const char *pszModule, const wchar_t *pszRoom);
 BOOL          SetAllOffline(BOOL bHide, const char *pszModule);
 BOOL          SetOffline(MCONTACT hContact, BOOL bHide);
 		        
 int           RoomDoubleclicked(WPARAM wParam,LPARAM lParam);
-INT_PTR       JoinChat(WPARAM wParam, LPARAM lParam);
-INT_PTR       LeaveChat(WPARAM wParam, LPARAM lParam);
-int           PrebuildContactMenu(WPARAM wParam, LPARAM lParam);
 
 // options.c
 void          ChatOptionsInit(WPARAM wParam);

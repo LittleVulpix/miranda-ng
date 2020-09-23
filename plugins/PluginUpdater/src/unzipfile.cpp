@@ -21,16 +21,16 @@ Boston, MA 02111-1307, USA.
 
 #define DATA_BUF_SIZE (4 * 1024 * 1024)
 
-static void PrepareFileName(wchar_t *dest, size_t destSize, const wchar_t *ptszPath, const wchar_t *ptszFileName)
+static void PrepareFileName(wchar_t *dest, size_t destSize, const wchar_t *pwszPath, const wchar_t *pwszFileName)
 {
-	mir_snwprintf(dest, destSize, L"%s\\%s", ptszPath, ptszFileName);
+	mir_snwprintf(dest, destSize, L"%s\\%s", pwszPath, pwszFileName);
 
 	for (wchar_t *p = dest; *p; ++p)
 		if (*p == '/')
 			*p = '\\'; 
 }
 
-bool extractCurrentFile(unzFile uf, wchar_t *ptszDestPath, wchar_t *ptszBackPath, bool ch)
+int extractCurrentFile(unzFile uf, wchar_t *pwszDestPath, wchar_t *pwszBackPath, bool ch)
 {
 	unz_file_info64 file_info;
 	char filename[MAX_PATH];
@@ -38,7 +38,7 @@ bool extractCurrentFile(unzFile uf, wchar_t *ptszDestPath, wchar_t *ptszBackPath
 
 	int err = unzGetCurrentFileInfo64(uf, &file_info, filename, sizeof(filename), buf, DATA_BUF_SIZE, nullptr, 0);
 	if (err != UNZ_OK)
-		return false;
+		return err;
 
 	for (char *p = strchr(filename, '/'); p; p = strchr(p+1, '/'))
 		*p = '\\';
@@ -46,44 +46,42 @@ bool extractCurrentFile(unzFile uf, wchar_t *ptszDestPath, wchar_t *ptszBackPath
 	// This is because there may be more then one file in a single zip
 	// So we need to check each file
 	if (ch && 1 != db_get_b(0, DB_MODULE_FILES, StrToLower(ptrA(mir_strdup(filename))), 1))
-		return true;
+		return UNZ_OK;
 
-	wchar_t tszDestFile[MAX_PATH], tszBackFile[MAX_PATH];
-	wchar_t *ptszNewName = mir_utf8decodeW(filename);
-	if (ptszNewName == nullptr)
-		ptszNewName = mir_a2u(filename);
+	TFileName wszDestFile, wszBackFile;
+	ptrW pwszNewName(mir_utf8decodeW(filename));
+	if (pwszNewName == nullptr)
+		pwszNewName = mir_a2u(filename);
 
 	if (!(file_info.external_fa & FILE_ATTRIBUTE_DIRECTORY)) {
 		err = unzOpenCurrentFile(uf);
-		if (err != UNZ_OK) {
-			mir_free(ptszNewName);
-			return false;
+		if (err != UNZ_OK)
+			return err;
+
+		if (pwszBackPath != nullptr) {
+			PrepareFileName(wszDestFile, _countof(wszDestFile), pwszDestPath, pwszNewName);
+			PrepareFileName(wszBackFile, _countof(wszBackFile), pwszBackPath, pwszNewName);
+			if (err = BackupFile(wszDestFile, wszBackFile))
+				return err;
 		}
 
-		if (ptszBackPath != nullptr) {
-			PrepareFileName(tszDestFile, _countof(tszDestFile), ptszDestPath, ptszNewName);
-			PrepareFileName(tszBackFile, _countof(tszBackFile), ptszBackPath, ptszNewName);
-			BackupFile(tszDestFile, tszBackFile);
-		}
+		PrepareFileName(wszDestFile, _countof(wszDestFile), pwszDestPath, pwszNewName);
+		SafeCreateFilePath(wszDestFile);
 
-		PrepareFileName(tszDestFile, _countof(tszDestFile), ptszDestPath, ptszNewName);
-		SafeCreateFilePath(tszDestFile);
-
-		wchar_t *ptszFile2unzip;
-		if (hPipe == nullptr) // direct mode
-			ptszFile2unzip = tszDestFile;
+		wchar_t *pwszFile2unzip;
+		if (g_hPipe == nullptr) // direct mode
+			pwszFile2unzip = wszDestFile;
 		else {
-			wchar_t tszTempPath[MAX_PATH];
-			GetTempPath( _countof(tszTempPath), tszTempPath);
-			GetTempFileName(tszTempPath, L"PUtemp", GetCurrentProcessId(), tszBackFile);
-			ptszFile2unzip = tszBackFile;
+			TFileName wszTempPath;
+			GetTempPathW(_countof(wszTempPath), wszTempPath);
+			GetTempFileNameW(wszTempPath, L"PUtemp", GetCurrentProcessId(), wszBackFile);
+			pwszFile2unzip = wszBackFile;
 		}
 
-		HANDLE hFile = CreateFile(ptszFile2unzip, GENERIC_WRITE, FILE_SHARE_WRITE, nullptr, CREATE_ALWAYS, file_info.external_fa, nullptr);
-		if (hFile == INVALID_HANDLE_VALUE) {
-			mir_free(ptszNewName);
-			return false;
-		}
+		HANDLE hFile = CreateFile(pwszFile2unzip, GENERIC_WRITE, FILE_SHARE_WRITE, nullptr, CREATE_ALWAYS, file_info.external_fa, nullptr);
+		if (hFile == INVALID_HANDLE_VALUE)
+			return GetLastError();
+
 		while (true) {
 			err = unzReadCurrentFile(uf, buf, DATA_BUF_SIZE);
 			if (err <= 0)
@@ -91,7 +89,7 @@ bool extractCurrentFile(unzFile uf, wchar_t *ptszDestPath, wchar_t *ptszBackPath
 
 			DWORD bytes;
 			if (!WriteFile(hFile, buf, err, &bytes, FALSE)) {
-				err = UNZ_ERRNO;
+				err = GetLastError();
 				break;
 			}
 		}
@@ -105,29 +103,28 @@ bool extractCurrentFile(unzFile uf, wchar_t *ptszDestPath, wchar_t *ptszBackPath
 		CloseHandle(hFile);
 		unzCloseCurrentFile(uf); /* don't lose the error */
 
-		if (hPipe)
-			SafeMoveFile(ptszFile2unzip, tszDestFile);
+		if (g_hPipe)
+			SafeMoveFile(pwszFile2unzip, wszDestFile);
 	}
-	mir_free(ptszNewName);
-	return true;
+	return err;
 }
 
-bool unzip(const wchar_t *ptszZipFile, wchar_t *ptszDestPath, wchar_t *ptszBackPath,bool ch)
+int unzip(const wchar_t *pwszZipFile, wchar_t *pwszDestPath, wchar_t *pwszBackPath,bool ch)
 {
-	bool bResult = true;
+	int iErrorCode = 0;
 
 	zlib_filefunc64_def ffunc;
 	fill_fopen64_filefunc(&ffunc);
 	
-	unzFile uf = unzOpen2_64(ptszZipFile, &ffunc);
+	unzFile uf = unzOpen2_64(pwszZipFile, &ffunc);
 	if (uf) {
 		do {
-			if (!extractCurrentFile(uf, ptszDestPath, ptszBackPath,ch))
-				bResult = false;
+			if (int err = extractCurrentFile(uf, pwszDestPath, pwszBackPath,ch))
+				iErrorCode = err;
 		}
 			while (unzGoToNextFile(uf) == UNZ_OK);
 		unzClose(uf);
 	}
 
-	return bResult;
+	return iErrorCode;
 }

@@ -152,6 +152,22 @@ void FacebookProto::OnShutdown()
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+MCONTACT FacebookProto::AddToList(int, PROTOSEARCHRESULT *psr)
+{
+	if (!mir_wstrlen(psr->id.w))
+		return 0;
+
+	if (auto *pUser = FindUser(_wtoi64(psr->id.w)))
+		return pUser->hContact;
+
+	MCONTACT hContact = db_add_contact();
+	Proto_AddToContact(hContact, m_szModuleName);
+	setWString(hContact, DBKEY_ID, psr->id.w);
+	return hContact;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 INT_PTR FacebookProto::GetCaps(int type, MCONTACT)
 {
 	switch (type) {
@@ -204,6 +220,7 @@ int FacebookProto::SendMsg(MCONTACT hContact, int, const char *pszSrc)
 	JSONNode root; root << CHAR_PARAM("body", pszSrc) << INT64_PARAM("msgid", msgId) << INT64_PARAM("sender_fbid", m_uid) << CHAR_PARAM("to", userId);
 	MqttPublish("/send_message2", root);
 
+	mir_cslock lck(m_csOwnMessages);
 	arOwnMessages.insert(new COwnMessage(msgId, m_mid, hContact));
 	return m_mid;
 }

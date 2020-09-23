@@ -21,7 +21,7 @@ Boston, MA 02111-1307, USA.
 
 CMPlugin g_plugin;
 
-wchar_t g_tszRoot[MAX_PATH] = {0}, g_tszTempPath[MAX_PATH];
+TFileName g_wszRoot = {0}, g_wszTempPath;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -59,7 +59,8 @@ CMPlugin::CMPlugin() :
 
 	// other settings
 	iPeriod(MODULENAME, "Period", 1),
-	iPeriodMeasure(MODULENAME, "PeriodMeasure", 1)
+	iPeriodMeasure(MODULENAME, "PeriodMeasure", 1),
+	iNumberBackups(MODULENAME, "NumberOfBackups", 3)
 {
 }
 
@@ -67,13 +68,11 @@ CMPlugin::CMPlugin() :
 
 int CMPlugin::Load()
 {
-	InitServices();
-
 	g_plugin.setByte(DB_SETTING_NEED_RESTART, 0);
 
-	DWORD dwLen = GetTempPath(_countof(g_tszTempPath), g_tszTempPath);
-	if (g_tszTempPath[dwLen-1] == '\\')
-		g_tszTempPath[dwLen-1] = 0;
+	DWORD dwLen = GetTempPath(_countof(g_wszTempPath), g_wszTempPath);
+	if (g_wszTempPath[dwLen-1] == '\\')
+		g_wszTempPath[dwLen-1] = 0;
 
 	InitPopupList();
 	InitNetlib();

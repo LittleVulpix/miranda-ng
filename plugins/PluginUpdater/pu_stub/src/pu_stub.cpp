@@ -21,8 +21,9 @@ void log(const wchar_t *tszFormat, ...)
 
 int CreateDirectoryTreeW(const wchar_t* szDir)
 {
-	wchar_t szTestDir[MAX_PATH];
-	lstrcpynW(szTestDir, szDir, MAX_PATH);
+	wchar_t szTestDir[MAX_PATH+1];
+	if (lstrcpynW(szTestDir, szDir, MAX_PATH) == nullptr)
+		szTestDir[MAX_PATH] = 0;
 
 	DWORD dwAttributes = GetFileAttributesW(szTestDir);
 	if (dwAttributes != INVALID_FILE_ATTRIBUTES && (dwAttributes & FILE_ATTRIBUTE_DIRECTORY))
@@ -36,6 +37,28 @@ int CreateDirectoryTreeW(const wchar_t* szDir)
 	CreateDirectoryTreeW(szTestDir);
 	*pszLastBackslash = '\\';
 	return (CreateDirectoryW(szTestDir, nullptr) == 0) ? GetLastError() : 0;
+}
+
+int DeleteDirectoryTreeW(const wchar_t *pwszDirName)
+{
+	// file name shall be double sero ended
+	wchar_t wszPath[MAX_PATH + 2];
+	if (lstrcpynW(wszPath, pwszDirName, MAX_PATH) == nullptr)
+		wszPath[MAX_PATH] = 0;
+	wszPath[lstrlenW(wszPath) + 1] = 0;
+
+	SHFILEOPSTRUCTW file_op = {
+		NULL,
+		FO_DELETE,
+		wszPath,
+		L"",
+		FOF_NOCONFIRMATION |
+		FOF_NOERRORUI |
+		FOF_SILENT,
+		false,
+		0,
+		L"" };
+	return SHFileOperationW(&file_op);
 }
 
 void CreatePathToFileW(wchar_t *wszFilePath)
@@ -75,23 +98,52 @@ int APIENTRY wWinMain(HINSTANCE /*hInstance*/, HINSTANCE, LPTSTR lpCmdLine, int)
 		DWORD dwAction = *(DWORD*)szReadBuffer;
 		wchar_t *ptszFile1 = (wchar_t*)(szReadBuffer + sizeof(DWORD));
 		wchar_t *ptszFile2 = ptszFile1 + wcslen(ptszFile1) + 1;
+		dwError = 0;
 		log(L"Received command: %d <%s> <%s>", dwAction, ptszFile1, ptszFile2);
 		switch (dwAction) {
 		case 1:  // copy
-			dwError = CopyFile(ptszFile1, ptszFile2, FALSE);
+			if (!CopyFile(ptszFile1, ptszFile2, FALSE))
+				dwError = GetLastError();
 			break;
 
 		case 2: // move
-			DeleteFile(ptszFile2);
-			if (MoveFile(ptszFile1, ptszFile2) == 0) // use copy on error
-				dwError = CopyFile(ptszFile1, ptszFile2, FALSE);
-			else
-				dwError = 0;
-			DeleteFile(ptszFile1);
+			if (!DeleteFileW(ptszFile2)) {
+				DWORD err = GetLastError();
+				if (err != ERROR_ACCESS_DENIED && err != ERROR_FILE_NOT_FOUND) {
+					dwError = err;
+					break;
+				}
+			}
+			
+			if (!MoveFileW(ptszFile1, ptszFile2)) { // use copy on error
+				switch (DWORD err = GetLastError()) {
+				case ERROR_ALREADY_EXISTS:
+				case ERROR_FILE_NOT_FOUND:
+					dwError = 0;
+					break; // this file was included into many archives, so Miranda tries to move it again & again
+
+				case ERROR_ACCESS_DENIED:
+				case ERROR_SHARING_VIOLATION:
+				case ERROR_LOCK_VIOLATION:
+					// use copy routine if a move operation isn't available
+					// for example, when files are on different disks
+					if (!CopyFileW(ptszFile1, ptszFile2, FALSE))
+						dwError = GetLastError();
+
+					if (!DeleteFileW(ptszFile1))
+						dwError = GetLastError();
+					break;
+
+				default:
+					dwError = err;
+					break;
+				}
+			}
 			break;
 
 		case 3: // erase
-			dwError = DeleteFile(ptszFile1);
+			if (!DeleteFileW(ptszFile1))
+				dwError = GetLastError();
 			break;
 
 		case 4: // create dir														  
@@ -100,6 +152,11 @@ int APIENTRY wWinMain(HINSTANCE /*hInstance*/, HINSTANCE, LPTSTR lpCmdLine, int)
 
 		case 5: // create path to file
 			CreatePathToFileW(ptszFile1);
+			dwError = 0;
+			break;
+
+		case 6: // delete folder recursively
+			DeleteDirectoryTreeW(ptszFile1);
 			dwError = 0;
 			break;
 

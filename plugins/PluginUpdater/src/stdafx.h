@@ -41,7 +41,6 @@ Boston, MA 02111-1307, USA.
 #include <m_assocmgr.h>
 #include <m_gui.h>
 #include <win2k.h>
-#include <m_pluginupdater.h>
 
 #include <m_folders.h>
 
@@ -56,6 +55,9 @@ extern "C"
 #include "resource.h"
 
 #include <m_autobackups.h>
+
+#define MS_PU_SHOWLIST "PluginUpdater/ShowList"
+#define MS_PU_CHECKUPDATES "PluginUpdater/CheckUpdates"
 
 #include "Notifications.h"
 
@@ -75,20 +77,22 @@ extern "C"
 #define MODULE L"Plugin Updater"
 #define DEFAULT_UPDATES_FOLDER L"Plugin Updates"
 
+typedef wchar_t TFileName[MAX_PATH];
+
 struct FILEURL
 {
-	wchar_t tszDownloadURL[2048];
-	wchar_t tszDiskPath[MAX_PATH];
+	wchar_t wszDownloadURL[2048];
+	TFileName wszDiskPath;
 	int CRCsum;
 };
 
 struct FILEINFO
 {
-	wchar_t tszOldName[MAX_PATH], tszNewName[MAX_PATH];
+	TFileName wszOldName, wszNewName;
 	FILEURL File;
-	bool    bEnabled, bDeleteOnly;
+	bool bEnabled, bDeleteOnly;
 
-	bool    IsFiltered(const CMStringW &wszFilter);
+	bool IsFiltered(const CMStringW &wszFilter);
 };
 
 typedef OBJLIST<FILEINFO> FILELIST;
@@ -132,7 +136,6 @@ enum
 #define DB_SETTING_UPDATE_MODE           "UpdateMode"
 #define DB_SETTING_UPDATE_URL            "UpdateURL"
 #define DB_SETTING_NEED_RESTART          "NeedRestart"
-#define DB_SETTING_RESTART_COUNT         "RestartCount"
 #define DB_SETTING_LAST_UPDATE           "LastUpdate"
 #define DB_SETTING_DONT_SWITCH_TO_STABLE "DontSwitchToStable"
 #define DB_SETTING_CHANGEPLATFORM        "ChangePlatform"
@@ -149,8 +152,8 @@ enum
 using namespace std;
 
 extern DWORD g_mirandaVersion;
-extern wchar_t g_tszRoot[MAX_PATH], g_tszTempPath[MAX_PATH];
-extern HANDLE hPipe;
+extern wchar_t g_wszRoot[MAX_PATH], g_wszTempPath[MAX_PATH];
+extern HANDLE g_hPipe;
 extern HNETLIBUSER hNetlibUser;
 
 extern IconItem iconList[];
@@ -166,7 +169,7 @@ struct CMPlugin : public PLUGIN<CMPlugin>
 
 	// common options
 	CMOption<bool> bUpdateOnStartup, bUpdateOnPeriod, bOnlyOnceADay, bSilentMode, bBackup, bChangePlatform, bUseHttps, bAutoRestart;
-	CMOption<int>  iPeriod, iPeriodMeasure;
+	CMOption<int>  iPeriod, iPeriodMeasure, iNumberBackups;
 
 	// popup options
 	CMOption<BYTE> PopupDefColors, PopupLeftClickAction, PopupRightClickAction;
@@ -177,21 +180,6 @@ void UninitCheck(void);
 void UninitListNew(void);
 
 int OptInit(WPARAM, LPARAM);
-
-class AutoHandle : private MNonCopyable
-{
-	HANDLE &m_handle;
-
-public:
-	AutoHandle(HANDLE &_handle) : m_handle(_handle) {}
-	~AutoHandle()
-	{
-		if (m_handle) {
-			::CloseHandle(m_handle);
-			m_handle = nullptr;
-		}
-	}
-};
 
 class ThreadWatch
 {
@@ -238,7 +226,6 @@ typedef OBJLIST<ServListEntry> SERVLIST;
 void  InitPopupList();
 void  InitNetlib();
 void  InitIcoLib();
-void  InitServices();
 void  InitEvents();
 void  InitListNew();
 void  InitCheck();
@@ -249,32 +236,36 @@ void  UnloadNetlib();
 
 void  CALLBACK RestartPrompt(void *);
 
-void  BackupFile(wchar_t *ptszSrcFileName, wchar_t *ptszBackFileName);
+int   BackupFile(wchar_t *pwszSrcFileName, wchar_t *pwszBackFileName);
 
-bool  ParseHashes(const wchar_t *ptszUrl, ptrW &baseUrl, SERVLIST &arHashes);
+bool  ParseHashes(const wchar_t *pwszUrl, ptrW &baseUrl, SERVLIST &arHashes);
 int   CompareHashes(const ServListEntry *p1, const ServListEntry *p2);
 
 wchar_t* GetDefaultUrl();
 bool   DownloadFile(FILEURL *pFileURL, HNETLIBCONN &nlc);
 
 void  ShowPopup(LPCTSTR Title, LPCTSTR Text, int Number);
-void  __stdcall OpenPluginOptions(void*);
 void  CheckUpdateOnStartup();
 void  __stdcall InitTimer(void *type);
 
-bool unzip(const wchar_t *ptszZipFile, wchar_t *ptszDestPath, wchar_t *ptszBackPath,bool ch);
+int  unzip(const wchar_t *pwszZipFile, wchar_t *pwszDestPath, wchar_t *pwszBackPath, bool ch);
 
 ///////////////////////////////////////////////////////////////////////////////
 
-int CalculateModuleHash(const wchar_t *tszFileName, char *dest);
+int CalculateModuleHash(const wchar_t *pwszFileName, char *dest);
 
-BOOL IsProcessElevated();
-bool PrepareEscalation();
+BOOL IsProcessElevated(void);
+bool PrepareEscalation(void);
 
-int SafeCreateDirectory(const wchar_t *ptszDirName);
-int SafeCopyFile(const wchar_t *ptszSrc, const wchar_t *ptszDst);
-int SafeMoveFile(const wchar_t *ptszSrc, const wchar_t *ptszDst);
-int SafeDeleteFile(const wchar_t *ptszSrc);
+void CreateWorkFolders(TFileName &wszTempFolder, TFileName &wszBackupFolder);
+void RemoveBackupFolders(void);
+void RollbackChanges(TFileName &pwszBackupFolder);
+
+int SafeCreateDirectory(const wchar_t *pwszDirName);
+int SafeDeleteDirectory(const wchar_t *pwszDirName);
+int SafeCopyFile(const wchar_t *pwszSrc, const wchar_t *pwszDst);
+int SafeMoveFile(const wchar_t *pwszSrc, const wchar_t *pwszDst);
+int SafeDeleteFile(const wchar_t *pwszSrc);
 int SafeCreateFilePath(const wchar_t *pFolder);
 
 char* StrToLower(char *str);
