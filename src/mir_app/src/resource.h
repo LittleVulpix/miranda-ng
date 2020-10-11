@@ -215,6 +215,7 @@
 #define IDC_REMOVETEMP                  1030
 #define IDC_SHOWNAMES                   1031
 #define IDC_ABOUT                       1032
+#define IDC_SHOWDATE                    1032
 #define IDC_MYNOTES                     1033
 #define IDC_TRAYONLYFORINACTIVE         1034
 #define IDC_POPUPONLYFORINACTIVE        1035
@@ -564,6 +565,7 @@
 #define IDC_LANGUAGES                   1747
 #define IDC_GENMENU_MODULE              1748
 #define IDC_LOGROTATE                   1749
+#define IDC_RIGHTCLICK                  1751
 #define IDC_EFFECT_COLOUR_TEXT1         1853
 #define IDC_EFFECT_COLOUR_SPIN1         1854
 #define IDC_EXTRAORDER                  1889
@@ -672,7 +674,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        333
 #define _APS_NEXT_COMMAND_VALUE         40018
-#define _APS_NEXT_CONTROL_VALUE         1751
+#define _APS_NEXT_CONTROL_VALUE         1752
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
