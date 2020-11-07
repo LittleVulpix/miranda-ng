@@ -158,10 +158,6 @@ private:
 	LIST<void> m_PopupClasses;
 	LIST<void> m_OutMessages;
 
-	// dialogs
-	LIST<CSkypeInviteDlg> m_InviteDialogs;
-	LIST<CSkypeGCCreateDlg> m_GCCreateDialogs;
-
 	// locks
 	mir_cs m_lckOutMessagesList;
 	mir_cs messageSyncLock;
@@ -320,7 +316,7 @@ private:
 	{	return (!mir_strcmpi(str, m_szMyname) || !mir_strcmp(str, ptrA(getStringA("SelfEndpointName"))));
 	}
 
-	static time_t IsoToUnixTime(const char *stamp);
+	static time_t IsoToUnixTime(const std::string &stamp);
 	static CMStringA GetStringChunk(const char *haystack, const char *start, const char *end);
 
 	static int SkypeToMirandaStatus(const char *status);
@@ -341,7 +337,7 @@ private:
 
 	CMStringW RunConfirmationCode();
 	CMStringW ChangeTopicForm();
-	void CloseDialogs();
+
 	//events
 	void InitDBEvents();
 
@@ -362,5 +358,7 @@ private:
 		return proto ? (proto->*Service)(wParam, lParam) : 0;
 	}
 };
+
+typedef CProtoDlgBase<CSkypeProto> CSkypeDlgBase;
 
 #endif //_SKYPE_PROTO_H_

@@ -65,8 +65,8 @@ Source: "Files\Icons\Toolbar_icons.dll"; DestDir: "{app}\Icons"; Components: cli
 
 ; Core and core modules
 Source: "Files\{#MirName}"; DestDir: "{app}"; Components: program; Flags: ignoreversion; AfterInstall: ShowPercent() 
+Source: "Files\libmdbx.mir"; DestDir: "{app}"; Components: program; Flags: ignoreversion; AfterInstall: ShowPercent() 
 Source: "Files\Libs\*.dll"; DestDir: "{app}\Libs"; Components: program; Flags: ignoreversion; AfterInstall: ShowPercent() 
-Source: "Files\libmdbx.mir"; DestDir: "{app}\Libs"; Components: program; Flags: ignoreversion; AfterInstall: ShowPercent() 
 Source: "Files\Libs\FreeImage.mir"; DestDir: "{app}\Libs"; Components: program; Flags: ignoreversion; AfterInstall: ShowPercent() 
 Source: "Files\Libs\libeay32.mir"; DestDir: "{app}\Libs"; Components: program; Flags: ignoreversion; AfterInstall: ShowPercent() 
 Source: "Files\Libs\libjson.mir"; DestDir: "{app}\Libs"; Components: program; Flags: ignoreversion; AfterInstall: ShowPercent() 
@@ -127,6 +127,7 @@ Source: "Files\Plugins\Scriver.dll"; DestDir: "{app}\Plugins"; Components: messa
 ; DB drivers
 Source: "Files\Plugins\Dbx_mdbx.dll"; DestDir: "{app}\Plugins"; Components: dbx_mdbx; Flags: ignoreversion; AfterInstall: ShowPercent() 
 Source: "Files\fixme.cmd"; DestDir: "{app}"; Components: dbx_mdbx; Flags: ignoreversion; AfterInstall: ShowPercent() 
+Source: "Files\mdbx_chk.exe"; DestDir: "{app}"; Components: dbx_mdbx; Flags: ignoreversion; AfterInstall: ShowPercent() 
 Source: "Files\mdbx_dump.exe"; DestDir: "{app}"; Components: dbx_mdbx; Flags: ignoreversion; AfterInstall: ShowPercent() 
 Source: "Files\mdbx_load.exe"; DestDir: "{app}"; Components: dbx_mdbx; Flags: ignoreversion; AfterInstall: ShowPercent() 
 
@@ -193,10 +194,10 @@ en.InstTypeHeader=Installation Mode
 en.InstTypeText=Select installation type
 en.DefTypeInstRadio=Normal Installation (recommended)
 en.PortTypeInstRadio=Portable Installation
-en.DefTypeInstLabel=Profiles and user data files are stored in Application Data.%nUAC compatible (Windows Vista/7/8)
-en.PortTypeInstLabel=Profiles and user data files are stored in program folder.%nVersion for installation on removable storage devices (such as USB flash drive)%n(Do not install to Program Files with enabled UAC!!!)
+en.DefTypeInstLabel=Profiles and user data files are stored in Application Data.%nUAC compatible.
+en.PortTypeInstLabel=Profiles and user data files are stored in program folder.%nVersion for installation on removable storage devices (such as USB flash drive).%nDo not install to Program Files with enabled UAC!
 
-en.ProfileUninst=WARNING!!!%nYou are about to delete profile folder containing all your settings, contacts and message history!%nAre you sure you want to remove profile?%n(You may need it later)
+en.ProfileUninst=WARNING!%nYou are about to delete profile folder containing all your settings, contacts and message history!%nAre you sure you want to remove profile?%n(You may need it later)
 
 en.FolderExists1=Folder
 en.FolderExists2=already exists. This installer is for a first time install only! Please select another folder for a new installation.%nIf you wish to upgrade your current program, please use PluginUpdater ("Check for plugin updates" item in Miranda's main menu).
@@ -240,7 +241,7 @@ en.SoundsDescription=Sound notification support for various events.
 en.ProtocolsDescription=Various protocols for instant messaging and more.
 en.ProtocolsFbDescription=Facebook protocol support for Miranda NG. More advanced than XMPP facebook chat, supporting posting statuses, authorizations, searching contacts, and much more.
 en.ProtocolsGGDescription=Gadu-Gadu protocol support for Miranda NG.
-en.ProtocolsICQDescription=ICQ (OSCAR) protocol support for Miranda NG.
+en.ProtocolsICQDescription=ICQ (WIM) protocol support for Miranda NG.
 en.ProtocolsIRCDescription=Internet Relay Chat (IRC) protocol support for Miranda NG.
 en.ProtocolsJabberDescription=Open-standard communications protocol (XMPP) for message-oriented middleware based on XML.
 en.ClistsDescription=Contact list plugins.
@@ -249,7 +250,7 @@ en.BlindClistDescription=This is a contact list for blind folks. It uses a list 
 en.ModernClistDescription=Supports skins, displays contacts, event notifications, protocol status with advantage visual modifications. Supports MW modifications, enhanced metacontact cooperation.
 en.NicerClistDescription=Displays contacts, event notifications, protocol status.
 en.MessageWinDescription=Message session plugins.
-en.StdMsgDescription=Basic messaging and group chats core modules. No tabs support.
+en.StdMsgDescription=Basic messaging and group chats core modules.
 en.ScriverDescription=Easy and lightweight messaging plugin.
 en.TabsrmmDescription=Advanced IM and group chat module for Miranda NG. Supports skins.
 en.MDBXDescription=Provides Miranda database support: global settings, contacts, history, settings per contact.
@@ -265,13 +266,13 @@ ru.InstTypeHeader=Тип установки
 ru.InstTypeText=Выберите тип установки программы.
 ru.DefTypeInstRadio=Обычная установка (рекомендуется)
 ru.PortTypeInstRadio=Портативная установка
-ru.DefTypeInstLabel=Профиль и все необходимые файлы хранятся в папке пользователя%n(Application Data).%nСовместимо с UAC (Windows Vista/7/8)
-ru.PortTypeInstLabel=Профиль и файлы пользователя находятся в папке с программой.%nПодходит для установки на Flash-накопители, не оставляет следов в ОС.%n(Не устанавливать в Program Files при включенном UAC!!!)
+ru.DefTypeInstLabel=Профиль и все необходимые файлы хранятся в папке пользователя%n(Application Data).%nСовместимо с UAC.
+ru.PortTypeInstLabel=Профиль и файлы пользователя находятся в папке с программой.%nПодходит для установки на внешние накопители.%nНе устанавливать в Program Files при включённом UAC!
 
-ru.ProfileUninst=ПРЕДУПРЕЖДЕНИЕ!!!%nВы можете удалить папку профиля, включающую в себя настройки, контакты и историю переписки!%nВы действительно хотите удалить файлы профиля?%n(Может понадобиться в дальнейшем)
+ru.ProfileUninst=ПРЕДУПРЕЖДЕНИЕ!%nВы можете удалить папку профиля, включающую в себя настройки, контакты и историю переписки!%nВы действительно хотите удалить файлы профиля?%n(Может понадобиться в дальнейшем)
 
 ru.FolderExists1=Выбранная папка
-ru.FolderExists2=включает в себя предыдущую установку! Установщик не предназначен для обновления. Пожалуйста, выберите иную папку для новой установки.%nДля обновления уже установленной программы воспользуйтесь плагином PluginUpdater (Пункт "Проверить обновления плагинов" в главном меню).
+ru.FolderExists2=включает в себя предыдущую установку! Установщик не предназначен для обновления. Пожалуйста, выберите иную папку для новой установки.%nДля обновления уже установленной программы воспользуйтесь плагином PluginUpdater (Пункт "Проверить обновления" в главном меню).
 
 ru.PercentDone=% выполнено
 
@@ -312,7 +313,7 @@ ru.SoundsDescription=Звуковые эффекты, проигрываемые
 ru.ProtocolsDescription=Различные протоколы для обмена сообщениями и не только.
 ru.ProtocolsFbDescription=Поддержка протокола Facebook в Miranda NG. Поддержка статусов, поиск контактов, авторизация и не только.
 ru.ProtocolsGGDescription=Поддержка протокола Gadu-Gadu в Miranda NG.
-ru.ProtocolsICQDescription=Поддержка протокола ICQ в Miranda NG.
+ru.ProtocolsICQDescription=Поддержка протокола ICQ (WIM) в Miranda NG.
 ru.ProtocolsIRCDescription=Поддержка протокола Internet Relay Chat (IRC) в Miranda NG.
 ru.ProtocolsJabberDescription=Поддержка протокола Jabber (XMPP) в Miranda NG. Протокол основан на открытых стандартах, базирующихся на XML.
 ru.ClistsDescription=Плагины списков контактов.
@@ -321,7 +322,7 @@ ru.BlindClistDescription=Список контактов для слабовид
 ru.ModernClistDescription=Показывает контакты, события, статусы протоколов с расширенными функциями оформления (скины). Мультиоконная модификация, расширенная поддержка метаконтактов.
 ru.NicerClistDescription=Показывает контакты, события, статусы протоколов.
 ru.MessageWinDescription=Плагины диалоговых окон.
-ru.StdMsgDescription=Модули ядра, обеспечивающие базовый функционал переписки и чатов. Нет поддержки табов.
+ru.StdMsgDescription=Модули ядра, обеспечивающие базовый функционал переписки и чатов.
 ru.ScriverDescription=Простой плагин диалоговых окон с поддержкой вкладок. Не поддерживает скины.
 ru.TabsrmmDescription=Продвинутый плагин диалоговых окон с поддержкой вкладок и скинов.
 ru.MDBXDescription=Поддержка базы Miranda NG: глобальные настройки, контакты, история, настройки контактов и т. п.
@@ -337,10 +338,10 @@ cz.InstTypeHeader=Režim instalace
 cz.InstTypeText=Zvolte režim instalace
 cz.DefTypeInstRadio=Běžná instalace (doporučeno)
 cz.PortTypeInstRadio=Přenositelná verze
-cz.DefTypeInstLabel=Profily a uživatelská data jsou uložena ve složce Data aplikací.%nKompatibilní se zapnutým Řízením uživatelských účtů (UAC) (Windows Vista/7/8)
-cz.PortTypeInstLabel=Profily a uživatelská data jsou uložena ve složce spolu s programem.%nTento způsob je vhodný pro přenosné disky (jako USB flash disky)%n(Neinstalujte do Program Files, pokud máte zapnuté UAC!!!)
+cz.DefTypeInstLabel=Profily a uživatelská data jsou uložena ve složce Data aplikací.%nKompatibilní se zapnutým Řízením uživatelských účtů (UAC).
+cz.PortTypeInstLabel=Profily a uživatelská data jsou uložena ve složce spolu s programem.%nTento způsob je vhodný pro přenosné disky (jako USB flash disky).%nNeinstalujte do Program Files, pokud máte zapnuté UAC!
 
-cz.ProfileUninst=VAROVÁNÍ!!!%nChystáte se odstranit složku s profily, která obsahuje všechno vaše nastavení, kontakty a historii komunikace!%nOpravdu si přejete odstranit vaše data?%n(V budoucnu se vám ještě mohou hodit.)
+cz.ProfileUninst=VAROVÁNÍ!%nChystáte se odstranit složku s profily, která obsahuje všechno vaše nastavení, kontakty a historii komunikace!%nOpravdu si přejete odstranit vaše data?%n(V budoucnu se vám ještě mohou hodit.)
 
 cz.FolderExists1=Složka
 cz.FolderExists2=již existuje. Tento instalátor slouží pouze pro prvotní instalaci! Zvolte prosím jinou složku, pokud si přejete provést novou instalaci.%nPokud si přejete aktualizovat vaši stávající verzi, použijte doplněk PluginUpdater (položka "Zkontrolovat aktualizace" v hlavní nabídce Mirandy).
@@ -384,7 +385,7 @@ cz.SoundsDescription=Podpora zvukových efektů pro různé události.
 cz.protocolsDescription=Různé protokoly pro rychlou komunikaci a další funkce.
 cz.protocolsFbDescription=Facebook protokol pro Mirandu NG. Pokročilejší verze než Facebook chat přes Jabber (XMPP). Podporuje sdílení stavů, neviditelnost, autorizace, vyhledávání kontaktů a mnohem více.
 cz.protocolsGGDescription=Gadu-Gadu protokol pro Mirandu NG. 
-cz.protocolsICQDescription=ICQ (OSCAR) protokol pro Mirandu NG. 
+cz.protocolsICQDescription=ICQ (WIM) protokol pro Mirandu NG. 
 cz.protocolsIRCDescription=Internet Relay Chat (IRC) protokol pro Mirandu NG.
 cz.protocolsJabberDescription=Otevřený komunikační protokol Jabber (XMPP) pro Mirandu NG.
 cz.ClistsDescription=Doplňky pro seznamy kontaktů.
@@ -393,7 +394,7 @@ cz.BlindClistDescription=Seznam kontaktů pro nevidomé uživatele. Pro zobrazen
 cz.ModernClistDescription=Podporuje skiny, zobrazuje kontakty, upozornění na události, stavy protokolů a umožňuje pokročilé úpravy vzhledu. Podporuje rámečky a rozšířenou práci s metakontakty.
 cz.NicerClistDescription=Zobrazuje kontakty, upozornění na události, stavy protokolů a podporuje rámečky.
 cz.MessageWinDescription=Doplňky pro komunikační okna.
-cz.StdMsgDescription=Základní integrovaný modul pro komunikaci a skupinové chaty. Bez podpory více záložek v jednom okně.
+cz.StdMsgDescription=Základní integrovaný modul pro komunikaci a skupinové chaty.
 cz.ScriverDescription=Jednoduchý a rychlý modul pro komunikaci a skupinové chaty. S podporou více záložek v jednom okně.
 cz.TabsrmmDescription=Pokročilý modul pro komunikaci a skupinové chaty. Podporuje skiny a více záložek v jednom okně.
 cz.MDBXDescription=Podpora pro databáze Mirandy: globální nastavení, kontakty, historie, nastavení pro jednotlivé kontakty.
@@ -409,8 +410,8 @@ de.InstTypeHeader=Installationsmodus
 de.InstTypeText=Wählen Sie die Art der Installation aus
 de.DefTypeInstRadio=Normale Installation (empfohlen)
 de.PortTypeInstRadio=Portable Installation
-de.DefTypeInstLabel=Profil- und Benutzerdaten werden in Anwendungsdaten gespeichert.%nUAC-kompatibel (Windows Vista/7/8).
-de.PortTypeInstLabel=Profil- und Benutzerdaten werden im Programmverzeichnis gespeichert.%nDies ist die Version zur Verwendung auf portablen Laufwerken (wie USB-Sticks).%n(Installieren Sie Miranda NG mit aktivierter UAC nicht im Programme-Ordner!)
+de.DefTypeInstLabel=Profil- und Benutzerdaten werden in Anwendungsdaten gespeichert.%nUAC-kompatibel.
+de.PortTypeInstLabel=Profil- und Benutzerdaten werden im Programmverzeichnis gespeichert.%nDies ist die Version zur Verwendung auf portablen Laufwerken%n(wie USB-Sticks).%nInstallieren Sie Miranda NG mit aktivierter UAC nicht im Programme-Ordner!
 
 de.ProfileUninst=WARNUNG!%nSie sind dabei, Ihr Profil mitsamt all Ihren Einstellungen, Kontakten und Nachrichten zu löschen!%nSind Sie sich sicher, dass Sie das Profil löschen möchten?%n(Sie könnten es später brauchen.)
 
@@ -456,7 +457,7 @@ de.SoundsDescription=Klangbenachrichtigungen für eine Vielzahl an Ereignissen.
 de.ProtocolsDescription=Verschiedene Protokolle für Sofortnachrichten und mehr.
 de.ProtocolsFbDescription=Facebook-Protokollunterstützung für Miranda NG. Funktionsreicher als der XMPP-Facebook-Chat, unterstützt das Veröffentlichen neuer Statusnachrichren, Autorisierung, Kontaktsuche und vieles mehr.
 de.ProtocolsGGDescription=Gadu-Gadu-Protokollunterstützung für Miranda NG.
-de.ProtocolsICQDescription=ICQ- (OSCAR-)Protokollunterstützung für Miranda NG.
+de.ProtocolsICQDescription=ICQ- (WIM-)Protokollunterstützung für Miranda NG.
 de.ProtocolsIRCDescription=Internet-Relay-Chat- (IRC-)Protokollunterstützung für Miranda NG.
 de.ProtocolsJabberDescription=Unterstützung des Extensible Messaging and Presence Protocols (XMPP) für Miranda NG.
 de.ClistsDescription=Kontaktlistenplugins.
@@ -465,7 +466,7 @@ de.BlindClistDescription=Dies ist eine Kontaktliste für Blinde. Sie benutzt ein
 de.ModernClistDescription=Unterstützt Skins, zeigt Kontakte, Ereignisbenachrichtigungen und Protokollstatus mit visuellen Verbesserungen an. Unterstützt MW-Modifikationen, erweiterte Zusammenarbeit mit Metakontakten.
 de.NicerClistDescription=Zeigt Kontakte, Ereignisbenachrichtigungen und Protokollstatus an.
 de.MessageWinDescription=Nachrichtensitzungsplugins.
-de.StdMsgDescription=Grundlegende Nachrichten- und Gruppenchat-Kernmodule. Keine Tabunterstützung.
+de.StdMsgDescription=Grundlegende Nachrichten- und Gruppenchat-Kernmodule.
 de.ScriverDescription=Einfaches und leichtgewichtiges Nachrichtenplugin.
 de.TabsrmmDescription=Erweitertes Nachrichten- und Gruppenchatmodul für Miranda NG. Unterstützt Skins.
 de.MDBXDescription=Stellt Miranda-Datenbankunterstützung bereit: globale Einstellungen, Kontakte, Verlauf, Per-Kontakt-Einstellungen.
@@ -481,10 +482,10 @@ pl.InstTypeHeader=Typ instalacji
 pl.InstTypeText=Wybierz typ instalacji
 pl.DefTypeInstRadio=Normalna (zalecana)
 pl.PortTypeInstRadio=Przenośna
-pl.DefTypeInstLabel=Profile i pliki danych użytkownika są przechowywane w folderze Dane aplikacji.%nZgodne z Kontrolą konta uzytkownika (Windows Vista/7/8)
-pl.PortTypeInstLabel=Profile i pliki danych użytkownika są przechowywane w folderze programu.%nWersja do instalowania na urządzeniach przenośnych (takich jak pamięć przenośna)%n(Nie instaluj w Program files/Pliki programów z włączoną Kontrolą konta użytkownika!!!)
+pl.DefTypeInstLabel=Profile i pliki danych użytkownika są przechowywane w folderze Dane aplikacji.%nZgodne z Kontrolą konta uzytkownika.
+pl.PortTypeInstLabel=Profile i pliki danych użytkownika są przechowywane w folderze programu.%nWersja do instalowania na urządzeniach przenośnych%n(takich jak pamięć przenośna).%nNie instaluj w Pliki programów z włączoną Kontrolą konta użytkownika!
 
-pl.ProfileUninst=UWAGA!!!%nZamierzasz usunąć folder z profilami, zawierający wszystkie Twoje ustawienia, kontakty i historię rozmów.%nCzy na pewno chcesz go usunąć?%n(Możesz go później potrzebować)
+pl.ProfileUninst=UWAGA!%nZamierzasz usunąć folder z profilami, zawierający wszystkie Twoje ustawienia, kontakty i historię rozmów.%nCzy na pewno chcesz go usunąć?%n(Możesz go później potrzebować)
 
 pl.FolderExists1=Folder
 pl.FolderExists2=już istnieje. Ten instalator służy tylko do czystej instalacji! Wybierz inny folder aby zainstalować program.%nJeżeli chcesz zaktualizować Mirandę, użyj do tego celu wtyczki PluginUpdater (wybierając "Sprawdź aktualizacje" z menu głównego Mirandy).
@@ -528,7 +529,7 @@ pl.SoundsDescription=Paczka predefiniowanych dźwięków dla różnych zdarzeń.
 pl.ProtocolsDescription=Wtyczki zapewniające wspracie dla różnych protokołów.
 pl.ProtocolsFbDescription=Zapewnia obsługę protokołu Facebook. Dostarcza więcej niż czat facebooka przez XMPP. Wspiera ustawianie statusu, zatwierdzanie znajomości, wyszukiwanie kontaktów i wiele inncyh.
 pl.ProtocolsGGDescription=Zapewnia obsługę protokołu Gadu-Gadu.
-pl.ProtocolsICQDescription=Zapewnia obsługę protokołu ICQ (OSCAR).
+pl.ProtocolsICQDescription=Zapewnia obsługę protokołu ICQ (WIM).
 pl.ProtocolsIRCDescription=Zapewnia obsługę protokołu Internet Relay Chat (IRC).
 pl.ProtocolsJabberDescription=Zapewnia obsługę protokołu Jabber/XMPP.
 pl.ClistsDescription=Wtyczki listy kontaktów.
@@ -537,7 +538,7 @@ pl.BlindClistDescription=Jest to lista kontaktów dla ludzi niewidomych. Używa 
 pl.ModernClistDescription=Wspiera skórki. Wyświetla kontakty, powiadomienia zdarzeń, statusy protokołów z dobrymi modyfikacjami wizualnymi. Wspierane zmiany z MW, rozszerzona współpraca z metakontaktami.
 pl.NicerClistDescription=Wyświetla kontakty, powiadomienia zdarzeń, statusy protokołów.
 pl.MessageWinDescription=Wtyczki okna wiadomości.
-pl.StdMsgDescription=Podstawowe moduły rdzenia do wiadomości i czatu. Brak wsparcia zakładek.
+pl.StdMsgDescription=Podstawowe moduły rdzenia do wiadomości i czatu.
 pl.ScriverDescription=Łatwa i lekka wtyczka rozmów.
 pl.TabsrmmDescription=Zaawansowana wtyczka rozmów z modułem czatu. Wspiera skórki.
 pl.MDBXDescription=Zapewnia wsparcie profilu Mirandy: ustawień globalnych, kontaktów, historii, ustawień dla każdego kontaktu z osobna.
@@ -626,7 +627,7 @@ begin
     Checked:=True;
     Top:=35;
     Left:=20;
-    Width:=210;
+    Width:=450;
     Caption:=ExpandConstant('{cm:DefTypeInstRadio}');
   end;
   DefTypeInstLabel:=TLabel.Create(InstallTypePage);
@@ -644,7 +645,7 @@ begin
     Checked:=False;
     Top:=DefTypeInstLabel.Top+DefTypeInstLabel.Height+20;
     Left:=20;
-    Width:=150;
+    Width:=450;
     Caption:=ExpandConstant('{cm:PortTypeInstRadio}');
   end;
   PortTypeInstLabel:=TLabel.Create(InstallTypePage);

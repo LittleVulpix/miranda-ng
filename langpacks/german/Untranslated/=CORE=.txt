@@ -1,2 +1,0 @@
-[Remove temporary contacts on exit]
-[Load server history]

@@ -2,7 +2,7 @@
 ;============================================================
 ;  File: VKontakte.dll
 ;  Plugin: VKontakte protocol
-;  Version: 0.1.11.3
+;  Version: 0.1.11.6
 ;  Authors: Miranda NG team
 ;============================================================
 [VKontakte protocol support for Miranda NG.]
@@ -306,9 +306,9 @@ Audio
 [Audio message]
 Audio-Nachricht
 [Transcription]
-
+Transkription
 [Graffiti]
-
+Graffiti
 [Video]
 Video
 [Link]
@@ -317,8 +317,16 @@ Link
 Dokument
 [Wall post]
 Pinnwandeintrag
+[(Unknown contact)]
+(Unbekannter Kontakt)
+[Wall reply]
+Pinnwandantwort
+[from]
+von
 [Story]
-
+Geschichte
+[Sticker]
+Sticker
 [Product]
 Produkt
 [Price]
@@ -327,8 +335,8 @@ Preis
 Geschenk
 [Unsupported or unknown attachment type: %s]
 Nicht unterstützter oder unbekannter Anhangtyp: %s
-[(Unknown contact)]
-(Unbekannter Kontakt)
+[Text]
+Text
 [Message from]
 Nachricht von
 [at]
