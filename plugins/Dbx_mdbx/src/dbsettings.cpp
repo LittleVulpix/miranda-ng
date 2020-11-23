@@ -339,11 +339,11 @@ LBL_WriteString:
 	}
 
 	{
-		txn_ptr trnlck(StartTran());
+		txn_ptr trnlck(this);
 		if (mdbx_put(trnlck, m_dbSettings, &key, &data, MDBX_UPSERT) != MDBX_SUCCESS)
 			return 1;
 
-		if (trnlck.commit() != MDBX_SUCCESS)
+		if (trnlck.Commit() != MDBX_SUCCESS)
 			return 1;
 	}
 
@@ -373,11 +373,11 @@ BOOL CDbxMDBX::DeleteContactSetting(MCONTACT contactID, LPCSTR szModule, LPCSTR 
 			keyVal->dwModuleId = GetModuleID(szModule);
 			memcpy(&keyVal->szSettingName, szSetting, settingNameLen + 1);
 
-			txn_ptr trnlck(StartTran());
+			txn_ptr trnlck(this);
 			MDBX_val key = { keyVal,  sizeof(DBSettingKey) + settingNameLen };
 			if (mdbx_del(trnlck, m_dbSettings, &key, nullptr) != MDBX_SUCCESS)
 				return 1;
-			if (trnlck.commit() != MDBX_SUCCESS)
+			if (trnlck.Commit() != MDBX_SUCCESS)
 				return 1;
 		}
 
@@ -400,12 +400,12 @@ BOOL CDbxMDBX::EnumContactSettings(MCONTACT hContact, DBSETTINGENUMPROC pfnEnumP
 	LIST<char> arKeys(100);
 	{
 		DBSettingKey keyVal = { hContact, GetModuleID(szModule), 0 };
-		txn_ptr_ro txn(m_txn_ro);
-		cursor_ptr_ro cursor(m_curSettings);
-
 		MDBX_val key = { &keyVal, sizeof(keyVal) }, data;
 
-		for (int res = mdbx_cursor_get(cursor, &key, &data, MDBX_SET_RANGE); res == MDBX_SUCCESS; res = mdbx_cursor_get(cursor, &key, &data, MDBX_NEXT)) {
+		txn_ptr_ro txn(m_txn_ro);
+		cursor_ptr pCursor(m_txn_ro, m_dbSettings);
+
+		for (int res = mdbx_cursor_get(pCursor, &key, &data, MDBX_SET_RANGE); res == MDBX_SUCCESS; res = mdbx_cursor_get(pCursor, &key, &data, MDBX_NEXT)) {
 			const DBSettingKey *pKey = (const DBSettingKey*)key.iov_base;
 			if (pKey->hContact != hContact || pKey->dwModuleId != keyVal.dwModuleId)
 				break;
