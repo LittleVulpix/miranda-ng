@@ -43,16 +43,6 @@ bool FacebookProto::ExtractOwnMessage(__int64 msgId, COwnMessage &res)
 	return false;
 }
 
-void FacebookProto::NotifyDelivery(const CMStringA &szId)
-{
-	COwnMessage tmp;
-	if (ExtractOwnMessage(_atoi64(szId), tmp)) {
-		ProtoBroadcastAck(tmp.hContact, ACKTYPE_MESSAGE, ACKRESULT_SUCCESS, (HANDLE)tmp.reqId, (LPARAM)szId.c_str());
-		if (g_bMessageState)
-			CallService(MS_MESSAGESTATE_UPDATE, tmp.hContact, MRD_TYPE_DELIVERED);
-	}
-}
-
 void FacebookProto::OnLoggedIn()
 {
 	m_mid = 0;
@@ -478,17 +468,6 @@ void FacebookProto::OnPublish(const char *topic, const uint8_t *p, size_t cbLen)
 		OnPublishMessage(rdr);
 	else if (!strcmp(topic, "/orca_typing_notifications"))
 		OnPublishUtn(rdr);
-	else if (!strcmp(topic, "/send_message_response"))
-		OnPublishDelivery(rdr);
-}
-
-void FacebookProto::OnPublishDelivery(FbThriftReader &rdr)
-{
-	JSONNode root = JSONNode::parse((const char *)rdr.data());
-	if (root["succeeded"].as_bool()) {
-		CMStringA msgId(root["msgid"].as_mstring());
-		NotifyDelivery(msgId);
-	}
 }
 
 void FacebookProto::OnPublishPresence(FbThriftReader &rdr)
@@ -698,13 +677,16 @@ void FacebookProto::OnPublishPrivateMessage(const JSONNode &root)
 		}
 	}
 
-	CMStringW wszActorFbId(metadata["actorFbId"].as_mstring());
 	CMStringA szId(metadata["messageId"].as_mstring());
+	if (CheckOwnMessage(pUser, offlineId, szId)) {
+		debugLogA("own message <%s> skipped", szId.c_str());
+		return;
+	}
 
-	// messages sent with attachments are returning as deltaNewMessage, not deltaSentMessage
-	__int64 actorFbId = _wtoi64(wszActorFbId);
-	if (m_uid == actorFbId)
-		NotifyDelivery(szId);
+	if (db_event_getById(m_szModuleName, szId)) {
+		debugLogA("this message <%s> was already stored, exiting", szId.c_str());
+		return;
+	}
 
 	// parse message body
 	CMStringA szBody(root["body"].as_string().c_str());
@@ -834,6 +816,9 @@ void FacebookProto::OnPublishPrivateMessage(const JSONNode &root)
 	}
 
 	// if that's a group chat, send it to the room
+	CMStringW wszActorFbId(metadata["actorFbId"].as_mstring());
+	__int64 actorFbId = _wtoi64(wszActorFbId);
+
 	if (pUser->bIsChat) {
 		szBody.Replace("%", "%%");
 		ptrW wszText(mir_utf8decodeW(szBody));
@@ -890,12 +875,38 @@ void FacebookProto::OnPublishReadReceipt(const JSONNode &root)
 }
 
 // my own message was sent
+bool FacebookProto::CheckOwnMessage(FacebookUser *pUser, __int64 offlineId, const char *pszMsgId)
+{
+	COwnMessage tmp;
+	if (!ExtractOwnMessage(offlineId, tmp))
+		return false;
+
+	if (pUser->bIsChat) {
+		CMStringW wszId(FORMAT, L"%lld", m_uid);
+		tmp.wszText.Replace(L"%", L"%%");
+
+		wchar_t userId[100];
+		_i64tow_s(pUser->id, userId, _countof(userId), 10);
+
+		GCEVENT gce = { m_szModuleName, 0, GC_EVENT_MESSAGE };
+		gce.pszID.w = userId;
+		gce.dwFlags = GCEF_ADDTOLOG;
+		gce.pszUID.w = wszId;
+		gce.pszText.w = tmp.wszText;
+		gce.time = time(0);
+		gce.bIsMe = true;
+		Chat_Event(&gce);
+	}
+	else ProtoBroadcastAck(pUser->hContact, ACKTYPE_MESSAGE, ACKRESULT_SUCCESS, (HANDLE)tmp.reqId, (LPARAM)pszMsgId);
+
+	return true;
+}
+
 void FacebookProto::OnPublishSentMessage(const JSONNode &root)
 {
 	auto &metadata = root["messageMetadata"];
 
 	__int64 offlineId = _wtoi64(metadata["offlineThreadingId"].as_mstring());
-	std::string szId(metadata["messageId"].as_string());
 
 	CMStringW wszUserId;
 	bool bIsChat;
@@ -905,21 +916,6 @@ void FacebookProto::OnPublishSentMessage(const JSONNode &root)
 		return;
 	}
 
-	COwnMessage tmp;
-	if (ExtractOwnMessage(offlineId, tmp)) {
-		if (pUser->bIsChat) {
-			CMStringW wszId(FORMAT, L"%lld", m_uid);
-			tmp.wszText.Replace(L"%", L"%%");
-
-			GCEVENT gce = { m_szModuleName, 0, GC_EVENT_MESSAGE };
-			gce.pszID.w = wszUserId;
-			gce.dwFlags = GCEF_ADDTOLOG;
-			gce.pszUID.w = wszId;
-			gce.pszText.w = tmp.wszText;
-			gce.time = time(0);
-			gce.bIsMe = true;
-			Chat_Event(&gce);
-		}
-		else ProtoBroadcastAck(pUser->hContact, ACKTYPE_MESSAGE, ACKRESULT_SUCCESS, (HANDLE)tmp.reqId, (LPARAM)szId.c_str());
-	}
+	std::string szMsgId(metadata["messageId"].as_string());
+	CheckOwnMessage(pUser, offlineId, szMsgId.c_str());
 }
