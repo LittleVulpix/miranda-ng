@@ -233,8 +233,8 @@ static wchar_t *chatcolorsnames[] =
 	LPGENW("Channel operators"),
 	LPGENW("Extended mode 1"),
 	LPGENW("Extended mode 2"),
-	LPGENW("Selection background"),
-	LPGENW("Selected text"),
+	LPGENW("Selected nicklist background"),
+	LPGENW("Selected nicklist text"),
 	LPGENW("Incremental search highlight")
 };
 
@@ -401,6 +401,10 @@ void RegisterFontServiceFonts()
 
 int FontServiceFontsChanged(WPARAM, LPARAM)
 {
+	g_chatApi.ReloadSettings();
+	g_chatApi.MM_IconsChanged();
+	g_chatApi.MM_FontsChanged();
+
 	PluginConfig.reloadSettings();
 	CSkin::initAeroEffect();
 	CacheMsgLogIcons();
