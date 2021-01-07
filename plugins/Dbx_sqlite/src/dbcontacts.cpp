@@ -6,26 +6,26 @@ enum {
 	SQL_CTC_STMT_DELETE,
 	SQL_CTC_STMT_DELETESETTINGS,
 	SQL_CTC_STMT_DELETEEVENTS,
-	SQL_CTC_STMT_NUM
+	SQL_CTC_STMT_DELETEEVENTS_SRT,
 };
 
-static char *ctc_stmts[SQL_CTC_STMT_NUM] = {
-	"select count(1) from contacts limit 1;",
-	"insert into contacts values (null);",
-	"delete from contacts where id = ?;",
-	"delete from settings where contact_id = ?;",
-	"delete from events where contact_id = ?;"
+static CQuery ctc_stmts[] =
+{
+	{ "SELECT COUNT(1) FROM contacts LIMIT 1;" },
+	{ "INSERT INTO contacts VALUES (null);" },
+	{ "DELETE FROM contacts WHERE id = ?;" },
+	{ "DELETE FROM settings WHERE contact_id = ?;" },
+	{ "DELETE FROM events WHERE contact_id = ?;" },
+	{ "DELETE FROM events_srt WHERE contact_id = ?;" },
 };
-
-static sqlite3_stmt *ctc_stmts_prep[SQL_CTC_STMT_NUM] = { 0 };
 
 void CDbxSQLite::InitContacts()
 {
-	for (size_t i = 0; i < SQL_CTC_STMT_NUM; i++)
-		sqlite3_prepare_v3(m_db, ctc_stmts[i], -1, SQLITE_PREPARE_PERSISTENT, &ctc_stmts_prep[i], nullptr);
+	for (auto &it : ctc_stmts)
+		sqlite3_prepare_v3(m_db, it.szQuery, -1, SQLITE_PREPARE_PERSISTENT, &it.pQuery, nullptr);
 
 	sqlite3_stmt *stmt = nullptr;
-	sqlite3_prepare_v2(m_db, "select contacts.id, count(events.id) from contacts left join events on events.contact_id = contacts.id group by contacts.id;", -1, &stmt, nullptr);
+	sqlite3_prepare_v2(m_db, "SELECT contacts.id, COUNT(es.id) FROM contacts LEFT JOIN events_srt es ON es.contact_id = contacts.id GROUP BY contacts.id;", -1, &stmt, nullptr);
 	int rc = 0;
 	while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
 		MCONTACT hContact = sqlite3_column_int64(stmt, 0);
@@ -53,14 +53,14 @@ void CDbxSQLite::InitContacts()
 
 void CDbxSQLite::UninitContacts()
 {
-	for (size_t i = 0; i < SQL_CTC_STMT_NUM; i++)
-		sqlite3_finalize(ctc_stmts_prep[i]);
+	for (auto &it : ctc_stmts)
+		sqlite3_finalize(it.pQuery);
 }
 
 LONG CDbxSQLite::GetContactCount()
 {
 	mir_cslock lock(m_csDbAccess);
-	sqlite3_stmt *stmt = ctc_stmts_prep[SQL_CTC_STMT_COUNT];
+	sqlite3_stmt *stmt = ctc_stmts[SQL_CTC_STMT_COUNT].pQuery;
 	int rc = sqlite3_step(stmt);
 	assert(rc == SQLITE_ROW || rc == SQLITE_DONE);
 	int count = sqlite3_column_int(stmt, 0);
@@ -73,7 +73,7 @@ MCONTACT CDbxSQLite::AddContact()
 	MCONTACT hContact = INVALID_CONTACT_ID;
 	{
 		mir_cslock lock(m_csDbAccess);
-		sqlite3_stmt *stmt = ctc_stmts_prep[SQL_CTC_STMT_ADD];
+		sqlite3_stmt *stmt = ctc_stmts[SQL_CTC_STMT_ADD].pQuery;
 		int rc = sqlite3_step(stmt);
 		assert(rc == SQLITE_ROW || rc == SQLITE_DONE);
 		sqlite3_reset(stmt);
@@ -96,37 +96,44 @@ LONG CDbxSQLite::DeleteContact(MCONTACT hContact)
 	if (hContact == 0)
 		return 1;
 
-	{
-		mir_cslock lock(m_csDbAccess);
+	mir_cslockfull lock(m_csDbAccess);
 
-		sqlite3_stmt *stmt = ctc_stmts_prep[SQL_CTC_STMT_DELETEEVENTS];
-		sqlite3_bind_int64(stmt, 1, hContact);
-		int rc = sqlite3_step(stmt);
-		assert(rc == SQLITE_DONE);
-		sqlite3_reset(stmt);
-		if (rc != SQLITE_DONE)
-			return 1;
+	sqlite3_stmt *stmt = ctc_stmts[SQL_CTC_STMT_DELETEEVENTS].pQuery;
+	sqlite3_bind_int64(stmt, 1, hContact);
+	int rc = sqlite3_step(stmt);
+	assert(rc == SQLITE_DONE);
+	sqlite3_reset(stmt);
+	if (rc != SQLITE_DONE)
+		return 1;
 
-		stmt = ctc_stmts_prep[SQL_CTC_STMT_DELETESETTINGS];
-		sqlite3_bind_int64(stmt, 1, hContact);
-		rc = sqlite3_step(stmt);
-		assert(rc == SQLITE_DONE);
-		sqlite3_reset(stmt);
-		if (rc != SQLITE_DONE)
-			return 1;
+	stmt = ctc_stmts[SQL_CTC_STMT_DELETEEVENTS_SRT].pQuery;
+	sqlite3_bind_int64(stmt, 1, hContact);
+	rc = sqlite3_step(stmt);
+	assert(rc == SQLITE_DONE);
+	sqlite3_reset(stmt);
+	if (rc != SQLITE_DONE)
+		return 1;
 
-		stmt = ctc_stmts_prep[SQL_CTC_STMT_DELETE];
-		sqlite3_bind_int64(stmt, 1, hContact);
-		rc = sqlite3_step(stmt);
-		assert(rc == SQLITE_DONE);
-		sqlite3_reset(stmt);
-		if (rc != SQLITE_DONE)
-			return 1;
-	}
+	stmt = ctc_stmts[SQL_CTC_STMT_DELETESETTINGS].pQuery;
+	sqlite3_bind_int64(stmt, 1, hContact);
+	rc = sqlite3_step(stmt);
+	assert(rc == SQLITE_DONE);
+	sqlite3_reset(stmt);
+	if (rc != SQLITE_DONE)
+		return 1;
+
+	stmt = ctc_stmts[SQL_CTC_STMT_DELETE].pQuery;
+	sqlite3_bind_int64(stmt, 1, hContact);
+	rc = sqlite3_step(stmt);
+	assert(rc == SQLITE_DONE);
+	sqlite3_reset(stmt);
+	if (rc != SQLITE_DONE)
+		return 1;
 
 	m_cache->FreeCachedContact(hContact);
-	NotifyEventHooks(g_hevContactDeleted, hContact);
 
+	lock.unlock();
+	NotifyEventHooks(g_hevContactDeleted, hContact);
 	return 0;
 }
 
@@ -143,17 +150,11 @@ LONG CDbxSQLite::GetContactSize(void)
 
 /////////////////////////////////////
 
-bool DBCachedContact::HasCount() const
-{
-	return m_count > -1;
-}
-
 void DBCachedContact::AddEvent(MEVENT hDbEvent, uint32_t timestamp, bool unread)
 {
-	m_count = HasCount()
-		? m_count + 1
-		: 1;
-	if (unread && m_unreadTimestamp > timestamp) {
+	m_count = HasCount() ? m_count + 1 : 1;
+	
+	if (unread && timestamp > m_unreadTimestamp) {
 		m_unread = hDbEvent;
 		m_unreadTimestamp = timestamp;
 	}
@@ -165,7 +166,7 @@ void DBCachedContact::EditEvent(MEVENT hDbEvent, uint32_t timestamp, bool unread
 		m_unread = 0;
 		m_unreadTimestamp = 0;
 	}
-	else if (unread && m_unreadTimestamp > timestamp) {
+	else if (unread && timestamp > m_unreadTimestamp) {
 		m_unread = hDbEvent;
 		m_unreadTimestamp = timestamp;
 	}
