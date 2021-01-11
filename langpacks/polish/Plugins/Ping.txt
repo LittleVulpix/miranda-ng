@@ -23,7 +23,7 @@ Nazwa dziennika:
 [Network]
 Protokoły
 [Popups]
-Popupy
+Powiadomienia
 [Reply]
 Odpowiedź
 [Block Repetitions]
@@ -41,7 +41,7 @@ Użyj Opcje -> Personalizacja -> Czcionki i kolory, by zmienić rozmiar oraz kol
 [Indent:]
 Wcięcie:
 [Row height:]
-Wysokość wiersza:
+Wysokość:
 [Repeats for success/failure:]
 Odpowiedzi na sukces/porażkę:
 [Attach to contact list]
@@ -160,7 +160,7 @@ włączone
 [double clicked]
 dwuklik
 [Show/Hide &Ping Window]
-Pokaż/Ukryj okno &Pingu
+Pokaż/ukryj okno &Pingu
 [List]
 Lista
 ;file \plugins\Ping\src\rawping.cpp

@@ -15,7 +15,7 @@ Sortowanie po statusie
 [Sort contacts by protocol]
 Sortowanie po protokole
 [Single click interface]
-Pokaż/Ukryj listę po pojedynczym kliknięciu
+Pokaż/ukryj listę po pojedynczym kliknięciu
 [Always show status in tooltip]
 Zawsze pokazuj status w podpowiedzi
 [Disable icon blinking]
@@ -65,7 +65,7 @@ Tekst paska tytułu:
 [Translucency options]
 Opcje przezroczystości
 [Fade contact list in/out]
-Wygaszaj/Rozjaśniaj listę
+Wygaszaj/rozjaśniaj listę
 [Transparent contact list]
 Przezroczysta lista kontaktów
 [Inactive opacity:]
@@ -81,7 +81,7 @@ Pokaż pasek tytułu
 [If window is partially covered, bring to front instead of hiding]
 Jeśli okno jest częściowo zakryte, przenieś na wierzch zamiast ukrywać
 [Show drop shadow (restart required)]
-Pokaż cień (wymagany restart)
+Pokaż cień (wymagane ponowne uruchomienie)
 [Pin to desktop]
 Przypnij do pulpitu
 [Groups]

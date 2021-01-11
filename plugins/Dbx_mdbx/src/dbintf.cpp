@@ -50,9 +50,6 @@ CDbxMDBX::~CDbxMDBX()
 	for (auto &it : hService)
 		DestroyServiceFunction(it);
 	UnhookEvent(hHook);
-
-	if (m_crypto)
-		m_crypto->destroy();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -224,6 +221,7 @@ int CDbxMDBX::Load()
 	if (InitModules()) return EGROKPRF_DAMAGED;
 	if (InitCrypt())   return EGROKPRF_DAMAGED;
 
+	InitDialogs();
 	FillContacts();
 	FillSettings();
 

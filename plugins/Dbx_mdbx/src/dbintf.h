@@ -32,8 +32,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define DBMODE_SHARED    0x0001
 #define DBMODE_READONLY  0x0002
 
-#define DBVT_ENCRYPTED   250
-
 #define MARKED_READ (DBEF_READ | DBEF_SENT)
 
 #include <pshpack1.h>
@@ -167,13 +165,12 @@ class CDbxMDBX : public MDatabaseCommon, public MIDatabaseChecker, public MZeroe
 	bool EditEvent(MCONTACT contactID, MEVENT hDbEvent, const DBEVENTINFO *dbe, bool bNew);
 	int  PrepareCheck(void);
 	void TouchFile(void);
-	void UpdateMenuItem(void);
 
 	////////////////////////////////////////////////////////////////////////////
 	// database stuff
 
 	ptrW         m_pwszProfileName;
-	bool         m_safetyMode = true, m_bReadOnly, m_bEncrypted, m_bUsesPassword;
+	bool         m_safetyMode = true, m_bReadOnly;
 
 	MDBX_env    *m_env;
 	MDBX_txn    *m_pWriteTran;
@@ -188,7 +185,7 @@ class CDbxMDBX : public MDatabaseCommon, public MIDatabaseChecker, public MZeroe
 	// settings
 
 	MDBX_dbi     m_dbSettings;
-	HANDLE       hService[2], hHook;
+	HANDLE       hService[1], hHook;
 
 	void         FillSettings(void);
 
@@ -226,9 +223,6 @@ class CDbxMDBX : public MDatabaseCommon, public MIDatabaseChecker, public MZeroe
 
 	MDBX_dbi m_dbCrypto;
 
-	int      InitCrypt(void);
-	CRYPTO_PROVIDER* SelectProvider();
-
 	void     InitDialogs();
 
 public:
@@ -237,20 +231,12 @@ public:
 
 	int  Check(void);
 	void DBFlush(bool bForce = false);
-	int  EnableEncryption(bool bEnable);
 	int  Load();
 	int  Map();
-	void StoreKey(void);
-	void SetPassword(const wchar_t *ptszPassword);
 
 	int  CheckEvents1(void);
 	int  CheckEvents2(void);
 	int  CheckEvents3(void);
-
-	__forceinline LPSTR GetMenuTitle() const { return m_bUsesPassword ? (char*)LPGEN("Change/remove password") : (char*)LPGEN("Set password"); }
-
-	__forceinline bool isEncrypted() const { return m_bEncrypted; }
-	__forceinline bool usesPassword() const { return m_bUsesPassword; }
 
 public:
 	STDMETHODIMP_(BOOL)     IsRelational(void) override { return TRUE; }
@@ -278,8 +264,7 @@ public:
 
 	STDMETHODIMP_(BOOL)     EnumModuleNames(DBMODULEENUMPROC pFunc, void *pParam) override;
 
-	STDMETHODIMP_(BOOL)     GetContactSettingWorker(MCONTACT contactID, const char *szModule, const char *szSetting, DBVARIANT *dbv, int isStatic) override;
-	STDMETHODIMP_(BOOL)     WriteContactSetting(MCONTACT contactID, DBCONTACTWRITESETTING *dbcws) override;
+	STDMETHODIMP_(BOOL)     WriteContactSettingWorker(MCONTACT contactID, DBCONTACTWRITESETTING &dbcws) override;
 	STDMETHODIMP_(BOOL)     DeleteContactSetting(MCONTACT contactID, const char *szModule, const char *szSetting) override;
 	STDMETHODIMP_(BOOL)     EnumContactSettings(MCONTACT hContact, DBSETTINGENUMPROC pfnEnumProc, const char *szModule, void *param) override;
 
@@ -287,6 +272,14 @@ public:
 	STDMETHODIMP_(BOOL)     MetaSplitHistory(DBCachedContact *ccMeta, DBCachedContact *ccSub) override;
 	STDMETHODIMP_(BOOL)     MetaRemoveSubHistory(DBCachedContact *ccSub) override;
 
+	STDMETHODIMP_(CRYPTO_PROVIDER*) ReadProvider(void) override;
+	STDMETHODIMP_(BOOL)     StoreProvider(CRYPTO_PROVIDER*) override;
+
+	STDMETHODIMP_(BOOL)     EnableEncryption(BOOL) override;
+	STDMETHODIMP_(BOOL)     ReadEncryption(void) override;
+
+	STDMETHODIMP_(BOOL)     ReadCryptoKey(MBinBuffer&) override;
+	STDMETHODIMP_(BOOL)     StoreCryptoKey(void) override;
 
 	STDMETHODIMP_(BOOL)     Compact();
 	STDMETHODIMP_(BOOL)     Backup(const wchar_t*);
@@ -307,7 +300,4 @@ protected:
 	STDMETHODIMP_(VOID)     Destroy();
 
 	DBCHeckCallback *cb;
-
-public:
-	MICryptoEngine *m_crypto;
 };

@@ -17,7 +17,7 @@ Przychodzące wiadomości
 [Incoming files]
 Przychodzące pliki
 [Groupchat messages]
-
+Wiadomości grupowe
 [Everything else]
 Pozostałe
 [Message-Event only]
@@ -79,7 +79,7 @@ Rozłączony
 [xStatuses]
 xStatusy
 [Keys to flash]
-Klawisze, które powinny świecić
+Klawisze, które powinny migać
 [Num Lock]
 Num Lock
 [Caps Lock]
@@ -111,7 +111,7 @@ Wolno
 [Emulate key presses (Use this option if you are using a USB keyboard)]
 Emuluj naciśnięcia klawiszy (włącz tą funkcję, jeśli używasz klawiatury na USB)
 [Create/Edit Themes]
-Twórz/Edytuj Motywy
+Twórz/edytuj Motywy
 [Theme]
 Motyw
 [Test]

@@ -34,9 +34,8 @@ private:
 	sqlite3_stmt* cursor;
 };
 
-struct CDbxSQLite : public MDatabaseCommon, public MZeroedObject
+class CDbxSQLite : public MDatabaseCommon, public MZeroedObject
 {
-private:
 	sqlite3 *m_db;
 
 	sqlite3_stmt *evt_cur_fwd = nullptr, *evt_cur_backwd = nullptr;
@@ -92,8 +91,16 @@ public:
 
 	STDMETHODIMP_(BOOL)     EnumModuleNames(DBMODULEENUMPROC pFunc, void *pParam) override;
 
-	STDMETHODIMP_(BOOL)     GetContactSettingWorker(MCONTACT contactID, LPCSTR szModule, LPCSTR szSetting, DBVARIANT *dbv, int isStatic) override;
-	STDMETHODIMP_(BOOL)     WriteContactSetting(MCONTACT contactID, DBCONTACTWRITESETTING *dbcws) override;
+	STDMETHODIMP_(BOOL)     ReadCryptoKey(MBinBuffer&) override;
+	STDMETHODIMP_(BOOL)     StoreCryptoKey() override;
+
+	STDMETHODIMP_(CRYPTO_PROVIDER*) ReadProvider() override;
+	STDMETHODIMP_(BOOL)     StoreProvider(CRYPTO_PROVIDER*) override;
+
+	STDMETHODIMP_(BOOL)     EnableEncryption(BOOL) override;
+	STDMETHODIMP_(BOOL)     ReadEncryption() override;
+
+	STDMETHODIMP_(BOOL)     WriteContactSettingWorker(MCONTACT contactID, DBCONTACTWRITESETTING &dbcws) override;
 	STDMETHODIMP_(BOOL)     DeleteContactSetting(MCONTACT contactID, LPCSTR szModule, LPCSTR szSetting) override;
 	STDMETHODIMP_(BOOL)     EnumContactSettings(MCONTACT hContact, DBSETTINGENUMPROC pfnEnumProc, const char *szModule, void *param) override;
 

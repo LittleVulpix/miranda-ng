@@ -148,16 +148,6 @@ STDMETHODIMP_(BOOL) CDbxSQLite::GetContactSettingWorker(MCONTACT contactID, LPCS
 	return 0;
 }
 
-STDMETHODIMP_(BOOL) CDbxSQLite::WriteContactSetting(MCONTACT, DBCONTACTWRITESETTING*)
-{
-	return FALSE;
-}
-
-STDMETHODIMP_(BOOL) CDbxSQLite::DeleteContactSetting(MCONTACT, LPCSTR, LPCSTR)
-{
-	return FALSE;
-}
-
 STDMETHODIMP_(BOOL) CDbxSQLite::EnumContactSettings(MCONTACT hContact, DBSETTINGENUMPROC pfnEnumProc, const char *szModule, void *param)
 {
 	if (szModule == nullptr)

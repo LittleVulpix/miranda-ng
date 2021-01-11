@@ -118,7 +118,7 @@ Aktualnie odtwarzany link
 [Current stream title]
 Aktualny tytuł strumienia
 [Station/playlist URL]
-Stacja/Plik playlisty
+Stacja/plik playlisty
 [Currently used decoder]
 Aktualnie używany kodek
 [connecting]
@@ -138,7 +138,7 @@ Graj/Stop
 [Start/Stop Record]
 Nagrywaj/Przerwij nagrywanie
 [Record]
-Zgrywanie
+Nagrywanie
 [Status message template]
 Szablon opisu
 [Equalizer presets]

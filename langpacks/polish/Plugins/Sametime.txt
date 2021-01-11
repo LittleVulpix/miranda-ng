@@ -25,7 +25,7 @@ Wyświetlanie błędów
 [Use message boxes]
 Użyj okienek
 [Use popups]
-Użyj popup
+Użyj powiadomień
 [Use system tray balloons]
 Używaj baloników w zasobniku systemowym
 [Contacts]
@@ -244,7 +244,7 @@ Błąd protokołu Sametime
 [User restricted]
 Użytkownik ograniczony
 [Incorrect Username/Password]
-Nieprawidłowa Nazwa użytkownika/Hasło
+Nieprawidłowa nazwa użytkownika/hasło
 [Encryption mismatch]
 Niezgodność szyfrowania
 [User unregistered]

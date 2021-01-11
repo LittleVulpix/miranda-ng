@@ -74,9 +74,6 @@ CDb3Mmap::~CDb3Mmap()
 	DestroyServiceFunction(hService);
 	UnhookEvent(hHook);
 
-	if (m_crypto)
-		m_crypto->destroy();
-
 	if (m_hMap)
 		CloseHandle(m_hMap);
 
@@ -121,10 +118,9 @@ int CDb3Mmap::Load(bool bSkipInit)
 		if (InitCrypt()) return EGROKPRF_CANTREAD;
 
 		// everything is ok, go on
-		if (!m_bReadOnly) {
+		if (!m_bReadOnly)
 			if (m_dbHeader.version < DB_095_1_VERSION)
 				return EGROKPRF_CANTREAD;
-		}
 
 		FillContacts();
 	}

@@ -47,7 +47,7 @@ Podgląd skórki
 [WARNING: \tSkins can modify your current profile. Rollback is not possible. \n\t\tPlease BACKUP your database before applying skin.]
 UWAGA: \tSkórki mogą zmodyfikować twój profil. Przywrócenie zmian nie jest możliwe. \n\t\tWykonaj kopię profilu przed ustawieniem nowej skórki.
 [* Restart may be required for all changes to take effect]
-* Miranda NG musi zostać zrestartowana aby zmiany przyniosły efekt
+* Uruchom ponownie program aby zmiany przyniosły efekt
 [Skin folder]
 Folder skórek
 [Download more skins]
@@ -97,9 +97,9 @@ Odstęp pomiędzy
 [Borders]
 Obramowanie
 [Vertical align]
-Pionowe wyrównanie
+Pionowo
 [Horizontal align]
-Poziome wyrównanie
+Poziomo
 [Multiline status bar:]
 Wielolinijkowy pasek statusu:
 [Accounts per line]
@@ -133,7 +133,7 @@ Pokaż obie ikony
 [Show normal status as overlay]
 Pokaż status jako nakładkę
 [Status overlay opacity is 75%]
-Widoczność nakładki statusu - 75%
+Widoczność nakładki - 75%
 [Show unread emails (if supported)]
 Pokaż nieprzeczytane maile (jeśli obsługiwane)
 [Right click opens status menu]
@@ -189,7 +189,7 @@ Ukryj listę kontaktów po
 [Automatically resize window to height of list]
 Dopasuj rozmiar okna rozmowy do wysokości listy
 [maximum]
-maksymalną
+maksymalny
 [% of screen]
 % ekranu
 [Size upwards]
@@ -207,15 +207,15 @@ Przeciągnij do
 [x100 ms]
 x100 ms
 [show delay]
-opóźnienie pokazania
+pojawianie
 [hide delay]
-opóźnienie ukrycia
+ukrywanie
 [Hide method]
 Metoda ukrycia
 [pixels]
 px
 [keep on screen]
-utrzymaj na ekranie
+trzymaj na ekranie
 [Snap to edges]
 Przyciąganie do krawędzi
 [Event notify area]
@@ -229,7 +229,7 @@ Zawsze widoczny
 [Dock to sides]
 Dokuj do krawędzi
 [and minimum]
-i minimalną
+minimalny
 [Items]
 Obiekty
 [Show divider between online and offline contacts]
@@ -253,7 +253,7 @@ Rysuj linię wzdłuż nazw grupy
 [Show counts of number of contacts in a group]
 Pokaż liczbę kontaktów w grupach
 [Hide group counts when there are none online]
-Ukryj liczbę kontaktów, jeśli nikt nie jest dostępny
+Ukryj liczbę kontaktów, jeśli nikt nie jest Dostępny
 [Sort groups alphabetically]
 Sortuj grupy alfabetycznie
 [Quicksearch in open groups only]
@@ -273,7 +273,7 @@ Ukryj pionowy pasek przewijania
 [Fade out entire list when:]
 Przygaś całą listę, gdy:
 [Single click interface]
-Pokaż/Ukryj listę po pojedynczym kliknięciu
+Pokaż/ukryj listę po pojedynczym kliknięciu
 [Always show status in tooltip]
 Zawsze pokazuj status w podpowiedzi
 [Disable icon blinking]
@@ -291,7 +291,7 @@ Dla podobnych statusów
 [Global status]
 Globalny status
 [Single account]
-Pojedyncze konto
+Jedno konto
 [Cycle icons]
 Zamieniaj ikony
 [All accounts]
@@ -303,13 +303,11 @@ Zmieniaj co (s)
 [Additional stuff]
 Pozostałe ustawienia
 [Ignore empty extra icons places (arrange to right).]
-Ignoruj puste miejsca na dodatkowe ikony (rozmieść w prawo)
+Ignoruj puste miejsca dodatkowych ikon (rozmieść w prawo)
 [Allow internal requesting of status message text]
 Akceptuj wewnętrzne prośby o treść opisu
 [Remove status message if contact became offline]
 Usuń opis, jeśli kontakt się rozłączy
-[Use improved search method in contact list]
-Użyj ulepszonej metody wyszukiwania na liście kontaktów
 [Metacontacts stuff]
 Elementy metakontaktów
 [Use 'Meta' protocol icons for metacontacts]
@@ -351,7 +349,7 @@ Minimalizuj do zasobnika
 [Translucency options]
 Opcje przezroczystości
 [Fade contact list in/out]
-Wygaszaj/Rozjaśniaj listę
+Wygaszaj/rozjaśniaj listę
 [Transparent contact list]
 Przezroczysta lista kontaktów
 [Inactive opacity:]
@@ -359,7 +357,7 @@ Nieaktywne okno:
 [Active opacity:]
 Aktywne okno:
 [Enable drop shadow (restart required)]
-Włącz cieniowanie (wymaga restartu)
+Cieniowanie (wymaga ponownego uruchomienia)
 [Frames]
 Ramki
 [Gaps between frames:]
@@ -375,7 +373,7 @@ Tryb Non-layered
 [Disable skin engine]
 Wyłącz silnik skórkowania
 [Enable Aero Glass (Vista, Win 7)]
-Włącz Aero Glass (Vista, Win 7)
+Aero Glass (Vista, Win 7)
 [Order of items:]
 Kolejność wyświetlania:
 [Minimum row height:]
@@ -405,7 +403,7 @@ Pokaż awatary
 [Draw overlay icons]
 Rysuj nakładki ikon
 [Max size (pixels):]
-Maks. rozmiar (w pikselach):
+Wielkość do (px):
 [Round corners of avatars]
 Zaokrąglone rogi awatarów
 [Ignore size for row height calcs]
@@ -575,9 +573,9 @@ Pokaż wszystkie paski tytułów
 Ukryj wszystkie paski tytułów
 ;file \plugins\Clist_modern\src\groupmenu.cpp
 [&Hide/show]
-&Ukryj/pokaż
+U&kryj/pokaż
 [&Find/add contacts...]
-&Szukaj/Dodaj kontakty...
+S&zukaj/dodaj kontakty...
 [&Main menu]
 &Menu główne
 [&Status]
@@ -814,7 +812,7 @@ Wyłącz Mirandę NG
 [Restore last status]
 Przywróć ostatni status
 [Show/Hide offline users]
-Pokaż/Ukryj rozłączonych
+Pokaż/ukryj rozłączonych
 ;file \plugins\Clist_modern\src\modern_skinopt.cpp
 [( unknown )]
 ( nieznany )
@@ -870,7 +868,7 @@ Konta
 [Accounts...]
 Konta...
 [Show/Hide offline contacts]
-Pokaż/Ukryj rozłączonych
+Pokaż/ukryj rozłączonych
 [Hide offline contacts]
 Ukryj rozłączone kontakty
 [Show offline contacts]
@@ -878,13 +876,13 @@ Pokaż rozłączone kontakty
 [Find user]
 Szukaj kontaktu
 [Use/Disable groups]
-Włącz/Wyłącz grupy
+Włącz/wyłącz grupy
 [Use groups]
 Pokaż grupy
 [Disable groups]
 Wyłącz grupy
 [Enable/Disable sounds]
-Włącz/Wyłącz dźwięki
+Włącz/wyłącz dźwięki
 [Enable sounds]
 Włącz dźwięki
 [Disable sounds]

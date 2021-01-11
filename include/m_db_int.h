@@ -167,29 +167,41 @@ interface MIR_APP_EXPORT MIDatabase
 #pragma warning(push)
 #pragma warning(disable:4275)
 
+struct MICryptoEngine;
+struct CRYPTO_PROVIDER;
+
 class MIR_APP_EXPORT MDatabaseCommon : public MIDatabase, public MNonCopyable
 {
 	HANDLE m_hLock = nullptr;
 
 protected:
+	bool m_bEncrypted = false, m_bUsesPassword = false;
 	int m_codePage;
 	
 	mir_cs m_csDbAccess;
 	LIST<char> m_lResidentSettings;
 	MIDatabaseCache* m_cache;
+	MICryptoEngine *m_crypto;
 
 protected:
-	bool LockName(const wchar_t *pwszProfileName);
 	int  CheckProto(DBCachedContact *cc, const char *proto);
+	void FillContactSettings();
+	bool LockName(const wchar_t *pwszProfileName);
 	void UnlockName();
 
-	STDMETHOD_(BOOL, GetContactSettingWorker)(MCONTACT contactID, LPCSTR szModule, LPCSTR szSetting, DBVARIANT *dbv, int isStatic) PURE;
+	STDMETHOD_(BOOL, GetContactSettingWorker)(MCONTACT contactID, LPCSTR szModule, LPCSTR szSetting, DBVARIANT *dbv, int isStatic);
+	STDMETHOD_(BOOL, WriteContactSettingWorker)(MCONTACT contactID, DBCONTACTWRITESETTING &dbcws) PURE;
 
 public:
 	MDatabaseCommon();
 	virtual ~MDatabaseCommon();
 
+	__forceinline bool isEncrypted() const { return m_bEncrypted; }
+	__forceinline MICryptoEngine* getCrypt() const { return m_crypto; }
 	__forceinline MIDatabaseCache* getCache() const { return m_cache; }
+	__forceinline bool usesPassword() const { return m_bUsesPassword; }
+
+	void SetPassword(const wchar_t *ptszPassword);
 
 	STDMETHODIMP_(BOOL) DeleteModule(MCONTACT contactID, LPCSTR szModule) override;
 
@@ -205,7 +217,8 @@ public:
 	STDMETHODIMP_(BOOL) GetContactSettingStr(MCONTACT contactID, LPCSTR szModule, LPCSTR szSetting, DBVARIANT *dbv) override;
 	STDMETHODIMP_(BOOL) GetContactSettingStatic(MCONTACT contactID, LPCSTR szModule, LPCSTR szSetting, DBVARIANT *dbv) override;
 	STDMETHODIMP_(BOOL) FreeVariant(DBVARIANT *dbv);
-	
+	STDMETHODIMP_(BOOL) WriteContactSetting(MCONTACT contactID, DBCONTACTWRITESETTING *dbcws) override;
+
 	STDMETHODIMP_(BOOL) EnumResidentSettings(DBMODULEENUMPROC pFunc, void *pParam) override;
 	STDMETHODIMP_(BOOL) SetSettingResident(BOOL bIsResident, const char *pszSettingName) override;
 	
@@ -216,6 +229,21 @@ public:
 
 	STDMETHODIMP_(DB::EventCursor*) EventCursor(MCONTACT hContact, MEVENT hDbEvent) override;
 	STDMETHODIMP_(DB::EventCursor*) EventCursorRev(MCONTACT hContact, MEVENT hDbEvent) override;
+
+	////////////////////////////////////////////////////////////////////////////////////////
+	// encryption support
+
+	int InitCrypt();
+
+	CRYPTO_PROVIDER* SelectProvider();
+	STDMETHOD_(CRYPTO_PROVIDER*, ReadProvider)() PURE;
+	STDMETHOD_(BOOL, StoreProvider)(CRYPTO_PROVIDER*) PURE;
+
+	STDMETHOD_(BOOL, ReadCryptoKey)(MBinBuffer&) PURE;
+	STDMETHOD_(BOOL, StoreCryptoKey)() PURE;
+
+	STDMETHOD_(BOOL, EnableEncryption)(BOOL) PURE;
+	STDMETHOD_(BOOL, ReadEncryption)() PURE;	
 };
 
 #pragma warning(pop)
@@ -234,6 +262,13 @@ public:
 
 	STDMETHODIMP_(BOOL) EnumModuleNames(DBMODULEENUMPROC, void*) override;
 
+	STDMETHODIMP_(CRYPTO_PROVIDER*) ReadProvider() override;
+	STDMETHODIMP_(BOOL) StoreProvider(CRYPTO_PROVIDER*) override;
+	STDMETHODIMP_(BOOL) ReadCryptoKey(MBinBuffer&) override;
+	STDMETHODIMP_(BOOL) StoreCryptoKey() override;
+	STDMETHODIMP_(BOOL) EnableEncryption(BOOL) override;
+	STDMETHODIMP_(BOOL) ReadEncryption() override;
+
 	////////////////////////////////////////////////////////////////////////////////////////
 	STDMETHODIMP_(MCONTACT) AddContact(void) override;
 	STDMETHODIMP_(LONG) DeleteContact(MCONTACT) override;
@@ -251,7 +286,7 @@ public:
 
 	////////////////////////////////////////////////////////////////////////////////////////
 	STDMETHODIMP_(BOOL) GetContactSettingWorker(MCONTACT, LPCSTR, LPCSTR, DBVARIANT*, int) override;
-	STDMETHODIMP_(BOOL) WriteContactSetting(MCONTACT, DBCONTACTWRITESETTING*) override;
+	STDMETHODIMP_(BOOL) WriteContactSettingWorker(MCONTACT, DBCONTACTWRITESETTING&) override;
 	STDMETHODIMP_(BOOL) DeleteContactSetting(MCONTACT, LPCSTR, LPCSTR) override;
 	STDMETHODIMP_(BOOL) EnumContactSettings(MCONTACT, DBSETTINGENUMPROC, const char*, void*) override;
 

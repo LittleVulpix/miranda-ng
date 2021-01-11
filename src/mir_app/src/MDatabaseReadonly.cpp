@@ -39,7 +39,39 @@ void MDatabaseReadonly::SetCacheSafetyMode(BOOL)
 
 BOOL MDatabaseReadonly::EnumModuleNames(DBMODULEENUMPROC, void*)
 {
-	return 0;
+	return FALSE;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+STDMETHODIMP_(BOOL) MDatabaseReadonly::ReadCryptoKey(MBinBuffer&)
+{
+	return FALSE;
+}
+
+STDMETHODIMP_(BOOL) MDatabaseReadonly::StoreCryptoKey()
+{
+	return FALSE;
+}
+
+STDMETHODIMP_(CRYPTO_PROVIDER*) MDatabaseReadonly::ReadProvider()
+{
+	return nullptr;
+}
+
+STDMETHODIMP_(BOOL) MDatabaseReadonly::StoreProvider(CRYPTO_PROVIDER *)
+{
+	return FALSE;
+}
+
+STDMETHODIMP_(BOOL) MDatabaseReadonly::EnableEncryption(BOOL)
+{
+	return FALSE;
+}
+
+STDMETHODIMP_(BOOL) MDatabaseReadonly::ReadEncryption()
+{
+	return FALSE;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -108,7 +140,7 @@ BOOL MDatabaseReadonly::GetContactSettingWorker(MCONTACT, LPCSTR, LPCSTR, DBVARI
 	return 1;
 }
 
-BOOL MDatabaseReadonly::WriteContactSetting(MCONTACT, DBCONTACTWRITESETTING*)
+BOOL MDatabaseReadonly::WriteContactSettingWorker(MCONTACT, DBCONTACTWRITESETTING&)
 {
 	return 1;
 }

@@ -28,7 +28,11 @@
 #define IDD_OPT_CLIST                   119
 #define IDD_OPT_CHAT_EVENTS             120
 #define IDD_AUTHREQ                     121
+#define IDD_SELECT_CRYPTOPROVIDER       122
+#define IDD_LOGIN                       123
+#define IDI_DATABASE                    124
 #define IDD_DETAILS                     125
+#define IDD_OPT_DATABASE                126
 #define IDD_HISTORY                     127
 #define IDI_AWAY                        128
 #define IDI_FREE4CHAT                   129
@@ -60,6 +64,8 @@
 #define IDI_MERROR                      165
 #define IDI_MWARNING                    166
 #define IDI_MINFO                       167
+#define IDD_CHANGEPASS                  168
+#define IDD_NEWPASS                     169
 #define IDI_MIRANDAWEBSITE              172
 #define IDI_RENAME                      173
 #define IDI_HISTORY                     174
@@ -302,6 +308,8 @@
 #define IDC_EDIT1                       1105
 #define IDC_BUILDTIME                   1108
 #define IDC_CREDITSFILE                 1109
+#define IDC_SELECTCRYPT_COMBO           1110
+#define IDC_CRYPTOPROVIDER_DESCR        1111
 #define IDC_NUMBER                      1113
 #define IDC_FINDWHAT                    1131
 #define IDC_FIND                        1132
@@ -348,8 +356,10 @@
 #define IDC_USESPECIFIC                 1212
 #define IDC_FILEDIR                     1213
 #define IDC_TRANSFERCOMPLETED           1214
+#define IDC_LANG                        1215
+#define IDC_USERPASS                    1216
 #define IDC_ALLFILESPROGRESS            1217
-#define IDC_WHITERECT                   1221
+#define IDC_WHITERECT                   1220
 #define IDC_ALLSPEED                    1221
 #define IDC_FIRSTNAME                   1224
 #define IDC_LASTNAME                    1225
@@ -393,7 +403,11 @@
 #define IDC_CATEGORYLIST                1366
 #define IDC_LOADICONS                   1369
 #define IDC_STICONSGROUP                1371
+#define IDC_OLDPASS                     1372
+#define IDC_USERPASS1                   1373
+#define IDC_USERPASS2                   1374
 #define IDC_MSGICON                     1375
+#define IDREMOVE                        1376
 #define IDC_STNOPAGE                    1377
 #define IDC_STCHECKMARKS                1380
 #define IDC_STATUSBAR                   1389
@@ -516,6 +530,8 @@
 #define IDC_PLUGINURL                   1682
 #define IDC_PLUGINPID                   1683
 #define IDC_IDLESPIN                    1687
+#define IDC_STANDARD                    1688
+#define IDC_TOTAL                       1689
 #define IDC_NODBDRIVERS                 1690
 #define IDC_IDLESTATUSLOCK              1691
 #define IDC_RESTART                     1692

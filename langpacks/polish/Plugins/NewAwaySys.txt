@@ -247,7 +247,7 @@ Ustaw opis %s dla kontaktu
 [Re&ad %s message]
 Po&każ opis "%s"
 [Toggle autoreply on/off]
-Włącz/Wyłącz autoodpowiedź
+Włącz/wyłącz autoodpowiedź
 [Toggle autoreply off]
 Wyłącz autoodpowiedź
 [Toggle autoreply on]
@@ -344,6 +344,6 @@ Away system
 [Status]
 Status
 [Popups]
-Popupy
+Powiadomienia
 [Variables plugin is not installed]
 Wtyczka Variables nie jest zainstalowana

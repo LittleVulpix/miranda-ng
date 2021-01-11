@@ -61,7 +61,6 @@ DBHeader
 #define WSOFS_END   0xFFFFFFFF
 #define WS_ERROR    0xFFFFFFFF
 
-#define DBVT_ENCRYPTED   250
 #define DBVT_UNENCRYPTED 251
 
 #define MARKED_READ (DBEF_READ | DBEF_SENT)
@@ -193,19 +192,10 @@ struct CDb3Mmap : public MDatabaseCommon, public MZeroedObject
 	int CreateDbHeaders(const DBSignature&);
 	int CheckDbHeaders(bool bInteractive);
 
-	void ToggleEncryption(void);
-	void StoreKey(void);
-	void SetPassword(const wchar_t *ptszPassword);
-	void UpdateMenuItem(void);
-
-	__forceinline LPTSTR GetMenuTitle() const { return m_bUsesPassword ? LPGENW("Change/remove password") : LPGENW("Set password"); }
-
 	void DatabaseCorruption(wchar_t *text);
 	void WriteSignature(DBSignature&);
 
 	__forceinline HANDLE getFile() const { return m_hDbFile; }
-	__forceinline bool isEncrypted() const { return m_bEncrypted; }
-	__forceinline bool usesPassword() const { return m_bUsesPassword; }
 
 public:
 	STDMETHODIMP_(BOOL)     IsRelational(void) override { return FALSE; }
@@ -233,8 +223,17 @@ public:
 
 	STDMETHODIMP_(BOOL)     EnumModuleNames(DBMODULEENUMPROC pFunc, void *pParam) override;
 
+	STDMETHODIMP_(BOOL)     ReadCryptoKey(MBinBuffer&) override;
+	STDMETHODIMP_(BOOL)     StoreCryptoKey(void) override;
+
+	STDMETHODIMP_(BOOL)     EnableEncryption(BOOL) override;
+	STDMETHODIMP_(BOOL)     ReadEncryption(void) override;
+
+	STDMETHODIMP_(CRYPTO_PROVIDER*) ReadProvider() override;
+	STDMETHODIMP_(BOOL)     StoreProvider(CRYPTO_PROVIDER*) override;
+
 	STDMETHODIMP_(BOOL)     GetContactSettingWorker(MCONTACT contactID, LPCSTR szModule, LPCSTR szSetting, DBVARIANT *dbv, int isStatic) override;
-	STDMETHODIMP_(BOOL)     WriteContactSetting(MCONTACT contactID, DBCONTACTWRITESETTING *dbcws) override;
+	STDMETHODIMP_(BOOL)     WriteContactSettingWorker(MCONTACT contactID, DBCONTACTWRITESETTING &dbcws) override;
 	STDMETHODIMP_(BOOL)     DeleteContactSetting(MCONTACT contactID, LPCSTR szModule, LPCSTR szSetting) override;
 	STDMETHODIMP_(BOOL)     EnumContactSettings(MCONTACT hContact, DBSETTINGENUMPROC pfnEnumProc, const char *szModule, void *param) override;
 
@@ -265,7 +264,7 @@ protected:
 	HANDLE   m_hDbFile;
 	DBHeader m_dbHeader;
 	DWORD    m_ChunkSize;
-	bool     m_safetyMode, m_bReadOnly, m_bShared, m_bEncrypted, m_bUsesPassword;
+	bool     m_safetyMode, m_bReadOnly, m_bShared;
 
 	////////////////////////////////////////////////////////////////////////////
 	// database stuff
@@ -274,8 +273,6 @@ public:
 	DWORD    m_flushFailTick;
 	PBYTE    m_pDbCache;
 	HANDLE   m_hMap;
-
-	MICryptoEngine *m_crypto;
 
 protected:
 	DWORD    m_dwFileSize, m_dwMaxContactId;
@@ -322,7 +319,4 @@ protected:
 	int      InitCrypt(void);
 	void     ToggleEventsEncryption(MCONTACT contactID);
 	void     ToggleSettingsEncryption(MCONTACT contactID);
-
-	void     InitDialogs();
-	bool     EnterPassword(const BYTE *pKey, const size_t keyLen);
 };

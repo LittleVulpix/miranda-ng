@@ -3,24 +3,11 @@
 // Используется d:\Others\SVN\MirandaNG\trunk\plugins\Dbx_mdb\res\dbx_mdbx.rc
 //
 #define IDREMOVE                        3
-#define IDI_LOGO                        101
-#define IDD_LOGIN                       102
-#define IDD_NEWPASS                     103
-#define IDD_CHANGEPASS                  104
 #define IDD_OPTIONS                     105
-#define IDD_SELECT_CRYPTOPROVIDER       106
 #define IDI_COMPACT                     107
 #define IDC_HEADERBAR                   1001
-#define IDC_LANG                        1002
-#define IDC_USERPASS                    1003
-#define IDC_USERPASS1                   1004
-#define IDC_USERPASS2                   1005
-#define IDC_OLDPASS                     1006
 #define IDC_STANDARD                    1007
 #define IDC_TOTAL                       1008
-#define IDC_SELECTCRYPT_COMBO           1010
-#define IDC_CRYPTOPROVIDER_DESCR        1011
-#define IDC_CHECK_TOTALCRYPT            1012
 
 // Next default values for new objects
 // 

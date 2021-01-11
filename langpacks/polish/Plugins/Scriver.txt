@@ -31,7 +31,7 @@ Pokazuj ostrzeżenie jeśli wiadomość nie została odebrana po
 [seconds]
 s
 [Send message on:]
-
+Wysyła wiadomość:
 [Tabs]
 Karty
 [Enable tabs]
@@ -357,7 +357,7 @@ Ogólne
 [Log formatting]
 Formatowanie dziennika
 [Popups]
-Popupy
+Powiadomienia
 ;file \plugins\Scriver\src\globals.cpp
 [Add contact]
 Dodaj kontakt
@@ -657,13 +657,13 @@ Ustawienia &pokoju
 [Control this room (Ctrl+O)]
 Kontroluj ten pokój (Ctrl + O)
 [&Show/hide nick list]
-&Pokaż/Ukryj listę nicków
+&Pokaż/ukryj listę nicków
 [Show/hide the nick list (Ctrl+N)]
-Pokaż/Ukryj listę nazw (Ctrl+N)
+Pokaż/ukryj listę nazw (Ctrl+N)
 [&Filter]
 &Filtr
 [Enable/disable the event filter (Ctrl+F)]
-Włącz/Wyłącz filtr zdarzeń (Ctrl+F)
+Włącz/wyłącz filtr zdarzeń (Ctrl+F)
 [&Message]
 &Wiadomość
 [Miranda could not load the built-in message module, Msftedit.dll is missing. If you are using WINE, please make sure you have Msftedit.dll installed. Press 'Yes' to continue loading Miranda.]
