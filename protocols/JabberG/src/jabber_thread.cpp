@@ -5,7 +5,7 @@ Jabber Protocol Plugin for Miranda NG
 Copyright (c) 2002-04  Santithorn Bunchua
 Copyright (c) 2005-12  George Hazan
 Copyright (c) 2007     Maxim Mluhov
-Copyright (C) 2012-20 Miranda NG team
+Copyright (C) 2012-21 Miranda NG team
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -385,9 +385,11 @@ LBL_FatalError:
 
 	// User may change status to OFFLINE while we are connecting above
 	if (m_iDesiredStatus != ID_STATUS_OFFLINE || info.bIsReg) {
+		bool bSendKeepAlive = false;
+
 		if (!info.bIsReg) {
 			m_szJabberJID = CMStringA(FORMAT, "%s@%s", info.conn.username, info.conn.server).Detach();
-			m_bSendKeepAlive = m_bKeepAlive != 0;
+			bSendKeepAlive = m_bKeepAlive;
 			setUString("jid", m_szJabberJID); // store jid in database
 
 			ListInit();
@@ -413,14 +415,14 @@ LBL_FatalError:
 				if (nSelRes == -1) // error
 					break;
 				else if (nSelRes == 0) {
-					if (m_bSendKeepAlive) {
+					if (bSendKeepAlive) {
 						if (info.jabberServerCaps & JABBER_CAPS_PING) {
 							CJabberIqInfo *pInfo = AddIQ(&CJabberProto::OnPingReply, JABBER_IQ_TYPE_GET, nullptr, this);
 							pInfo->SetTimeout(m_iConnectionKeepAliveTimeout);
 							info.send(XmlNodeIq(pInfo) << XATTR("from", info.fullJID) << XCHILDNS("ping", JABBER_FEAT_PING));
 						}
+						else info.send(" \t ");
 					}
-					else info.send(" \t ");
 					
 					if (m_bEnableStreamMgmt)
 						m_StrmMgmt.RequestAck();

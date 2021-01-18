@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 // Miranda NG: the free IM client for Microsoft* Windows*
 //
-// Copyright (C) 2012-20 Miranda NG team,
+// Copyright (C) 2012-21 Miranda NG team,
 // Copyright (c) 2000-09 Miranda ICQ/IM project,
 // all portions of this codebase are copyrighted to the people
 // listed in contributors.txt.
@@ -43,7 +43,7 @@ static void __stdcall Chat_DismissPopup(void *pi)
 		if (g_clistApi.pfnGetEvent(si->hContact, 0))
 			g_clistApi.pfnRemoveEvent(si->hContact, GC_FAKE_EVENT);
 
-	if (si->pDlg && KillTimer(si->pDlg->GetHwnd(), TIMERID_FLASHWND))
+	if (si->pDlg && si->pDlg->timerFlash.Stop())
 		FlashWindow(si->pDlg->GetHwnd(), FALSE);
 }
 
@@ -233,7 +233,7 @@ void DoFlashAndSoundWorker(FLASH_PARAMS *p)
 						dat->m_iFlashIcon = p->hNotifyIcon;
 				}
 				dat->m_bCanFlashTab = TRUE;
-				SetTimer(si->pDlg->GetHwnd(), TIMERID_FLASHWND, TIMEOUT_FLASHWND, nullptr);
+				si->pDlg->timerFlash.Start(TIMEOUT_FLASHWND);
 			}
 		}
 		if (dat->m_pWnd) {

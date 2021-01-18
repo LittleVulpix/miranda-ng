@@ -2,7 +2,7 @@
 
 Object UI extensions
 Copyright (c) 2008  Victor Pavlychko, George Hazan
-Copyright (C) 2012-20 Miranda NG team
+Copyright (C) 2012-21 Miranda NG team
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -58,6 +58,7 @@ int CCtrlCheck::GetState()
 void CCtrlCheck::SetState(int state)
 {
 	::SendMessage(m_hwnd, BM_SETCHECK, state, 0);
+	OnChange(this);
 }
 
 bool CCtrlCheck::IsChecked()

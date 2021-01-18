@@ -2,7 +2,7 @@
 
 Miranda NG: the free IM client for Microsoft* Windows*
 
-Copyright (C) 2012-20 Miranda NG team (https://miranda-ng.org),
+Copyright (C) 2012-21 Miranda NG team (https://miranda-ng.org),
 Copyright (c) 2000-12 Miranda IM project,
 all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
@@ -132,8 +132,6 @@ public:
 		default: CheckDlgButton(m_hwnd, IDC_ASK, BST_CHECKED); break;
 		}
 
-		onChange_NoScanner(0);
-		onChange_AutoAccept(0);
 		return true;
 	}
 

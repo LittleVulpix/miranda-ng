@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 // Miranda NG: the free IM client for Microsoft* Windows*
 //
-// Copyright (C) 2012-20 Miranda NG team,
+// Copyright (C) 2012-21 Miranda NG team,
 // Copyright (c) 2000-09 Miranda ICQ/IM project,
 // all portions of this codebase are copyrighted to the people
 // listed in contributors.txt.
@@ -273,13 +273,13 @@ void RegisterFontServiceFonts()
 		case H_MSGFONTID_MYMISC:
 		case H_MSGFONTID_MYNAME:
 		case H_MSGFONTID_MYTIME:
-		case MSGFONTID_SYMBOLS_IN:
 			wcsncpy_s(fid.backgroundName, LPGENW("Outgoing background(old)"), _TRUNCATE);
 			break;
 		case MSGFONTID_YOURMSG:
 		case MSGFONTID_YOURMISC:
 		case MSGFONTID_YOURNAME:
 		case MSGFONTID_YOURTIME:
+		case MSGFONTID_SYMBOLS_IN:
 			wcsncpy_s(fid.backgroundName, LPGENW("Incoming background"), _TRUNCATE);
 			break;
 		case H_MSGFONTID_YOURMSG:

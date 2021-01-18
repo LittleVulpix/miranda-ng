@@ -2,7 +2,7 @@
 
 Miranda NG: the free IM client for Microsoft* Windows*
 
-Copyright (C) 2012-20 Miranda NG team (https://miranda-ng.org)
+Copyright (C) 2012-21 Miranda NG team (https://miranda-ng.org)
 Copyright (c) 2000-08 Miranda ICQ/IM project,
 all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
@@ -230,6 +230,7 @@ public:
 	bool m_bFGSet, m_bBGSet;
 	bool m_bInMenu;
 	COLORREF m_iFG, m_iBG;
+	CTimer timerFlash, timerType;
 
 	void ClearLog();
 	void RedrawLog();

@@ -2,7 +2,7 @@
 
 Miranda NG: the free IM client for Microsoft* Windows*
 
-Copyright (C) 2012-20 Miranda NG team (https://miranda-ng.org),
+Copyright (C) 2012-21 Miranda NG team (https://miranda-ng.org),
 Copyright (c) 2000-12 Miranda IM project,
 all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
@@ -65,10 +65,8 @@ public:
 		chkCycle.SetState(iTrayIcon == SETTING_TRAYICON_CYCLE);
 		chkMulti.SetState(iTrayIcon == SETTING_TRAYICON_MULTI);
 		chkDontCycle.SetState(iTrayIcon == SETTING_TRAYICON_SINGLE);
-		onChange_Tray(0);
 		
 		chkDisableBlink.SetState(g_plugin.getBool("DisableTrayFlash", false));
-		onChange_DisableBlink(0);
 
 		blink.SetPosition(g_plugin.getWord("IconFlashTime", 550));
 		cycleTime.SetPosition(g_plugin.getWord("CycleTime", SETTING_CYCLETIME_DEFAULT));

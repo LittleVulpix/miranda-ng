@@ -1,7 +1,7 @@
 /*
 Chat module plugin for Miranda IM
 
-Copyright 2000-12 Miranda IM, 2012-20 Miranda NG team,
+Copyright 2000-12 Miranda IM, 2012-21 Miranda NG team,
 all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
 
@@ -231,7 +231,7 @@ static LRESULT CALLBACK PopupDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPA
 			if (g_clistApi.pfnGetEvent(si->hContact, 0))
 				g_clistApi.pfnRemoveEvent(si->hContact, GC_FAKE_EVENT);
 
-		if (si->pDlg && KillTimer(si->pDlg->GetHwnd(), TIMERID_FLASHWND))
+		if (si->pDlg && si->pDlg->timerFlash.Stop())
 			FlashWindow(si->pDlg->GetHwnd(), FALSE);
 
 		PUDeletePopup(hWnd);

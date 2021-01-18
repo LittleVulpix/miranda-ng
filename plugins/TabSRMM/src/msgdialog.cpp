@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 // Miranda NG: the free IM client for Microsoft* Windows*
 //
-// Copyright (C) 2012-20 Miranda NG team,
+// Copyright (C) 2012-21 Miranda NG team,
 // Copyright (c) 2000-09 Miranda ICQ/IM project,
 // all portions of this codebase are copyrighted to the people
 // listed in contributors.txt.
@@ -312,6 +312,7 @@ LRESULT CALLBACK SplitterSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM
 CMsgDialog::CMsgDialog(int iDlgId, MCONTACT hContact) :
 	CSuper(g_plugin, iDlgId),
 	m_pPanel(this),
+	timerAwayMsg(this, 4),
 	m_btnOk(this, IDOK),
 	m_btnAdd(this, IDC_ADD),
 	m_btnQuote(this, IDC_QUOTE),
@@ -329,6 +330,7 @@ CMsgDialog::CMsgDialog(int iDlgId, MCONTACT hContact) :
 CMsgDialog::CMsgDialog(SESSION_INFO *si) :
 	CSuper(g_plugin, IDD_CHANNEL, si),
 	m_pPanel(this),
+	timerAwayMsg(this, 4),
 	m_btnOk(this, IDOK),
 	m_btnAdd(this, IDC_ADD),
 	m_btnQuote(this, IDC_QUOTE),
@@ -355,6 +357,10 @@ void CMsgDialog::Init()
 	m_btnOk.OnClick = Callback(this, &CMsgDialog::onClick_Ok);
 
 	m_message.OnChange = Callback(this, &CMsgDialog::onChange_Message);
+
+	timerAwayMsg.OnEvent = Callback(this, &CMsgDialog::onAwayMsg);
+	timerFlash.OnEvent = Callback(this, &CMsgDialog::onFlash);
+	timerType.OnEvent = Callback(this, &CMsgDialog::onType);
 }
 
 CMsgDialog::~CMsgDialog()
@@ -474,7 +480,7 @@ bool CMsgDialog::OnInitDialog()
 	m_iMultiSplit = g_plugin.getDword("multisplit", 150);
 	if (m_si == nullptr || m_si->iType == GCW_PRIVMESS) {
 		m_nTypeMode = PROTOTYPE_SELFTYPING_OFF;
-		SetTimer(m_hwnd, TIMERID_TYPE, 1000, nullptr);
+		timerType.Start(1000);
 	}
 	m_iLastEventType = 0xffffffff;
 
@@ -618,7 +624,7 @@ bool CMsgDialog::OnInitDialog()
 
 	if (m_pContainer->m_flags.m_bCreateMinimized || !m_bActivate || m_pContainer->m_flags.m_bDeferredTabSelect) {
 		m_iFlashIcon = PluginConfig.g_IconMsgEvent;
-		SetTimer(m_hwnd, TIMERID_FLASHWND, TIMEOUT_FLASHWND, nullptr);
+		timerFlash.Start(TIMEOUT_FLASHWND);
 		m_bCanFlashTab = true;
 
 		DBEVENTINFO dbei = {};
@@ -1075,6 +1081,32 @@ void CMsgDialog::onChange_Message(CCtrlEdit*)
 				DM_NotifyTyping(PROTOTYPE_SELFTYPING_OFF);
 		}
 	}
+}
+
+void CMsgDialog::onType(CTimer *)
+{
+	if (m_si == nullptr || m_si->iType == GCW_PRIVMESS)
+		DM_Typing(false);
+}
+
+void CMsgDialog::onFlash(CTimer *)
+{
+	if (m_bCanFlashTab)
+		FlashTab(true);
+}
+
+// timer to control info panel hovering
+void CMsgDialog::onAwayMsg(CTimer *pTimer)
+{
+	pTimer->Stop();
+
+	POINT pt;
+	GetCursorPos(&pt);
+
+	if (m_pPanel.hitTest(pt) != CInfoPanel::HTNIRVANA)
+		ActivateTooltip(0, 0);
+	else
+		m_bAwayMsgTimer = false;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -2712,18 +2744,6 @@ INT_PTR CMsgDialog::DlgProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		return 0;
 
 	case WM_TIMER:
-		// timer to control info panel hovering
-		if (wParam == TIMERID_AWAYMSG) {
-			KillTimer(m_hwnd, wParam);
-			GetCursorPos(&pt);
-
-			if (wParam == TIMERID_AWAYMSG && m_pPanel.hitTest(pt) != CInfoPanel::HTNIRVANA)
-				ActivateTooltip(0, 0);
-			else
-				m_bAwayMsgTimer = false;
-			break;
-		}
-
 		// timer id for message timeouts is composed like:
 		// for single message sends: basevalue (TIMERID_MSGSEND) + send queue index
 		if (wParam >= TIMERID_MSGSEND) {
@@ -2739,16 +2759,6 @@ INT_PTR CMsgDialog::DlgProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 					sendQueue->handleError(this, iIndex);
 				break;
 			}
-		}
-		else if (wParam == TIMERID_FLASHWND) {
-			if (m_bCanFlashTab)
-				FlashTab(true);
-			break;
-		}
-		else if (wParam == TIMERID_TYPE) {
-			if (m_si == nullptr || m_si->iType == GCW_PRIVMESS)
-				DM_Typing(false);
-			break;
 		}
 		break;
 

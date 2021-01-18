@@ -2,7 +2,7 @@
 
 Miranda NG: the free IM client for Microsoft* Windows*
 
-Copyright (C) 2012-20 Miranda NG team,
+Copyright (C) 2012-21 Miranda NG team,
 all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
 
@@ -30,6 +30,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 CSrmmBaseDialog::CSrmmBaseDialog(CMPluginBase &pPlugin, int idDialog, SESSION_INFO *si) :
 	CDlgBase(pPlugin, idDialog),
+	timerFlash(this, 1),
+	timerType(this, 2),
+
 	m_message(this, IDC_SRMM_MESSAGE),
 	m_nickList(this, IDC_SRMM_NICKLIST),
 

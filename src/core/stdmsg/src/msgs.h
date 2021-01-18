@@ -1,6 +1,6 @@
 /*
 
-Copyright 2000-12 Miranda IM, 2012-20 Miranda NG team,
+Copyright 2000-12 Miranda IM, 2012-21 Miranda NG team,
 all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
 
@@ -68,6 +68,9 @@ class CMsgDialog : public CSrmmBaseDialog
 
 	CCtrlBase m_avatar;
 	CCtrlButton m_btnOk;
+	
+	void OnFlash(CTimer *);
+	void OnType(CTimer *);
 
 	CTabbedWindow *m_pOwner;
 	DWORD m_nFlash = 0;

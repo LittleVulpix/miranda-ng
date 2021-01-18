@@ -2,7 +2,7 @@
 
 Chat module interface for Miranda NG
 
-Copyright (c) 2014-20 George Hazan
+Copyright (c) 2014-21 George Hazan
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -44,8 +44,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define CHATFONT_MODULE "ChatFonts"
 
 #define GC_FAKE_EVENT MEVENT(0xBABABEDA)
-
-#define TIMERID_FLASHWND       1
 
 #define GCW_TABROOM            10
 #define GCW_TABPRIVMSG         11

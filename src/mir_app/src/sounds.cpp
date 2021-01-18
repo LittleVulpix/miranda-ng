@@ -2,7 +2,7 @@
 
 Miranda NG: the free IM client for Microsoft* Windows*
 
-Copyright (C) 2012-20 Miranda NG team (https://miranda-ng.org),
+Copyright (C) 2012-21 Miranda NG team (https://miranda-ng.org),
 Copyright (c) 2000-12 Miranda IM project,
 all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
@@ -132,7 +132,6 @@ public:
 		RebuildTree();
 		m_tree.SetItemState(0, TVIS_SELECTED, TVIS_SELECTED);
 		chkSounds.SetState(db_get_b(0, "Skin", "UseSound", 0) != 0);
-		onChange_Sounds(0);
 		return true;
 	}
 

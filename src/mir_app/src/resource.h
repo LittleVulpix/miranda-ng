@@ -30,7 +30,6 @@
 #define IDD_AUTHREQ                     121
 #define IDD_SELECT_CRYPTOPROVIDER       122
 #define IDD_LOGIN                       123
-#define IDI_DATABASE                    124
 #define IDD_DETAILS                     125
 #define IDD_OPT_DATABASE                126
 #define IDD_HISTORY                     127
@@ -171,6 +170,7 @@
 #define IDI_AUTH_REQUEST                326
 #define IDI_AUTH_REVOKE                 327
 #define IDI_SOUND                       328
+#define IDI_DATABASE                    329
 #define IDI_ONTHEPHONE                  1002
 #define IDC_MESSAGE                     1002
 #define IDC_LANGINFOFRAME               1002
@@ -685,7 +685,7 @@
 #define IDI_POPUP                       40088
 #define IDI_NOPOPUP                     40089
 
-#define LEGAL_COPYRIGHT "Copyright © 2000-11 Miranda IM, 2012-20 Miranda NG team. This software is released under the terms of the GNU General Public License.\0"
+#define LEGAL_COPYRIGHT "Copyright © 2000-11 Miranda IM, 2012-21 Miranda NG team. This software is released under the terms of the GNU General Public License.\0"
 
 // Next default values for new objects
 // 

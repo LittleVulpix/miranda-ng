@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 // Miranda NG: the free IM client for Microsoft* Windows*
 //
-// Copyright (C) 2012-20 Miranda NG team,
+// Copyright (C) 2012-21 Miranda NG team,
 // Copyright (c) 2000-09 Miranda ICQ/IM project,
 // all portions of this codebase are copyrighted to the people
 // listed in contributors.txt.
@@ -28,9 +28,6 @@
 #define __SENDQUEUE_H
 
 #define TIMERID_MSGSEND      100
-#define TIMERID_TYPE         3
-#define TIMERID_AWAYMSG      4
-//#define TIMERID_TOOLTIP		 5
 #define TIMEOUT_TYPEOFF      10000      // send type off after 10 seconds of inactivity
 #define SB_CHAR_WIDTH        45
 #define SEND_FLAGS PREF_UNICODE

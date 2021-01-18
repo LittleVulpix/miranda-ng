@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 // Miranda NG: the free IM client for Microsoft* Windows*
 //
-// Copyright (C) 2012-20 Miranda NG team,
+// Copyright (C) 2012-21 Miranda NG team,
 // Copyright (c) 2000-09 Miranda ICQ/IM project,
 // all portions of this codebase are copyrighted to the people
 // listed in contributors.txt.
@@ -1209,7 +1209,6 @@ public:
 
 		chkLimit.SetState(M.GetByte("cuttitle", 0));
 		spnLimit.SetPosition(db_get_w(0, SRMSGMOD_T, "cut_at", 15));
-		onChange_Cut(&chkLimit);
 
 		cmbEscMode.AddString(TranslateT("Normal - close tab, if last tab is closed also close the window"));
 		cmbEscMode.AddString(TranslateT("Minimize the window to the task bar"));

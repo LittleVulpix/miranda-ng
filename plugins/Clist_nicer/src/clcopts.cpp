@@ -2,7 +2,7 @@
 
 Miranda NG: the free IM client for Microsoft* Windows*
 
-Copyright (C) 2012-20 Miranda NG team (https://miranda-ng.org),
+Copyright (C) 2012-21 Miranda NG team (https://miranda-ng.org),
 Copyright (c) 2000-03 Miranda ICQ/IM project,
 all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
@@ -277,11 +277,7 @@ public:
 		SendDlgItemMessage(m_hwnd, IDC_AVATARSIZESPIN, UDM_SETRANGE, 0, MAKELONG(100, 16));
 		SendDlgItemMessage(m_hwnd, IDC_AVATARSIZESPIN, UDM_SETPOS, 0, cfg::dat.avatarSize);
 
-		onChange_AvatarsBorder(0);
-		onChange_AvatarsRounded(0);
-
 		chkLocalTime.SetState(cfg::dat.bShowLocalTime);
-		onChange_LocalTime(0);
 
 		if (cfg::dat.dwFlags & CLUI_FRAME_AVATARSLEFT)
 			SendDlgItemMessage(m_hwnd, IDC_ALIGNMENT, CB_SETCURSEL, 1, 0);

@@ -2,7 +2,7 @@
 
 Object UI extensions
 Copyright (c) 2008  Victor Pavlychko, George Hazan
-Copyright (C) 2012-20 Miranda NG team
+Copyright (C) 2012-21 Miranda NG team
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -89,12 +89,14 @@ bool CCtrlBase::Enabled() const
 
 void CCtrlBase::NotifyChange()
 {
-	if (!m_parentWnd || !m_parentWnd->IsInitialized())
+	if (!m_parentWnd)
 		return;
 
-	m_bChanged = true;
-	if (!m_bSilent)
-		m_parentWnd->NotifyChange();
+	if (m_parentWnd->IsInitialized()) {
+		m_bChanged = true;
+		if (!m_bSilent)
+			m_parentWnd->NotifyChange();
+	}
 
 	OnChange(this);
 }

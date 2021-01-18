@@ -1,6 +1,6 @@
 /*
 
-Copyright 2000-12 Miranda IM, 2012-20 Miranda NG team,
+Copyright 2000-12 Miranda IM, 2012-21 Miranda NG team,
 all portions of this codebase are copyrighted to the people
 listed in contributors.txt.
 
@@ -245,8 +245,6 @@ public:
 		DWORD msgTimeout = g_dat.msgTimeout;
 		edtSecs.SetInt((msgTimeout >= 5000) ? msgTimeout / 1000 : 5);
 		
-		onChange_Avatar(nullptr);
-
 		chkCascade.Enable(!g_dat.bSavePerContact);
 		chkCtrlSupport.Enable(!g_dat.bAutoClose);
 		return true;
@@ -358,8 +356,6 @@ public:
 
 		spinCount.SetPosition(g_dat.nLoadCount);
 		spinTime.SetPosition(g_dat.nLoadTime);
-
-		onChange_Time(nullptr);
 		return true;
 	}
 
@@ -485,8 +481,6 @@ public:
 		clist.OnListRebuilt = Callback(this, &COptionTypingDlg::RebuildList);
 		clist.OnCheckChanged = Callback(this, &COptionTypingDlg::onChange_Clist);
 		clist.OnOptionsChanged = Callback(this, &COptionTypingDlg::ResetCList);
-
-		onChange_ShowNotify(nullptr);
 		return true;
 	}
 
@@ -542,7 +536,6 @@ public:
 		m_chkTabs.SetState(g_Settings.bTabsEnable);
 		m_chkTabsBottom.SetState(g_Settings.bTabsAtBottom);
 		m_chkTabsClose.SetState(g_Settings.bTabCloseOnDblClick);
-		onChange_Tabs(&m_chkTabs);
 		return true;
 	}
 

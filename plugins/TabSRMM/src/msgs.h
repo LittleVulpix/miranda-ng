@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 // Miranda NG: the free IM client for Microsoft* Windows*
 //
-// Copyright (C) 2012-20 Miranda NG team,
+// Copyright (C) 2012-21 Miranda NG team,
 // Copyright (c) 2000-09 Miranda ICQ/IM project,
 // all portions of this codebase are copyrighted to the people
 // listed in contributors.txt.
@@ -524,6 +524,7 @@ public:
 	wchar_t *m_wszSearchQuery, *m_wszSearchResult;
 	SESSION_INFO *m_pLastSession;
 
+	CTimer timerAwayMsg;
 	CCtrlButton m_btnOk, m_btnAdd, m_btnQuote, m_btnCancelAdd;
 
 public:
@@ -537,6 +538,10 @@ public:
 	void onClick_Filter(CCtrlButton *);
 	void onClick_CancelAdd(CCtrlButton *);
 	void onClick_ShowNickList(CCtrlButton *);
+
+	void onType(CTimer *);
+	void onFlash(CTimer *);
+	void onAwayMsg(CTimer *);
 
 	void onChange_Message(CCtrlEdit *);
 

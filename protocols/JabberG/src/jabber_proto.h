@@ -5,7 +5,7 @@ Jabber Protocol Plugin for Miranda NG
 Copyright (c) 2002-04  Santithorn Bunchua
 Copyright (c) 2005-12  George Hazan
 Copyright (c) 2007     Maxim Mluhov
-Copyright (C) 2012-20 Miranda NG team
+Copyright (C) 2012-21 Miranda NG team
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -248,7 +248,6 @@ struct CJabberProto : public PROTO<CJabberProto>, public IJabberInterface
 	bool   m_bCisAvailable;
 	bool   m_bJabberOnline; // XMPP connection initialized and we can send XMPP packets
 	bool   m_bShutdown;
-	bool   m_bSendKeepAlive;
 	bool   m_bPepSupported;
 	bool   m_bStreamSent;
 	bool   m_bMamPrefsAvailable;
