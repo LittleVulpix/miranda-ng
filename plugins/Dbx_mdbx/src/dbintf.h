@@ -223,8 +223,6 @@ class CDbxMDBX : public MDatabaseCommon, public MIDatabaseChecker, public MZeroe
 
 	MDBX_dbi m_dbCrypto;
 
-	void     InitDialogs();
-
 public:
 	CDbxMDBX(const wchar_t *tszFileName, int mode);
 	virtual ~CDbxMDBX();
@@ -285,7 +283,9 @@ public:
 	STDMETHODIMP_(BOOL)     Backup(const wchar_t*);
 
 	STDMETHODIMP_(MEVENT)   GetEventById(const char *szModule, const char *szId) override;
-	
+
+	STDMETHODIMP_(DATABASELINK*) GetDriver() override;
+
 	STDMETHODIMP_(DB::EventCursor *) EventCursor(MCONTACT hContact, MEVENT hDbEvent) override;
 	STDMETHODIMP_(DB::EventCursor *) EventCursorRev(MCONTACT hContact, MEVENT hDbEvent) override;
 

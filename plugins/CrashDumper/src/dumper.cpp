@@ -424,6 +424,10 @@ void PrintVersionInfo(CMStringW& buffer, unsigned flags)
 	mir_snwprintf(profpn, L"%s\\%s", profpathfull, profname);
 	buffer.AppendFormat(L"Profile: %s\r\n", profpn);
 
+	if (auto *pDb = db_get_current())
+		if (auto *dbLink = pDb->GetDriver())
+			buffer.AppendFormat(L"Database driver: %s\r\n", dbLink ->szFullName);
+
 	if (flags & VI_FLAG_PRNVAR) {
 		WIN32_FIND_DATA FindFileData;
 		HANDLE hFind = FindFirstFile(profpn, &FindFileData);

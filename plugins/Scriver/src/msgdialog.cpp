@@ -152,6 +152,8 @@ void CMsgDialog::Init()
 
 	m_btnOk.OnClick = Callback(this, &CMsgDialog::onClick_Ok);
 
+	timerType.OnEvent = Callback(this, &CMsgDialog::onType);
+
 	m_message.OnChange = Callback(this, &CMsgDialog::onChange_Message);
 	m_splitterY.OnChange = Callback(this, &CMsgDialog::onChange_SplitterY);
 }
@@ -171,7 +173,7 @@ bool CMsgDialog::OnInitDialog()
 		m_wStatus = ID_STATUS_OFFLINE;
 
 	m_nTypeMode = PROTOTYPE_SELFTYPING_OFF;
-	SetTimer(m_hwnd, TIMERID_TYPE, 1000, nullptr);
+	timerType.Start(1000);
 
 	m_lastEventType = -1;
 	m_lastEventTime = time(0);
@@ -256,17 +258,17 @@ bool CMsgDialog::OnInitDialog()
 					notifyUnread = true;
 			}
 
+			DB::ECPTR pCursor(DB::EventsRev(m_hContact, m_hDbEventFirst));
+
 			DBEVENTINFO dbei = {};
 			MEVENT hPrevEvent;
 			switch (historyMode) {
 			case LOADHISTORY_COUNT:
 				for (int i = g_plugin.iLoadCount; i > 0; i--) {
-					if (m_hDbEventFirst == 0)
-						hPrevEvent = db_event_last(m_hContact);
-					else
-						hPrevEvent = db_event_prev(m_hContact, m_hDbEventFirst);
+					hPrevEvent = pCursor.FetchNext();
 					if (hPrevEvent == 0)
 						break;
+
 					dbei.cbBlob = 0;
 					m_hDbEventFirst = hPrevEvent;
 					db_event_get(m_hDbEventFirst, &dbei);
@@ -276,26 +278,23 @@ bool CMsgDialog::OnInitDialog()
 				break;
 
 			case LOADHISTORY_TIME:
-				if (m_hDbEventFirst == 0) {
+				if (m_hDbEventFirst == 0)
 					dbei.timestamp = time(0);
-					hPrevEvent = db_event_last(m_hContact);
-				}
-				else {
+				else
 					db_event_get(m_hDbEventFirst, &dbei);
-					hPrevEvent = db_event_prev(m_hContact, m_hDbEventFirst);
-				}
 
 				DWORD firstTime = dbei.timestamp - 60 * g_plugin.iLoadTime;
 				for (;;) {
+					hPrevEvent = pCursor.FetchNext();
 					if (hPrevEvent == 0)
 						break;
+
 					dbei.cbBlob = 0;
 					db_event_get(hPrevEvent, &dbei);
 					if (dbei.timestamp < firstTime)
 						break;
 					if (DbEventIsShown(dbei))
 						m_hDbEventFirst = hPrevEvent;
-					hPrevEvent = db_event_prev(m_hContact, hPrevEvent);
 				}
 				break;
 			}
@@ -303,16 +302,14 @@ bool CMsgDialog::OnInitDialog()
 
 		m_pParent->AddChild(this);
 
-		MEVENT hdbEvent = db_event_last(m_hContact);
-		if (hdbEvent) {
+		DB::ECPTR pCursor(DB::EventsRev(m_hContact));
+		while (MEVENT hdbEvent = pCursor.FetchNext()) {
 			DBEVENTINFO dbei = {};
-			do {
-				db_event_get(hdbEvent, &dbei);
-				if (dbei.eventType == EVENTTYPE_MESSAGE && !(dbei.flags & DBEF_SENT)) {
-					m_lastMessage = dbei.timestamp;
-					break;
-				}
-			} while ((hdbEvent = db_event_prev(m_hContact, hdbEvent)));
+			db_event_get(hdbEvent, &dbei);
+			if (dbei.eventType == EVENTTYPE_MESSAGE && !(dbei.flags & DBEF_SENT)) {
+				m_lastMessage = dbei.timestamp;
+				break;
+			}
 		}
 
 		SendMessage(m_hwnd, DM_OPTIONSAPPLIED, 0, 0);
@@ -579,6 +576,9 @@ void CMsgDialog::onClick_Filter(CCtrlButton *pButton)
 
 void CMsgDialog::onChange_SplitterX(CSplitter *pSplitter)
 {
+	if (!m_bInitialized)
+		return;
+
 	RECT rc;
 	GetClientRect(m_hwnd, &rc);
 
@@ -591,9 +591,37 @@ void CMsgDialog::onChange_SplitterX(CSplitter *pSplitter)
 
 void CMsgDialog::onChange_SplitterY(CSplitter *pSplitter)
 {
+	if (!m_bInitialized)
+		return;
+
 	RECT rc;
 	GetClientRect(m_hwnd, &rc);
 	m_pParent->iSplitterY = rc.bottom - pSplitter->GetPos();
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void CMsgDialog::onType(CTimer *)
+{
+	if (m_nTypeMode == PROTOTYPE_SELFTYPING_ON && GetTickCount() - m_nLastTyping > TIMEOUT_TYPEOFF)
+		NotifyTyping(PROTOTYPE_SELFTYPING_OFF);
+
+	if (m_bShowTyping) {
+		if (m_nTypeSecs)
+			m_nTypeSecs--;
+		else {
+			m_bShowTyping = false;
+			UpdateStatusBar();
+			UpdateIcon();
+		}
+	}
+	else {
+		if (m_nTypeSecs) {
+			m_bShowTyping = true;
+			UpdateStatusBar();
+			UpdateIcon();
+		}
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -1279,27 +1307,6 @@ INT_PTR CMsgDialog::DlgProc(UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_TIMER:
 		if (wParam == TIMERID_MSGSEND)
 			ReportSendQueueTimeouts(this);
-		else if (wParam == TIMERID_TYPE) {
-			if (m_nTypeMode == PROTOTYPE_SELFTYPING_ON && GetTickCount() - m_nLastTyping > TIMEOUT_TYPEOFF)
-				NotifyTyping(PROTOTYPE_SELFTYPING_OFF);
-
-			if (m_bShowTyping) {
-				if (m_nTypeSecs)
-					m_nTypeSecs--;
-				else {
-					m_bShowTyping = false;
-					UpdateStatusBar();
-					UpdateIcon();
-				}
-			}
-			else {
-				if (m_nTypeSecs) {
-					m_bShowTyping = true;
-					UpdateStatusBar();
-					UpdateIcon();
-				}
-			}
-		}
 		else if (wParam == TIMERID_UNREAD) {
 			TabControlData tcd;
 			tcd.iFlags = TCDF_ICON;

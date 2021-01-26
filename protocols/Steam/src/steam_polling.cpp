@@ -15,9 +15,6 @@ void CSteamProto::ParsePollData(const JSONNode &data)
 			hContact = GetContact(steamId.c_str());
 			if (hContact == 0)
 				continue;
-
-			if (timestamp > getDword(hContact, DB_KEY_LASTMSGTS))
-				setDword(hContact, DB_KEY_LASTMSGTS, timestamp);
 		}
 		else hContact = 0;
 
@@ -55,6 +52,9 @@ void CSteamProto::ParsePollData(const JSONNode &data)
 		if (type == "my_saytext" || type =="my_emote") {
 			json_string text = item["text"].as_string();
 
+			if (timestamp > getDword(hContact, DB_KEY_LASTMSGTS))
+				setDword(hContact, DB_KEY_LASTMSGTS, timestamp);
+
 			PROTORECVEVENT recv = { 0 };
 			recv.timestamp = timestamp;
 			recv.szMessage = (char*)text.c_str();
@@ -63,8 +63,11 @@ void CSteamProto::ParsePollData(const JSONNode &data)
 			continue;
 		}
 
-		if (type == "saytext" || type =="emote") {
+		if (type == "saytext" || type == "emote") {
 			json_string text = item["text"].as_string();
+
+			if (timestamp > getDword(hContact, DB_KEY_LASTMSGTS))
+				setDword(hContact, DB_KEY_LASTMSGTS, timestamp);
 
 			PROTORECVEVENT recv = { 0 };
 			recv.timestamp = timestamp;
