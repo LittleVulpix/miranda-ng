@@ -594,7 +594,7 @@ INT_PTR CSkypeProto::ParseSkypeUriService(WPARAM, LPARAM lParam)
 		*(szSecondParam++) = 0;
 
 	// no command or message command
-	if (!szCommand || (szCommand && !mir_wstrcmpi(szCommand, L"chat"))) {
+	if (!szCommand || !mir_wstrcmpi(szCommand, L"chat")) {
 		if (szSecondParam) {
 			wchar_t *szChatId = wcsstr(szSecondParam, L"id=");
 			if (szChatId) {
@@ -603,13 +603,13 @@ INT_PTR CSkypeProto::ParseSkypeUriService(WPARAM, LPARAM lParam)
 				return 0;
 			}
 		}
-		MCONTACT hContact = AddContact(_T2A(szJid), true);
+		MCONTACT hContact = AddContact(_T2A(szJid), nullptr, true);
 		CallService(MS_MSG_SENDMESSAGE, (WPARAM)hContact, NULL);
 		return 0;
 	}
 
 	if (!mir_wstrcmpi(szCommand, L"call")) {
-		MCONTACT hContact = AddContact(_T2A(szJid), true);
+		MCONTACT hContact = AddContact(_T2A(szJid), nullptr, true);
 		NotifyEventHooks(g_hCallEvent, (WPARAM)hContact, (LPARAM)0);
 		return 0;
 	}
@@ -631,7 +631,7 @@ INT_PTR CSkypeProto::ParseSkypeUriService(WPARAM, LPARAM lParam)
 	}
 
 	if (!mir_wstrcmpi(szCommand, L"sendfile")) {
-		MCONTACT hContact = AddContact(_T2A(szJid), true);
+		MCONTACT hContact = AddContact(_T2A(szJid), nullptr, true);
 		CallService(MS_FILE_SENDFILE, hContact, NULL);
 		return 1;
 	}

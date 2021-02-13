@@ -22,9 +22,15 @@ CSkypeProto::CSkypeProto(const char* protoName, const wchar_t* userName) :
 	m_PopupClasses(1),
 	m_OutMessages(3, PtrKeySortT),
 	m_bThreadsTerminated(false),
-	m_opts(this),
 	m_impl(*this),
-	m_requests(1)
+	m_requests(1),
+	bAutoHistorySync(this, "AutoSync", true),
+	bMarkAllAsUnread(this, "MarkMesUnread", true),
+	bUseHostnameAsPlace(this, "UseHostName", true),
+	bUseBBCodes(this, "UseBBCodes", true),
+	bUseServerTime(this, "UseServerTime", false),
+	wstrCListGroup(this, SKYPE_SETTINGS_GROUP, L"Skype"),
+	wstrPlace(this, "Place", L"")
 {
 	NETLIBUSER nlu = {};
 	CMStringW name(FORMAT, TranslateT("%s connection"), m_tszUserName);
@@ -173,12 +179,12 @@ MCONTACT CSkypeProto::AddToList(int, PROTOSEARCHRESULT *psr)
 
 	if (psr->id.a == nullptr)
 		return NULL;
-	MCONTACT hContact;
 
+	MCONTACT hContact;
 	if (psr->flags & PSR_UNICODE)
-		hContact = AddContact(T2Utf(psr->id.w));
+		hContact = AddContact(T2Utf(psr->id.w), T2Utf(psr->nick.w));
 	else
-		hContact = AddContact(psr->id.a);
+		hContact = AddContact(psr->id.a, psr->nick.a);
 
 	return hContact;
 }
@@ -200,7 +206,7 @@ MCONTACT CSkypeProto::AddToListByEvent(int, int, MEVENT hDbEvent)
 
 	DB::AUTH_BLOB blob(dbei.pBlob);
 
-	MCONTACT hContact = AddContact(blob.get_email());
+	MCONTACT hContact = AddContact(blob.get_email(), blob.get_nick());
 	return hContact;
 }
 
