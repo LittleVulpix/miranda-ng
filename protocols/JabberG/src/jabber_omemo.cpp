@@ -1801,8 +1801,10 @@ void CJabberProto::OmemoAnnounceDevice()
 	char szBareJid[JABBER_MAX_JID_LEN];
 	XmlNodeIq iq("set", SerialNext());
 	iq << XATTR("from", JabberStripJid(m_ThreadInfo->fullJID, szBareJid, _countof_portable(szBareJid)));
-	TiXmlElement *publish_node = iq << XCHILDNS("pubsub", "http://jabber.org/protocol/pubsub") << XCHILD("publish") << XATTR("node", JABBER_FEAT_OMEMO ".devicelist");
-	TiXmlElement *list_node = publish_node << XCHILD("item") << XCHILDNS("list", JABBER_FEAT_OMEMO);
+	TiXmlElement *publish_node = iq << XCHILDNS("pubsub", "http://jabber.org/protocol/pubsub")
+		<< XCHILD("publish") << XATTR("node", JABBER_FEAT_OMEMO ".devicelist");
+	TiXmlElement *list_node = publish_node << XCHILD("item") << XATTR ("id", "current")
+		<< XCHILDNS("list", JABBER_FEAT_OMEMO);
 
 	for (int i = 0; ; ++i) {
 		mir_snprintf(setting_name, "OmemoDeviceId%d", i);
@@ -1849,7 +1851,7 @@ void CJabberProto::OmemoSendBundle()
 		mir_snprintf(attr_val, "%s.bundles:%u", JABBER_FEAT_OMEMO, own_id);
 		publish_node << XATTR("node", attr_val);
 	}
-	TiXmlElement *bundle_node = publish_node << XCHILD("item") << XCHILDNS("bundle", JABBER_FEAT_OMEMO);
+	TiXmlElement *bundle_node = publish_node << XCHILD("item") << XATTR("id", "current") << XCHILDNS("bundle", JABBER_FEAT_OMEMO);
 
 	// add signed pre key public
 	bundle_node << XCHILD("signedPreKeyPublic", ptrA(getUStringA("OmemoSignedPreKeyPublic"))) << XATTRI("signedPreKeyId", 1);
@@ -1924,7 +1926,9 @@ bool CJabberProto::OmemoCheckSession(MCONTACT hContact)
 	while (id) {
 		if (!checked) {
 			pending_check = true;
-			XmlNodeIq iq(AddIQ(&CJabberProto::OmemoOnIqResultGetBundle, JABBER_IQ_TYPE_GET, nullptr, &id));
+			unsigned int* _id = new unsigned int;
+			*_id = id;
+			XmlNodeIq iq(AddIQ(&CJabberProto::OmemoOnIqResultGetBundle, JABBER_IQ_TYPE_GET, nullptr, _id));
 
 			char szBareJid[JABBER_MAX_JID_LEN];
 			iq << XATTR("from", JabberStripJid(m_ThreadInfo->fullJID, szBareJid, _countof_portable(szBareJid)));
@@ -2075,6 +2079,7 @@ void CJabberProto::OmemoOnIqResultGetBundle(const TiXmlElement *iqNode, CJabberI
 	while (id) {
 		if (id == *dev_id) {
 			setByte(hContact, setting_name2, 1);
+			delete dev_id;
 			break;
 		}
 		i++;
