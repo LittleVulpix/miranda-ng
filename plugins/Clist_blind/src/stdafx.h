@@ -54,22 +54,13 @@ struct ClcContact : public ClcContactBase {};
 struct ClcData : public ClcDataBase
 {
 	HWND hwnd_list;
-	BOOL need_rebuild;
+	bool bNeedsRebuild;
 };
 
 // shared vars
 extern CLIST_INTERFACE coreCli;
 extern int g_bSortByStatus, g_bSortByProto;
 
+wchar_t* MyDBGetContactSettingTString(MCONTACT hContact, char *module, char *setting, wchar_t *out, size_t len, wchar_t *def);
 
 int CompareContacts(const ClcContact *contact1, const ClcContact *contact2);
-
-/* most free()'s are invalid when the code is executed from a dll, so this changes
- all the bad free()'s to good ones, however it's still incorrect code. The reasons for not
- changing them include:
-
-  * db_free has a CallService() lookup
-  * free() is executed in some large loops to do with clist creation of group data
-  * easy search and replace
-
-*/
