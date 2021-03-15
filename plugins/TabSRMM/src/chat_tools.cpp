@@ -194,7 +194,7 @@ passed:
 	}
 
 	if (iNewEvent == GC_EVENT_MESSAGE) {
-		ShowPopup(si->hContact, si, g_chatApi.hIcons[ICON_MESSAGE], si->pszModule, si->ptszName, clr ? clr : g_chatApi.aFonts[9].color,
+		ShowPopup(si->hContact, si, g_chatApi.getIcon(GC_EVENT_MESSAGE), si->pszModule, si->ptszName, clr ? clr : g_chatApi.aFonts[9].color,
 			TranslateT("%s%s says:%s %s"), bbStart, gce->pszNick.w, bbEnd, g_chatApi.RemoveFormatting(gce->pszText.w));
 	}
 	else oldDoPopup(si, gce);
@@ -202,53 +202,130 @@ passed:
 	return TRUE;
 }
 
-void DoFlashAndSoundWorker(FLASH_PARAMS *p)
+BOOL DoSoundsFlashPopupTrayStuff(SESSION_INFO *si, GCEVENT *gce, BOOL bHighlight, int bManyFix)
 {
-	SESSION_INFO *si = SM_FindSessionByHCONTACT(p->hContact);
-	if (si == nullptr)
-		return;
+	if (gce == nullptr || si == nullptr || gce->bIsMe || si->iType == GCW_SERVER)
+		return FALSE;
 
-	CMsgDialog *dat = nullptr;
-	if (si->pDlg) {
-		dat = si->pDlg;
-		if (dat) {
-			p->bInactive = dat->m_pContainer->m_hwnd != GetForegroundWindow();
-			p->bActiveTab = (dat->m_pContainer->m_hwndActive == si->pDlg->GetHwnd());
-			if (p->sound && dat->MustPlaySound())
-				Skin_PlaySound(p->sound);
+	CMsgDialog *dat = si->pDlg;
+	int iMuteMode = db_get_b(si->hContact, "SRMM", "MuteMode", CHATMODE_NORMAL);
+
+	int  iEvent = gce->iType;
+	bool bInactive = (dat) ? !dat->IsActive() : true;
+	bool bActiveTab = false;
+	bool bMustFlash = false;
+	bool bMustAutoswitch = false;
+	bool bFlagUnread = false;
+
+	if (bHighlight) {
+		gce->iType |= GC_EVENT_HIGHLIGHT;
+		if (Contact_IsHidden(si->hContact) != 0)
+			Contact_Hide(si->hContact, false);
+		
+		if (bInactive) {
+			bFlagUnread = true;
+			DoTrayIcon(si, gce);
+		}
+
+		if (dat || !nen_options.iMUCDisable)
+			if (iMuteMode != CHATMODE_MUTE)
+				DoPopup(si, gce);
+
+		if (g_Settings.bFlashWindowHighlight && bInactive)
+			bMustFlash = true;
+
+		bMustAutoswitch = true;
+		if (g_Settings.bCreateWindowOnHighlight && dat == nullptr) {
+			Clist_ContactDoubleClicked(si->hContact);
+			bActiveTab = true;
+			bInactive = bMustAutoswitch = bMustFlash = false;
+		}
+
+		if (dat && g_Settings.bAnnoyingHighlight && bInactive && dat->m_pContainer->m_hwnd != GetForegroundWindow()) {
+			bActiveTab = true;
+			bInactive = bMustAutoswitch = bMustFlash = false;
+			dat->ActivateTab();
 		}
 	}
-	else if (p->sound)
-		Skin_PlaySound(p->sound);
+	else {
+		// do blinking icons in tray
+		if (bInactive || !g_Settings.bTrayIconInactiveOnly) {
+			DoTrayIcon(si, gce);
+			if (iEvent == GC_EVENT_MESSAGE)
+				bFlagUnread = true;
+		}
+		// stupid thing to not create multiple popups for a QUIT event for instance
+		if (bManyFix == 0) {
+			// do popups
+			if (dat || !nen_options.iMUCDisable)
+				if (iMuteMode != CHATMODE_MUTE)
+					DoPopup(si, gce);
 
+			// do sounds and flashing
+			if (iEvent == GC_EVENT_MESSAGE) {
+				if (bInactive && !(si->wState & STATE_TALK)) {
+					si->wState |= STATE_TALK;
+					db_set_w(si->hContact, si->pszModule, "ApparentMode", ID_STATUS_OFFLINE);
+				}
+			}
+		}
+
+		if (iEvent == GC_EVENT_MESSAGE) {
+			bMustAutoswitch = true;
+			if (g_Settings.bFlashWindow)
+				bMustFlash = true;
+		}
+	}
+
+	if (dat && bFlagUnread) {
+		dat->m_dwUnread++;
+		if (dat->m_pWnd)
+			dat->m_pWnd->Invalidate();
+	}
+	
+	if (iMuteMode != CHATMODE_MUTE) {
+		auto sound = si->getSoundName(gce->iType);
+		if (dat) {
+			bInactive = dat->m_pContainer->m_hwnd != GetForegroundWindow();
+			bActiveTab = (dat->m_pContainer->m_hwndActive == dat->GetHwnd());
+			if (sound && dat->MustPlaySound())
+				Skin_PlaySound(sound);
+		}
+		else if (sound)
+			Skin_PlaySound(sound);
+	}
+
+	// dialog event processing
 	if (dat) {
-		BOOL bForcedIcon = (p->hNotifyIcon == g_chatApi.hIcons[ICON_HIGHLIGHT] || p->hNotifyIcon == g_chatApi.hIcons[ICON_MESSAGE]);
+		HICON hIconHighlight = g_chatApi.getIcon(GC_EVENT_HIGHLIGHT), hIconMessage = g_chatApi.getIcon(GC_EVENT_MESSAGE);
+		HICON hNotifyIcon = (bManyFix && !bInactive) ? 0 : g_chatApi.getIcon(gce->iType);
+		BOOL bForcedIcon = (hNotifyIcon == hIconHighlight || hNotifyIcon == hIconMessage);
 
-		if ((p->iEvent & si->iLogTrayFlags) || bForcedIcon) {
-			if (!p->bActiveTab) {
-				if (p->hNotifyIcon == g_chatApi.hIcons[ICON_HIGHLIGHT])
-					dat->m_iFlashIcon = p->hNotifyIcon;
+		if ((gce->iType & si->iLogTrayFlags) || bForcedIcon) {
+			if (!bActiveTab) {
+				if (hNotifyIcon == hIconHighlight)
+					dat->m_iFlashIcon = hNotifyIcon;
 				else {
-					if (dat->m_iFlashIcon != g_chatApi.hIcons[ICON_HIGHLIGHT] && dat->m_iFlashIcon != g_chatApi.hIcons[ICON_MESSAGE])
-						dat->m_iFlashIcon = p->hNotifyIcon;
+					if (dat->m_iFlashIcon != hIconHighlight && dat->m_iFlashIcon != hIconMessage)
+						dat->m_iFlashIcon = hNotifyIcon;
 				}
 				dat->m_bCanFlashTab = TRUE;
-				si->pDlg->timerFlash.Start(TIMEOUT_FLASHWND);
+				dat->timerFlash.Start(TIMEOUT_FLASHWND);
 			}
 		}
 		if (dat->m_pWnd) {
-			dat->m_pWnd->updateIcon(p->hNotifyIcon);
-			dat->m_pWnd->setOverlayIcon(p->hNotifyIcon, true);
+			dat->m_pWnd->updateIcon(hNotifyIcon);
+			dat->m_pWnd->setOverlayIcon(hNotifyIcon, true);
 		}
 
 		// autoswitch tab..
-		if (p->bMustAutoswitch) {
-			if ((IsIconic(dat->m_pContainer->m_hwnd)) && !IsZoomed(dat->m_pContainer->m_hwnd) && PluginConfig.m_bAutoSwitchTabs && dat->m_pContainer->m_hwndActive != si->pDlg->GetHwnd()) {
-				int iItem = GetTabIndexFromHWND(dat->m_pContainer->m_hwndTabs, si->pDlg->GetHwnd());
+		if (bMustAutoswitch) {
+			if ((IsIconic(dat->m_pContainer->m_hwnd)) && !IsZoomed(dat->m_pContainer->m_hwnd) && PluginConfig.m_bAutoSwitchTabs && dat->m_pContainer->m_hwndActive != dat->GetHwnd()) {
+				int iItem = GetTabIndexFromHWND(dat->m_pContainer->m_hwndTabs, dat->GetHwnd());
 				if (iItem >= 0) {
 					TabCtrl_SetCurSel(dat->m_pContainer->m_hwndTabs, iItem);
 					ShowWindow(dat->m_pContainer->m_hwndActive, SW_HIDE);
-					dat->m_pContainer->m_hwndActive = si->pDlg->GetHwnd();
+					dat->m_pContainer->m_hwndActive = dat->GetHwnd();
 					dat->m_pContainer->UpdateTitle(dat->m_hContact);
 					dat->m_pContainer->m_flags.m_bDeferredTabSelect = true;
 				}
@@ -256,208 +333,33 @@ void DoFlashAndSoundWorker(FLASH_PARAMS *p)
 		}
 
 		// flash window if it is not focused
-		if (p->bMustFlash && p->bInactive)
+		if (bMustFlash && bInactive)
 			if (!dat->m_pContainer->m_flags.m_bNoFlash)
 				dat->m_pContainer->FlashContainer(1, 0);
 
-		if (p->hNotifyIcon && p->bInactive && ((p->iEvent & si->iLogTrayFlags) || bForcedIcon)) {
-			if (p->bMustFlash)
-				dat->m_hTabIcon = p->hNotifyIcon;
+		if (hNotifyIcon && bInactive && ((gce->iType & si->iLogTrayFlags) || bForcedIcon)) {
+			if (bMustFlash)
+				dat->m_hTabIcon = hNotifyIcon;
 			else if (dat->m_iFlashIcon) {
 				dat->m_hTabIcon = dat->m_iFlashIcon;
 
 				TCITEM item = {};
 				item.mask = TCIF_IMAGE;
 				item.iImage = 0;
-				TabCtrl_SetItem(GetParent(si->pDlg->GetHwnd()), dat->m_iTabID, &item);
+				TabCtrl_SetItem(GetParent(dat->GetHwnd()), dat->m_iTabID, &item);
 			}
 
 			HICON hIcon = (HICON)SendMessage(dat->m_pContainer->m_hwnd, WM_GETICON, ICON_BIG, 0);
-			if (p->hNotifyIcon == g_chatApi.hIcons[ICON_HIGHLIGHT] || (hIcon != g_chatApi.hIcons[ICON_MESSAGE] && hIcon != g_chatApi.hIcons[ICON_HIGHLIGHT])) {
-				dat->m_pContainer->SetIcon(dat, p->hNotifyIcon);
+			if (hNotifyIcon == hIconHighlight || (hIcon != hIconMessage && hIcon != hIconHighlight)) {
+				dat->m_pContainer->SetIcon(dat, hNotifyIcon);
 				dat->m_pContainer->m_flags.m_bNeedsUpdateTitle = true;
 			}
 		}
 
-		if (p->bMustFlash && p->bInactive)
+		if (bMustFlash && bInactive)
 			AddUnreadContact(dat->m_hContact);
 	}
-
-	delete p;
-}
-
-BOOL DoSoundsFlashPopupTrayStuff(SESSION_INFO *si, GCEVENT *gce, BOOL bHighlight, int bManyFix)
-{
-	if (gce == nullptr || si == nullptr || gce->bIsMe || si->iType == GCW_SERVER)
-		return FALSE;
-
-	CMsgDialog *dat = nullptr;
-	auto *params = new FLASH_PARAMS();
-	params->hContact = si->hContact;
-	params->bInactive = true;
-	if (si->pDlg) {
-		dat = si->pDlg;
-		if ((si->pDlg->GetHwnd() == si->pDlg->m_pContainer->m_hwndActive) && GetForegroundWindow() == si->pDlg->m_pContainer->m_hwnd)
-			params->bInactive = false;
-	}
-	params->bActiveTab = params->bMustFlash = params->bMustAutoswitch = false;
-	params->iEvent = gce->iType;
-
-	WPARAM wParamForHighLight = 0;
-	bool bFlagUnread = false;
-	if (bHighlight) {
-		gce->iType |= GC_EVENT_HIGHLIGHT;
-		params->sound = "ChatHighlight";
-		if (Contact_IsHidden(si->hContact) != 0)
-			Contact_Hide(si->hContact, false);
-		if (params->bInactive) {
-			bFlagUnread = true;
-			DoTrayIcon(si, gce);
-		}
-
-		if (g_Settings.bCreateWindowOnHighlight && dat == nullptr)
-			wParamForHighLight = 1;
-
-		if (dat && g_Settings.bAnnoyingHighlight && params->bInactive && dat->m_pContainer->m_hwnd != GetForegroundWindow()) {
-			wParamForHighLight = 2;
-			params->hWnd = dat->GetHwnd();
-		}
-
-		if (dat || !nen_options.iMUCDisable)
-			DoPopup(si, gce);
-		if (g_Settings.bFlashWindowHighlight && params->bInactive)
-			params->bMustFlash = true;
-		params->bMustAutoswitch = true;
-		params->hNotifyIcon = g_chatApi.hIcons[ICON_HIGHLIGHT];
-	}
-	else {
-		// do blinking icons in tray
-		if (params->bInactive || !g_Settings.bTrayIconInactiveOnly) {
-			DoTrayIcon(si, gce);
-			if (params->iEvent == GC_EVENT_MESSAGE)
-				bFlagUnread = true;
-		}
-		// stupid thing to not create multiple popups for a QUIT event for instance
-		if (bManyFix == 0) {
-			// do popups
-			if (dat || !nen_options.iMUCDisable)
-				DoPopup(si, gce);
-
-			// do sounds and flashing
-			switch (params->iEvent) {
-			case GC_EVENT_JOIN:
-				params->sound = "ChatJoin";
-				if (params->bInactive)
-					params->hNotifyIcon = g_chatApi.hIcons[ICON_JOIN];
-				break;
-			case GC_EVENT_PART:
-				params->sound = "ChatPart";
-				if (params->bInactive)
-					params->hNotifyIcon = g_chatApi.hIcons[ICON_PART];
-				break;
-			case GC_EVENT_QUIT:
-				params->sound = "ChatQuit";
-				if (params->bInactive)
-					params->hNotifyIcon = g_chatApi.hIcons[ICON_QUIT];
-				break;
-			case GC_EVENT_ADDSTATUS:
-			case GC_EVENT_REMOVESTATUS:
-				params->sound = "ChatMode";
-				if (params->bInactive)
-					params->hNotifyIcon = g_chatApi.hIcons[params->iEvent == GC_EVENT_ADDSTATUS ? ICON_ADDSTATUS : ICON_REMSTATUS];
-				break;
-			case GC_EVENT_KICK:
-				params->sound = "ChatKick";
-				if (params->bInactive)
-					params->hNotifyIcon = g_chatApi.hIcons[ICON_KICK];
-				break;
-			case GC_EVENT_MESSAGE:
-				if (params->bInactive)
-					params->sound = "RecvMsgInactive";
-				else
-					params->sound = "RecvMsgActive";
-				
-				if (params->bInactive && !(si->wState & STATE_TALK)) {
-					si->wState |= STATE_TALK;
-					db_set_w(si->hContact, si->pszModule, "ApparentMode", ID_STATUS_OFFLINE);
-				}
-				break;
-			case GC_EVENT_ACTION:
-				params->sound = "ChatAction";
-				if (params->bInactive)
-					params->hNotifyIcon = g_chatApi.hIcons[ICON_ACTION];
-				break;
-			case GC_EVENT_NICK:
-				params->sound = "ChatNick";
-				if (params->bInactive)
-					params->hNotifyIcon = g_chatApi.hIcons[ICON_NICK];
-				break;
-			case GC_EVENT_NOTICE:
-				params->sound = "ChatNotice";
-				if (params->bInactive)
-					params->hNotifyIcon = g_chatApi.hIcons[ICON_NOTICE];
-				break;
-			case GC_EVENT_TOPIC:
-				params->sound = "ChatTopic";
-				if (params->bInactive)
-					params->hNotifyIcon = g_chatApi.hIcons[ICON_TOPIC];
-				break;
-			}
-
-			if (!(db_get_dw(0, CHAT_MODULE, "SoundFlags", GC_EVENT_HIGHLIGHT) & params->iEvent))
-				params->sound = nullptr;
-			else if (CHATMODE_MUTE == db_get_b(si->hContact, "SRMM", "MuteMode", CHATMODE_NORMAL))
-				params->sound = nullptr;
-		}
-		else {
-			switch (params->iEvent) {
-			case GC_EVENT_JOIN:
-				params->hNotifyIcon = g_chatApi.hIcons[ICON_JOIN];
-				break;
-			case GC_EVENT_PART:
-				params->hNotifyIcon = g_chatApi.hIcons[ICON_PART];
-				break;
-			case GC_EVENT_QUIT:
-				params->hNotifyIcon = g_chatApi.hIcons[ICON_QUIT];
-				break;
-			case GC_EVENT_KICK:
-				params->hNotifyIcon = g_chatApi.hIcons[ICON_KICK];
-				break;
-			case GC_EVENT_ACTION:
-				params->hNotifyIcon = g_chatApi.hIcons[ICON_ACTION];
-				break;
-			case GC_EVENT_NICK:
-				params->hNotifyIcon = g_chatApi.hIcons[ICON_NICK];
-				break;
-			case GC_EVENT_NOTICE:
-				params->hNotifyIcon = g_chatApi.hIcons[ICON_NOTICE];
-				break;
-			case GC_EVENT_TOPIC:
-				params->hNotifyIcon = g_chatApi.hIcons[ICON_TOPIC];
-				break;
-			case GC_EVENT_ADDSTATUS:
-				params->hNotifyIcon = g_chatApi.hIcons[ICON_ADDSTATUS];
-				break;
-			case GC_EVENT_REMOVESTATUS:
-				params->hNotifyIcon = g_chatApi.hIcons[ICON_REMSTATUS];
-				break;
-			}
-		}
-
-		if (params->iEvent == GC_EVENT_MESSAGE) {
-			params->bMustAutoswitch = true;
-			if (g_Settings.bFlashWindow)
-				params->bMustFlash = true;
-			params->hNotifyIcon = g_chatApi.hIcons[ICON_MESSAGE];
-		}
-	}
-	if (dat && bFlagUnread) {
-		dat->m_dwUnread++;
-		if (dat->m_pWnd)
-			dat->m_pWnd->Invalidate();
-	}
-	PostMessage(PluginConfig.g_hwndHotkeyHandler, DM_MUCFLASHWORKER, wParamForHighLight, (LPARAM)params);
-	return TRUE;
+	return true;
 }
 
 wchar_t* my_strstri(const wchar_t* s1, const wchar_t* s2)

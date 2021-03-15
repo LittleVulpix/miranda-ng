@@ -149,6 +149,34 @@ GCSessionInfoBase::GCSessionInfoBase() :
 GCSessionInfoBase::~GCSessionInfoBase()
 {}
 
+const char *GCSessionInfoBase::getSoundName(int iEventType) const
+{
+	// if sounds are filtered out for this event type, do nothing;
+	if (!(db_get_dw(0, CHAT_MODULE, "SoundFlags", GC_EVENT_HIGHLIGHT) & iEventType))
+		return nullptr;
+
+	if (iEventType & GC_EVENT_HIGHLIGHT)
+		return "ChatHighlight";
+
+	switch (iEventType) {
+	case GC_EVENT_JOIN:           return "ChatJoin";
+	case GC_EVENT_PART:           return "ChatPart";
+	case GC_EVENT_QUIT:           return "ChatQuit";
+	case GC_EVENT_ADDSTATUS:
+	case GC_EVENT_REMOVESTATUS:   return "ChatMode";
+	case GC_EVENT_KICK:           return "ChatKick";
+	case GC_EVENT_ACTION:         return "ChatAction";
+	case GC_EVENT_NICK:           return "ChatNick";
+	case GC_EVENT_NOTICE:         return "ChatNotice";
+	case GC_EVENT_TOPIC:          return "ChatTopic";
+	case GC_EVENT_MESSAGE:
+		bool bInactive = pDlg == nullptr || !pDlg->IsActive();
+		return (bInactive) ? "RecvMsgInactive" : "RecvMsgActive";
+	}
+
+	return nullptr;
+}
+
 static SESSION_INFO* SM_CreateSession(void)
 {
 	return new SESSION_INFO();
@@ -260,9 +288,9 @@ static HICON SM_GetStatusIcon(SESSION_INFO *si, USERINFO *ui)
 
 	STATUSINFO *ti = g_chatApi.TM_FindStatus(si->pStatuses, g_chatApi.TM_WordToString(si->pStatuses, ui->Status));
 	if (ti != nullptr)
-		return g_chatApi.hIcons[ICON_STATUS0 + ti->iIconIndex];
+		return g_chatApi.hStatusIcons[ti->iIconIndex];
 	
-	return g_chatApi.hIcons[ICON_STATUS0];
+	return g_chatApi.hStatusIcons[0];
 }
 
 BOOL SM_AddEvent(const wchar_t *pszID, const char *pszModule, GCEVENT *gce, bool bIsHighlighted)
@@ -969,6 +997,7 @@ MIR_APP_DLL(CHAT_MANAGER*) Chat_CustomizeApi(const CHAT_MANAGER_INITDATA *pInit)
 
 	ResetApi();
 
+	LoadChatIcons();
 	RegisterFonts();
 	OptionsInit();
 	return &g_chatApi;

@@ -315,6 +315,7 @@ public:
 	}
 
 	void Attach() override;
+	void Clear() override;
 	void LogEvents(MEVENT hDbEventFirst, int count, bool bAppend) override;
 	void LogEvents(struct LOGINFO *, bool) override;
 	void ScrollToBottom() override;
@@ -473,9 +474,11 @@ public:
 	bool    m_bErrorState;
 	bool    m_bDividerWanted, m_bDividerSet;
 	bool    m_bSplitterOverride;
+	bool    m_bRtlText;
+	bool    m_bLogEmpty;
+
 	int     m_sendMode;
 	HKL     m_hkl;                                    // keyboard layout identifier
-	DWORD   m_isAutoRTL;
 	DWORD   m_idle;
 	DWORD   m_dwFlags;
 	DWORD   m_dwUnread;
@@ -559,6 +562,7 @@ public:
 
 	void AddLog() override;
 	void CloseTab() override;
+	bool IsActive() const override;
 	void LoadSettings() override;
 	void SetStatusText(const wchar_t *, HICON) override;
 	void ShowFilterMenu() override;
@@ -584,11 +588,6 @@ public:
 	}
 
 	void LogEvent(DBEVENTINFO &dbei);
-
-	bool IsActive() const override
-	{
-		return m_pContainer->IsActive() && m_pContainer->m_hwndActive == m_hwnd;
-	}
 
 	void    DM_OptionsApplied(bool bRemakeLog = true);
 	void    DM_RecalcPictureSize(void);
@@ -722,14 +721,12 @@ struct TIconDescW
 #define DM_CREATECONTAINER       (TM_USER+26)
 #define DM_QUERYLASTUNREAD       (TM_USER+28)
 #define DM_UPDATEPICLAYOUT       (TM_USER+30)
-#define DM_MUCFLASHWORKER        (TM_USER+32)
 #define DM_APPENDMCEVENT         (TM_USER+34)
 #define DM_CHECKINFOTIP          (TM_USER+35)
 #define DM_SAVESIZE              (TM_USER+36)
 #define DM_CHECKSIZE             (TM_USER+37)
 #define DM_FORCEREDRAW           (TM_USER+38)
 #define DM_QUERYHCONTACT         (TM_USER+41)
-#define DM_ACTIVATEME            (TM_USER+46)
 #define DM_STATUSMASKSET         (TM_USER+51)
 #define DM_UPDATESTATUSMSG       (TM_USER+53)
 #define DM_OWNNICKCHANGED        (TM_USER+55)

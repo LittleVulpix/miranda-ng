@@ -2923,7 +2923,7 @@ INT_PTR CMsgDialog::DlgProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 				int nickIndex = 0;
 				for (int i = 0; i < STATUSICONCOUNT; i++) {
-					if (hIcon == g_chatApi.hIcons[ICON_STATUS0 + i]) {
+					if (hIcon == g_chatApi.hStatusIcons[i]) {
 						nickIndex = i;
 						break;
 					}
@@ -3190,10 +3190,6 @@ INT_PTR CMsgDialog::DlgProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	case DM_STATUSICONCHANGE:
 		m_pContainer->InitRedraw();
-		return 0;
-
-	case DM_ACTIVATEME: // the child window will activate itself
-		ActivateTab();
 		return 0;
 
 	case DM_QUERYHCONTACT:
