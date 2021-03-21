@@ -940,7 +940,7 @@ void CJabberProto::OnProcessPubsubEvent(const TiXmlElement *node)
 	if (m_bUseOMEMO) {
 		auto *itemsNode = XmlGetChildByTag(eventNode, "items", "node", JABBER_FEAT_OMEMO ".devicelist");
 		if (itemsNode) {
-			OmemoHandleDeviceList(itemsNode);
+			OmemoHandleDeviceList(from, itemsNode);
 			return;
 		}
 		//TODO:handle omemo device list
@@ -1365,7 +1365,7 @@ void CJabberProto::OnProcessMessage(const TiXmlElement *node, ThreadData *info)
 			if (!inviteReason)
 				inviteReason = szMessage;
 			if (!m_bIgnoreMUCInvites)
-				GroupchatProcessInvite(from, XmlGetAttr(xNode, "jid"), inviteReason, nullptr);
+				GroupchatProcessInvite(XmlGetAttr(xNode, "jid"), from, inviteReason, nullptr);
 			return;
 		}
 	}

@@ -348,16 +348,16 @@ complete:
 		return result;
 	}
 
-	void lock(void *user_data)
+	static void myLock(void *user_data)
 	{
 		omemo_impl *omi = (omemo_impl*)user_data;
-		omi->signal_mutex->lock();
+		omi->lock();
 	}
 
-	void unlock(void *user_data)
+	static void myUnlock(void *user_data)
 	{
 		omemo_impl *omi = (omemo_impl*)user_data;
-		omi->signal_mutex->unlock();
+		omi->unlock();
 	}
 
 	signal_context *global_context = nullptr;
@@ -395,7 +395,8 @@ complete:
 		signal_protocol_store_context *store_context;
 	};
 	
-	omemo_impl::omemo_impl(CJabberProto *p) : proto(p), signal_mutex(nullptr), provider(nullptr)
+	omemo_impl::omemo_impl(CJabberProto *p) :
+		proto(p)
 	{
 		if (proto->m_bUseOMEMO)
 			init();
@@ -403,13 +404,12 @@ complete:
 	
 	void omemo_impl::init()
 	{
-		if (provider && signal_mutex)
+		if (provider)
 			return;
 
 		if (!global_context)
 			signal_context_create(&global_context, this);
-		signal_mutex = new mir_cslockfull(_signal_cs);
-		signal_mutex->unlock(); //fuck...
+
 		provider = new signal_crypto_provider;
 		provider->random_func = &random_func;
 		provider->hmac_sha256_init_func = &hmac_sha256_init_func;
@@ -428,7 +428,7 @@ complete:
 			//TODO: handle error
 		}
 
-		if (signal_context_set_locking_functions(global_context, &lock, &unlock)) {
+		if (signal_context_set_locking_functions(global_context, &myLock, &myUnlock)) {
 			proto->debugLogA("Jabber OMEMO: signal_context_set_crypto_provider failed");
 			//TODO: handle error
 		}
@@ -442,7 +442,7 @@ complete:
 
 	void omemo_impl::deinit()
 	{
-		if (provider && signal_mutex) {
+		if (provider) {
 			for (auto &i : sessions) {
 				for (auto &i2 : i.second) {
 					if (i2.second.cipher)
@@ -455,7 +455,6 @@ complete:
 			}
 			sessions.clear();
 
-			delete signal_mutex; signal_mutex = nullptr;
 			delete provider; provider = nullptr;			
 		}
 	}
@@ -534,7 +533,7 @@ complete:
 		signal_buffer_free(key_buf);
 
 		// generate and save signed pre key
-		session_signed_pre_key* signed_pre_key;
+		session_signed_pre_key *signed_pre_key;
 		{
 			const unsigned int signed_pre_key_id = 1;
 			signal_protocol_key_helper_generate_signed_pre_key(&signed_pre_key, new_dev->device_key, signed_pre_key_id, time(0), global_context);
@@ -1226,10 +1225,12 @@ complete:
 			data[i]->proto = proto;
 			data[i]->device_id = device_id_int;
 		}
+
 		/* Create the data store context, and add all the callbacks to it */
 		//TODO: validation of functions return codes
 		signal_protocol_store_context *store_context;
 		signal_protocol_store_context_create(&store_context, global_context);
+
 		signal_protocol_session_store ss;
 		ss.contains_session_func = &contains_session_func;
 		ss.delete_all_sessions_func = &delete_all_sessions_func;
@@ -1240,6 +1241,7 @@ complete:
 		ss.store_session_func = &store_session_func;
 		ss.user_data = (void*)data[0];
 		signal_protocol_store_context_set_session_store(store_context, &ss);
+
 		signal_protocol_pre_key_store sp;
 		sp.contains_pre_key = &contains_pre_key;
 		sp.destroy_func = &destroy_func;
@@ -1248,6 +1250,7 @@ complete:
 		sp.store_pre_key = &store_pre_key;
 		sp.user_data = (void*)data[1];
 		signal_protocol_store_context_set_pre_key_store(store_context, &sp);
+
 		signal_protocol_signed_pre_key_store ssp;
 		ssp.contains_signed_pre_key = &contains_signed_pre_key;
 		ssp.destroy_func = &destroy_func;
@@ -1256,6 +1259,7 @@ complete:
 		ssp.store_signed_pre_key = &store_signed_pre_key;
 		ssp.user_data = (void*)data[2];
 		signal_protocol_store_context_set_signed_pre_key_store(store_context, &ssp);
+
 		signal_protocol_identity_key_store sip;
 		sip.destroy_func = &destroy_func;
 		sip.get_identity_key_pair = &get_identity_key_pair;
@@ -1274,6 +1278,7 @@ complete:
 	{
 		// Instantiate a session_builder for a recipient address.
 		DWORD dev_id_int = strtoul(dev_id, nullptr, 10);
+		auto &pSession = sessions[hContact][dev_id_int];
 
 		// libsignal does not copy structure, so we must allocate one manually, does it free it on exit ?
 		signal_protocol_address *address = (signal_protocol_address*)mir_alloc(sizeof(signal_protocol_address));
@@ -1284,12 +1289,12 @@ complete:
 		address->device_id = dev_id_int;
 
 		session_builder *builder;
-		if (session_builder_create(&builder, sessions[hContact][dev_id_int].store_context, address, global_context) < 0) {
+		if (session_builder_create(&builder, pSession.store_context, address, global_context) < 0) {
 			proto->debugLogA("Jabber OMEMO: error: session_builder_create failed");
 			return false; //failure
 		}
 
-		sessions[hContact][dev_id_int].builder = builder;
+		pSession.builder = builder;
 
 		unsigned int key_id_int = atoi(key_id);
 
@@ -1357,7 +1362,7 @@ complete:
 		key_buf = (uint8_t*)mir_base64_decode(signed_pre_key_signature, &key_buf_len);
 		session_pre_key_bundle *retrieved_pre_key;
 		uint32_t registration_id = 0;
-		signal_protocol_identity_get_local_registration_id(sessions[hContact][dev_id_int].store_context, &registration_id);
+		signal_protocol_identity_get_local_registration_id(pSession.store_context, &registration_id);
 		session_pre_key_bundle_create(&retrieved_pre_key, registration_id, dev_id_int, key_id_int, prekey, signed_pre_key_id_int, signed_prekey, key_buf, key_buf_len, identity_key_p);
 		mir_free(key_buf);
 
@@ -1381,12 +1386,12 @@ complete:
 
 		/* Create the session cipher and encrypt the message */
 		session_cipher *cipher;
-		if (session_cipher_create(&cipher,
-			sessions[hContact][dev_id_int].store_context, address, global_context) < 0) {
+		if (session_cipher_create(&cipher, pSession.store_context, address, global_context) < 0) {
 			proto->debugLogA("Jabber OMEMO: session_cipher_create failure");
 			return false; //failure
 		}
-		sessions[hContact][dev_id_int].cipher = cipher;
+		
+		pSession.cipher = cipher;
 		return true; //success
 	}
 
@@ -1553,7 +1558,7 @@ bool CJabberProto::OmemoHandleMessage(const TiXmlElement *node, const char *jid,
 			}
 		}
 		if (deserialized && pm) {
-			int ret = session_cipher_decrypt_pre_key_signal_message(m_omemo.sessions[hContact][sender_dev_id_int].cipher, pm, nullptr, &decrypted_key);
+			int ret = session_cipher_decrypt_pre_key_signal_message(pSession.cipher, pm, nullptr, &decrypted_key);
 			switch (ret) {
 			case SG_SUCCESS:
 				decrypted = true;
@@ -1598,7 +1603,7 @@ bool CJabberProto::OmemoHandleMessage(const TiXmlElement *node, const char *jid,
 		}
 
 		if (deserialized && sm) {
-			ret = session_cipher_decrypt_signal_message(m_omemo.sessions[hContact][sender_dev_id_int].cipher, sm, nullptr, &decrypted_key);
+			ret = session_cipher_decrypt_signal_message(pSession.cipher, sm, nullptr, &decrypted_key);
 			switch (ret) {
 			case SG_SUCCESS:
 				decrypted = true;
@@ -1710,16 +1715,12 @@ bool CJabberProto::OmemoHandleMessage(const TiXmlElement *node, const char *jid,
 	return true;
 }
 
-void CJabberProto::OmemoHandleDeviceList(const TiXmlElement *node)
+void CJabberProto::OmemoHandleDeviceList(const char *from, const TiXmlElement *node)
 {
 	if (!node)
 		return;
 	
-	auto *message = node->Parent()->ToElement();
-	message = message->Parent()->ToElement();
-	
-	const char *jid = XmlGetAttr(message, "from");
-	MCONTACT hContact = HContactFromJID(jid);
+	MCONTACT hContact = HContactFromJID(from);
 	node = XmlFirstChild(node, "item"); //get <item> node
 	if (!node) {
 		debugLogA("Jabber OMEMO: error: omemo devicelist does not have <item> node");
@@ -1731,7 +1732,7 @@ void CJabberProto::OmemoHandleDeviceList(const TiXmlElement *node)
 		return;
 	}
 	bool own_jid = false;
-	if (strstr(m_ThreadInfo->fullJID, jid))
+	if (strstr(m_ThreadInfo->fullJID, from))
 		own_jid = true;
 
 	if (own_jid) {
