@@ -154,45 +154,28 @@ HANDLE CTwitterProto::GetAwayMsg(MCONTACT hContact)
 	return (HANDLE)1;
 }
 
-int CTwitterProto::OnContactDeleted(WPARAM wParam, LPARAM)
+void CTwitterProto::OnContactDeleted(MCONTACT hContact)
 {
-	MCONTACT hContact = (MCONTACT)wParam;
 	if (m_iStatus != ID_STATUS_ONLINE)
-		return 0;
+		return;
 
-	if (!IsMyContact(hContact))
-		return 0;
-
-	DBVARIANT dbv;
-	if (!getString(hContact, TWITTER_KEY_UN, &dbv)) {
-		if (in_chat_)
-			DeleteChatContact(dbv.pszVal);
+	ptrA szId(getStringA(hContact, TWITTER_KEY_UN));
+	if (szId) {
+		if (m_si)
+			DeleteChatContact(szId);
 
 		mir_cslock s(twitter_lock_);
-		remove_friend(dbv.pszVal); // Be careful about this until Miranda is fixed
-		db_free(&dbv);
+		remove_friend(szId.get()); // Be careful about this until Miranda is fixed
 	}
-	return 0;
 }
 
-int CTwitterProto::OnMarkedRead(WPARAM, LPARAM hDbEvent)
+void CTwitterProto::OnMarkRead(MCONTACT hContact, MEVENT hDbEvent)
 {
-	MCONTACT hContact = db_event_getContact(hDbEvent);
-	if (!hContact)
-		return 0;
-
-	// filter out only events of my protocol
-	const char *szProto = Proto_GetBaseAccountName(hContact);
-	if (mir_strcmp(szProto, m_szModuleName))
-		return 0;
-
 	auto *pMark = (m_arChatMarks.find((CChatMark *)&hDbEvent));
 	if (pMark) {
 		mark_read(hContact, pMark->szId);
 		m_arChatMarks.remove(pMark);
 	}
-	
-	return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -242,7 +225,7 @@ MCONTACT CTwitterProto::AddToClientList(const char *name, const char *status)
 	if (hContact)
 		return hContact;
 
-	if (in_chat_)
+	if (m_si)
 		AddChatContact(name);
 
 	// If not, make a new contact!

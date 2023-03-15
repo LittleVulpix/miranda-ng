@@ -36,7 +36,7 @@
 Левый щелчок:
 [Preview]
 Тест
-[Show incoming call dialog immediately ]
+[Show incoming call dialog immediately]
 
 [Catch focus on this dialog]
 
@@ -70,16 +70,16 @@
 Подавление эха
 [Microphone boost]
 Усиление микрофона
-[Unknown call]
-Неизвестный звонок
+[Voice call]
+Вызов
 [Call will disclose IP address to the peer and his server]
 Вызов раскроет ваш IP-адрес собеседнику и его серверу
 [Established]
 
 [M]
-м
+
 [V]
-Пер.
+
 [Frame Popup]
 
 [Answer call]
@@ -108,7 +108,7 @@
 [Busy]
 Занят
 [Ready]
-Готово
+Готов
 [Make Voice Call]
 Позвонить
 [Answer Voice Call]
@@ -159,8 +159,6 @@
 Вызов принят
 [Voice call ringing]
 Входящий вызов
-[Voice call]
-Вызов
 [Voice call on hold]
 Вызов на удержании
 [Voice call ended]
@@ -169,7 +167,19 @@
 Абонент занят
 [Voice call ready]
 
+[Hold]
+Удержать
+[Holded]
+Удерживается
+[Resume]
+Продолжить
+[Close]
+Закрыть
+[Callee is busy]
+Абонент занят
+[Cancel]
+Отмена
 [Unknown number]
 Неизвестный номер
 [Call is over %s]
-
+Вызов завершён %s

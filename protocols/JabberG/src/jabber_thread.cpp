@@ -153,12 +153,9 @@ void CJabberProto::CheckKeepAlive()
 	// unfortunately there's no other way to detect if that message came online or from history
 	time_t now = time(0);
 	LISTFOREACH(i, this, LIST_CHATROOM)
-	{
 		if (auto *item = ListGetItemPtrFromIndex(i))
 			if (!item->bChatLogging && now - item->iChatInitTime > 2)
 				item->bChatLogging = true;
-	}
-
 
 	// check expired iq requests
 	m_iqManager.CheckExpired();
@@ -269,7 +266,7 @@ void CJabberProto::ServerThread(JABBER_CONN_DATA *pParam)
 
 	// quit all chatrooms (will send quit message)
 	LISTFOREACH(i, this, LIST_CHATROOM)
-		if (JABBER_LIST_ITEM *item = ListGetItemPtrFromIndex(i))
+		if (auto *item = ListGetItemPtrFromIndex(i))
 			GcQuit(item, 0, nullptr);
 
 	ListRemoveList(LIST_CHATROOM);
@@ -1330,32 +1327,33 @@ void CJabberProto::OnProcessMessage(const TiXmlElement *node, ThreadData *info)
 				szMessage += tempstring;
 			}
 		}
-		else if (!mir_strcmp(pszXmlns, JABBER_FEAT_OOB2)) {
+		else if (!mir_strcmp(pszXmlns, JABBER_FEAT_OOB2) && m_bAutoLoadOOB) {
 			if (auto *url = XmlGetChildText(xNode, "url")) {
-				DBEVENTINFO dbei = {};
-				dbei.szModule = Proto_GetBaseAccountName(hContact);
-				dbei.timestamp = msgTime;
-				dbei.eventType = EVENTTYPE_FILE;
-				dbei.flags = DBEF_UTF;
-				//if (pre->dwFlags & PREF_CREATEREAD)
-				dbei.flags |= DBEF_READ;
-
+				// create incoming file transfer instead of writing message
 				CMStringA szName;
 				const char *b = strrchr(url, '/') + 1;
 				while (*b != 0 && *b != '#' && *b != '?')
 					szName.AppendChar(*b++);
+				auto *pszName = szName.c_str();
 
-				auto *szDescr = XmlGetChildText(xNode, "desc");
+				filetransfer *ft = new filetransfer(this, 0);
+				ft->jid = mir_strdup(from);
+				ft->std.hContact = hContact;
+				ft->type = FT_HTTP;
+				ft->httpPath = mir_strdup(url);
+				ft->std.totalFiles = 1;
+				ft->std.szCurrentFile.w = mir_utf8decodeW(szName);
 
-				CMStringA szBlob(FORMAT, "%c%c%c%c", 0, 0, 0, 0);
-				szBlob.AppendFormat("%s%c", szName.c_str(), 0);
-				szBlob.AppendFormat("%s%c", szDescr ? szDescr : "", 0);
-				szBlob.AppendFormat("%s%c", url, 0);
-
-				dbei.cbBlob = szBlob.GetLength();
-				dbei.pBlob = (uint8_t*)szBlob.GetBuffer();
-				db_event_add(hContact, &dbei);
+				PROTORECVFILE pre = {};
+				pre.fileCount = 1;
+				pre.timestamp = time(0);
+				pre.files.a = &pszName;
+				pre.lParam = (LPARAM)ft;
+				pre.descr.a = XmlGetChildText(xNode, "desc");
+				ProtoChainRecvFile(ft->std.hContact, &pre);
+				return;
 			}
+			else debugLogA("No URL in OOB file transfer, ignoring");
 		}
 		else if (!mir_strcmp(pszXmlns, JABBER_FEAT_MUC_USER)) {
 			auto *inviteNode = XmlFirstChild(xNode, "invite");
@@ -1385,7 +1383,7 @@ void CJabberProto::OnProcessMessage(const TiXmlElement *node, ThreadData *info)
 					else if (!mir_strcmp(action, "delete")) {
 						MCONTACT cc = HContactFromJID(jid);
 						if (cc)
-							db_delete_contact(cc);
+							db_delete_contact(cc, true);
 					}
 				}
 			}
@@ -1820,7 +1818,7 @@ bool CJabberProto::OnProcessJingle(const TiXmlElement *node)
 
 				const TiXmlElement *descr = XmlGetChildByTag(content, "description", "xmlns", JABBER_FEAT_JINGLE_RTP);
 				const char *reason = NULL;
-				if (m_bEnableVOIP && descr) {
+				if (hasJingle() && descr) {
 					if (m_voipSession.IsEmpty()) {
 						m_voipSession = szSid;
 						m_voipPeerJid = from;
@@ -1868,7 +1866,7 @@ bool CJabberProto::OnProcessJingle(const TiXmlElement *node)
 				return true;
 			}
 			else if (!mir_strcmp(szAction, "session-accept")) {
-				if (m_bEnableVOIP && m_voipSession == szSid) {
+				if (hasJingle() && m_voipSession == szSid) {
 					m_ThreadInfo->send(XmlNodeIq("result", idStr, from));
 					if (OnRTPDescription(child)) {
 						//Make call GUI
@@ -1884,7 +1882,7 @@ bool CJabberProto::OnProcessJingle(const TiXmlElement *node)
 				}
 			}
 			else if (!mir_strcmp(szAction, "session-terminate")) {
-				if (m_bEnableVOIP && m_voipSession == szSid) {
+				if (hasJingle() && m_voipSession == szSid) {
 					// EndCall()
 					m_ThreadInfo->send(XmlNodeIq("result", idStr, from));
 
@@ -1902,7 +1900,7 @@ bool CJabberProto::OnProcessJingle(const TiXmlElement *node)
 			}
 			else if (!mir_strcmp(szAction, "transport-info")) {
 				auto *transport = XmlGetChildByTag(content, "transport", "xmlns", JABBER_FEAT_JINGLE_ICEUDP);
-				if (m_bEnableVOIP && m_voipSession == szSid && transport) {
+				if (hasJingle() && m_voipSession == szSid && transport) {
 					m_ThreadInfo->send(XmlNodeIq("result", idStr, from));
 					if (const TiXmlElement *candidate = XmlFirstChild(transport, "candidate")) {
 						OnICECandidate(candidate);
@@ -1957,7 +1955,7 @@ void CJabberProto::OnProcessIq(const TiXmlElement *node)
 		// Check for file transfer deny by comparing idStr with ft->iqId
 		LISTFOREACH(i, this, LIST_FILE)
 		{
-			JABBER_LIST_ITEM *item = ListGetItemPtrFromIndex(i);
+			auto *item = ListGetItemPtrFromIndex(i);
 			if (item->ft != nullptr && item->ft->state == FT_CONNECTING && !mir_strcmp(tszBuf, item->ft->szId)) {
 				debugLogA("Denying file sending request");
 				item->ft->state = FT_DENIED;

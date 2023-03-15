@@ -2,7 +2,7 @@
 ;============================================================
 ;  File: ICQ.dll
 ;  Plugin: ICQ-WIM protocol
-;  Version: 0.96.1.9
+;  Version: 0.96.2.3
 ;  Authors: George Hazan
 ;============================================================
 [ICQ protocol support for Miranda NG.]
@@ -56,6 +56,8 @@ Přezdívka:
 Účet založen:
 [Last seen:]
 Naposledy spatřen:
+[Phone number:]
+Telefon:
 [Enter ICQ Password]
 Zadejte heslo pro ICQ
 [Enter a password:]
@@ -66,6 +68,15 @@ Zapamatovat heslo této relace
 [&Invite a user]
 Pozvat už&ivatele
 [&Leave/destroy chat]
+
+;file \protocols\ICQ-WIM\src\groups.cpp
+[Name]
+Jméno
+[Rename]
+Přejmenovat
+[Delete]
+Smazat
+[Enter new group name]
 
 ;file \protocols\ICQ-WIM\src\main.cpp
 [E-mail]
@@ -87,13 +98,7 @@ Extra
 ;file \protocols\ICQ-WIM\src\proto.cpp
 [Synchronize server groups]
 
-[Name]
-Jméno
-[Rename]
-Přejmenovat
-[Delete]
-Smazat
-[Enter new group name]
+[Edit my web profile]
 
 [UIN/e-mail/phone]
 

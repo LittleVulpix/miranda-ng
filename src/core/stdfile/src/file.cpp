@@ -32,16 +32,6 @@ int PFTS_CompareWithTchar(PROTOFILETRANSFERSTATUS* ft, const wchar_t* s, wchar_t
 
 static HGENMENU hSRFileMenuItem;
 
-wchar_t* GetContactID(MCONTACT hContact)
-{
-	char *szProto = Proto_GetBaseAccountName(hContact);
-	if (Contact::IsGroupChat(hContact, szProto))
-		if (wchar_t *theValue = db_get_wsa(hContact, szProto, "ChatRoomID"))
-			return theValue;
-
-	return Contact::GetInfo(CNF_UNIQUEID, hContact, szProto);
-}
-
 static INT_PTR SendFileCommand(WPARAM hContact, LPARAM)
 {
 	FileSendData fsd;
@@ -83,26 +73,34 @@ static INT_PTR GetReceivedFilesFolder(WPARAM wParam, LPARAM lParam)
 {
 	wchar_t buf[MAX_PATH];
 	GetContactReceivedFilesDir(wParam, buf, MAX_PATH, TRUE);
-	char* dir = mir_u2a(buf);
-	mir_strncpy((char*)lParam, dir, MAX_PATH);
+	char *dir = mir_u2a(buf);
+	mir_strncpy((char *)lParam, dir, MAX_PATH);
 	mir_free(dir);
+	return 0;
+}
+
+static INT_PTR GetReceivedFilesFolderW(WPARAM wParam, LPARAM lParam)
+{
+	wchar_t buf[MAX_PATH];
+	GetContactReceivedFilesDir(wParam, buf, MAX_PATH, TRUE);
+	mir_wstrncpy((wchar_t *)lParam, buf, MAX_PATH);
 	return 0;
 }
 
 static INT_PTR RecvFileCommand(WPARAM, LPARAM lParam)
 {
-	CreateDialogParam(g_plugin.getInst(), MAKEINTRESOURCE(IDD_FILERECV), NULL, DlgProcRecvFile, lParam);
+	LaunchRecvDialog((CLISTEVENT *)lParam);
 	return 0;
 }
 
-void PushFileEvent(MCONTACT hContact, MEVENT hdbe, LPARAM lParam)
+static void PushFileEvent(MCONTACT hContact, MEVENT hdbe, LPARAM lParam)
 {
 	CLISTEVENT cle = {};
 	cle.hContact = hContact;
 	cle.hDbEvent = hdbe;
 	cle.lParam = lParam;
 	if (g_plugin.bAutoAccept && Contact::OnList(hContact)) {
-		CreateDialogParam(g_plugin.getInst(), MAKEINTRESOURCE(IDD_FILERECV), NULL, DlgProcRecvFile, (LPARAM)&cle);
+		LaunchRecvDialog(&cle);
 	}
 	else {
 		Skin_PlaySound("RecvFile");
@@ -437,6 +435,7 @@ int LoadSendRecvFileModule(void)
 	CreateServiceFunction(MS_FILE_SENDSPECIFICFILES, SendSpecificFiles);
 	CreateServiceFunction(MS_FILE_SENDSPECIFICFILEST, SendSpecificFilesT);
 	CreateServiceFunction(MS_FILE_GETRECEIVEDFILESFOLDER, GetReceivedFilesFolder);
+	CreateServiceFunction(MS_FILE_GETRECEIVEDFILESFOLDERW, GetReceivedFilesFolderW);
 	CreateServiceFunction("SRFile/RecvFile", RecvFileCommand);
 
 	CreateServiceFunction("SRFile/OpenContRecDir", openContRecDir);

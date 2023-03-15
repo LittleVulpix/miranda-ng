@@ -8,31 +8,79 @@
 [Telegram protocol support for Miranda NG.]
 Поддержка протокола Telegram в Miranda NG.
 ;file \protocols\Telegram\res\resource.rc
+[Country:]
+Страна:
 [Phone number:]
 Телефон:
 [Default group:]
 Группа:
+[Device name:]
+Имя устройства:
 [Do not open chat windows on creation]
 Не открывать окна комнат чата при создании
+[If a contact goes Offline, set this status instead and cache it for given timeout in seconds (0 - disabled)]
+Когда контакт выходит из сети, установить ему этот статус и сохранять в течение указанного числа секунд (0 - отключено)
+[After that, set this status to a contact and move it offline after specified timeout in seconds (0 - disabled)]
+После этого установить контакту следующий статус, а через указанное число секунд установить "Не в сети" (0 - отключено)
+[Add phone contact]
+Добавить контакт по номеру телефона
+[First name:]
+Имя:
+[Last name:]
+Фамилия:
+[Phone:]
+Телефон:
+[Cancel]
+Отмена
+;file \protocols\Telegram\src\auth.cpp
+[Enter email address for account verification]
+Введите адрес электронной почты для подтверждения учётной записи
+[Enter verification code received by email]
+Введите код подтверждения, полученный по электронной почте
+[Enter the secret code sent to another device]
+Введите код, отправленный на другое ваше устройство
+[Enter password]
+Введите пароль
+[ (hint: %s)]
+ (подсказка: %s)
+[Secret code expired]
+
+[Error]
+Ошибка
+[Invalid secret code]
+
+[Invalid password]
+Неверный пароль
+;file \protocols\Telegram\src\groupchat.cpp
+[Creator]
+Создатель
+[Admin]
+Админ
+[Participant]
+Участник
+[SuperAdmin]
+СуперАдмин
+[Visitor]
+Посетитель
+;file \protocols\Telegram\src\main.cpp
+[Premium user]
+Premium-подписчик
 ;file \protocols\Telegram\src\options.cpp
 [Network]
 Сеть
 [Account]
 Учётная запись
+[Advanced]
+Дополнительно
+;file \protocols\Telegram\src\proto.cpp
 ;file \protocols\Telegram\src\server.cpp
-[Enter secret code sent to your phone]
-
-[Enter password]
-Введите пароль
-[ (hint: %s)]
- (подсказка: %s)
-[Phone code expired]
-
-[Error]
-Ошибка
-[Invalid phone code]
-
+[%d member(s)]
+%d участник(ов)
 ;file \protocols\Telegram\src\utils.cpp
+[none]
+нет
+[Chat rooms]
+Чаты
 [%s error notifications]
 Уведомления об ошибках %s
 [Errors]

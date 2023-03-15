@@ -42,7 +42,7 @@ struct GaduProto : public PROTO<GaduProto>
 				
 	HANDLE   SearchBasic(const wchar_t* id) override;
 	HANDLE   SearchByName(const wchar_t* nick, const wchar_t* firstName, const wchar_t* lastName) override;
-	HWND     SearchAdvanced(HWND owner) override;
+	HANDLE   SearchAdvanced(HWND owner) override;
 	HWND     CreateExtendedSearchUI(HWND owner) override;
 				
 	HANDLE   SendFile(MCONTACT hContact, const wchar_t* szDescription, wchar_t** ppszFiles) override;
@@ -58,6 +58,7 @@ struct GaduProto : public PROTO<GaduProto>
 				
 	void     OnBuildProtoMenu(void) override;
 	void     OnContactDeleted(MCONTACT) override;
+	MWindow  OnCreateAccMgrUI(MWindow) override;
 	void     OnModulesLoaded() override;
 	void     OnShutdown() override;
 
@@ -66,7 +67,6 @@ struct GaduProto : public PROTO<GaduProto>
 
 	INT_PTR  __cdecl blockuser(WPARAM wParam, LPARAM lParam);
 	INT_PTR  __cdecl getmyawaymsg(WPARAM wParam, LPARAM lParam);
-	INT_PTR  __cdecl get_acc_mgr_gui(WPARAM wParam, LPARAM lParam);
 	INT_PTR  __cdecl leavechat(WPARAM wParam, LPARAM lParam);
 
 	//////////////////////////////////////////////////////////////////////////////////////
@@ -189,7 +189,7 @@ struct GaduProto : public PROTO<GaduProto>
 	int gc_init();
 	void gc_menus_init(HGENMENU hRoot);
 	int gc_destroy();
-	wchar_t * gc_getchat(uin_t sender, uin_t *recipients, int recipients_count);
+	SESSION_INFO* gc_getchat(uin_t sender, uin_t *recipients, int recipients_count);
 	GGGC *gc_lookup(const wchar_t *id);
 	int gc_changenick(MCONTACT hContact, wchar_t *ptszNick);
 
@@ -215,13 +215,11 @@ struct GaduProto : public PROTO<GaduProto>
 	// options 
 
 	CMOption<uint8_t> m_autoRecconect;
-	CMOption<uint8_t> m_keepConnectionAlive;
 	CMOption<uint8_t> m_showConnectionErrors;
 	CMOption<uint8_t> m_useDirectConnections;
 	CMOption<uint8_t> m_useForwarding;
 	CMOption<uint8_t> m_useManualHosts;
 	CMOption<uint8_t> m_useMsgDeliveryAcknowledge;
-	CMOption<uint8_t> m_useSslConnection;
 
 	CMOption<uint16_t> m_directConnectionPort;
 	CMOption<uint16_t> m_forwardPort;

@@ -4,8 +4,6 @@ CSteamProto::CSteamProto(const char *protoName, const wchar_t *userName) :
 	PROTO<CSteamProto>(protoName, userName),
 	m_requestQueue(1), hAuthProcess(1), hMessageProcess(1)
 {
-	CreateProtoService(PS_CREATEACCMGRUI, &CSteamProto::OnAccountManagerInit);
-
 	m_hRequestsQueueEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
 	// default group
@@ -49,6 +47,8 @@ CSteamProto::CSteamProto(const char *protoName, const wchar_t *userName) :
 	SetAllContactStatuses(ID_STATUS_OFFLINE);
 
 	// avatar API
+	CreateDirectoryTreeW(GetAvatarPath());
+
 	CreateProtoService(PS_GETAVATARINFO, &CSteamProto::GetAvatarInfo);
 	CreateProtoService(PS_GETAVATARCAPS, &CSteamProto::GetAvatarCaps);
 	CreateProtoService(PS_GETMYAVATAR, &CSteamProto::GetMyAvatar);

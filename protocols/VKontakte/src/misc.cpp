@@ -117,6 +117,21 @@ char* ExpUrlEncode(const char *szUrl, bool strict)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+void CVkProto::CheckUpdate()
+{
+	if (getByte("Compatibility") < 1) {
+		for (auto &cc : AccContacts()) {
+			LONG userId = getDword(cc, "vk_chat_id", VK_INVALID_USER);
+			if (userId != VK_INVALID_USER) {
+				setDword(cc, "ID", userId);
+				delSetting(cc, "vk_chat_id");
+				delSetting(cc, "ChatRoomID");
+			}
+		}
+		setByte("Compatibility", 1);
+	}
+}
+
 void CVkProto::ClearAccessToken()
 {
 	debugLogA("CVkProto::ClearAccessToken");
@@ -157,6 +172,9 @@ MCONTACT CVkProto::FindUser(LONG dwUserid, bool bCreate)
 		return 0;
 
 	for (auto &hContact : AccContacts()) {
+		if (isChatRoom(hContact))
+			continue;
+
 		LONG dbUserid = getDword(hContact, "ID", VK_INVALID_USER);
 		if (dbUserid == VK_INVALID_USER)
 			continue;
@@ -183,7 +201,10 @@ MCONTACT CVkProto::FindChat(LONG dwUserid)
 		return 0;
 
 	for (auto &hContact : AccContacts()) {
-		LONG dbUserid = getDword(hContact, "vk_chat_id", VK_INVALID_USER);
+		if (!isChatRoom(hContact))
+			continue;
+
+		LONG dbUserid = getDword(hContact, "ID", VK_INVALID_USER);
 		if (dbUserid == VK_INVALID_USER)
 			continue;
 
@@ -796,7 +817,7 @@ void CVkProto::MarkDialogAsRead(MCONTACT hContact)
 	while (hDBEvent != 0) {
 		DBEVENTINFO dbei = {};
 		if (!db_event_get(hDBEvent, &dbei) && !mir_strcmp(m_szModuleName, dbei.szModule)) {
-			db_event_markRead(hContact, hDBEvent);
+			db_event_markRead(hContact, hDBEvent, true);
 			g_clistApi.pfnRemoveEvent(hMContact, hDBEvent);
 			if (hContact != hMContact)
 				g_clistApi.pfnRemoveEvent(hContact, hDBEvent);
@@ -1762,7 +1783,7 @@ MEVENT CVkProto::GetMessageFromDb(const char *messageId, UINT &timestamp, CMStri
 int CVkProto::DeleteContact(MCONTACT hContact)
 {
 	setByte(hContact, "SilentDelete", 1);
-	return db_delete_contact(hContact);
+	return db_delete_contact(hContact, true);
 }
 
 bool CVkProto::IsMessageExist(UINT iMsgId, VKMesType vkType)

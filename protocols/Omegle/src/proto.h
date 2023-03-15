@@ -22,8 +22,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-class OmegleProto : public PROTO < OmegleProto >
+class OmegleProto : public PROTO<OmegleProto>
 {
+	SESSION_INFO *m_si;
+
 public:
 	OmegleProto(const char *proto_name, const wchar_t *username);
 	~OmegleProto();
@@ -52,10 +54,8 @@ public:
 	int     UserIsTyping(MCONTACT hContact, int type) override;
 
 	void    OnContactDeleted(MCONTACT) override;
+	MWindow OnCreateAccMgrUI(MWindow) override;
 	void    OnShutdown() override;
-
-	// Services
-	INT_PTR __cdecl SvcCreateAccMgrUI(WPARAM, LPARAM);
 
 	// Events
 	int  __cdecl OnOptionsInit(WPARAM, LPARAM);

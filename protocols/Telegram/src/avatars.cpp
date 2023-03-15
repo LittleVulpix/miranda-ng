@@ -17,7 +17,16 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "stdafx.h"
 
-INT_PTR CMTProto::SvcGetAvatarCaps(WPARAM wParam, LPARAM lParam)
+CMStringW CTelegramProto::GetAvatarFilename(MCONTACT hContact)
+{
+	CMStringW wszResult(GetAvatarPath());
+
+	const wchar_t *szFileType = ProtoGetAvatarExtension(getByte(hContact, "AvatarType", PA_FORMAT_JPEG));
+	wszResult.AppendFormat(L"\\%s%s", getMStringW(hContact, DBKEY_ID).c_str(), szFileType);
+	return wszResult;
+}
+
+INT_PTR CTelegramProto::SvcGetAvatarCaps(WPARAM wParam, LPARAM lParam)
 {
 	switch (wParam) {
 	case AF_MAXSIZE:
@@ -41,14 +50,11 @@ INT_PTR CMTProto::SvcGetAvatarCaps(WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-INT_PTR CMTProto::SvcGetAvatarInfo(WPARAM, LPARAM lParam)
+INT_PTR CTelegramProto::SvcGetAvatarInfo(WPARAM, LPARAM lParam)
 {
 	auto *pai = (PROTO_AVATAR_INFORMATION *)lParam;
 
-	ptrW wszPath(getWStringA(pai->hContact, DBKEY_AVATAR_PATH));
-	if (wszPath == nullptr)
-		return GAIR_NOAVATAR;
-
+	CMStringW wszPath(GetAvatarFilename(pai->hContact));
 	pai->format = getByte(pai->hContact, DBKEY_AVATAR_TYPE, PA_FORMAT_JPEG);
 	wcsncpy_s(pai->filename, wszPath, _TRUNCATE);
 
@@ -59,33 +65,59 @@ INT_PTR CMTProto::SvcGetAvatarInfo(WPARAM, LPARAM lParam)
 	return GAIR_NOAVATAR;
 }
 
-INT_PTR CMTProto::SvcGetMyAvatar(WPARAM, LPARAM)
+INT_PTR CTelegramProto::SvcGetMyAvatar(WPARAM, LPARAM)
 {
 	return 1;
 }
 
-INT_PTR CMTProto::SvcSetMyAvatar(WPARAM, LPARAM)
+INT_PTR CTelegramProto::SvcSetMyAvatar(WPARAM, LPARAM)
 {
 	return 1;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void CMTProto::ProcessFile(TD::updateFile *pObj)
+void CTelegramProto::ProcessFile(TD::updateFile *pObj)
 {
 	if (auto *pFile = pObj->file_.get()) {
 		if (!pFile->local_->is_downloading_completed_)
 			return;
 
+		Utf2T wszExistingFile(pFile->local_->path_.c_str());
+
+		for (auto &it : m_arFiles) {
+			if (it->m_uniqueId == pFile->remote_->unique_id_.c_str()) {
+				if (it->m_type == it->AVATAR) {
+					if (it->m_destPath.Right(5).MakeLower() == L".webp") {
+						if (auto *pImage = FreeImage_LoadU(FIF_WEBP, wszExistingFile)) {
+							it->m_destPath.Truncate(it->m_destPath.GetLength() - 5);
+							it->m_destPath += L".png";
+							FreeImage_SaveU(FIF_PNG, pImage, it->m_destPath);
+							FreeImage_Unload(pImage);
+						}
+					}
+					else MoveFileW(wszExistingFile, it->m_destPath);
+					
+					SMADD_CONT cont = {1, m_szModuleName, it->m_destPath};
+					CallService(MS_SMILEYADD_LOADCONTACTSMILEYS, 0, LPARAM(&cont));
+				}
+				m_arFiles.removeItem(&it);
+				return;
+			}
+		}
+
 		for (auto &it : m_arUsers) {
 			if (it->szAvatarHash == pFile->remote_->unique_id_.c_str()) {
+	
 				PROTO_AVATAR_INFORMATION pai;
-				wcsncpy_s(pai.filename, Utf2T(pFile->local_->path_.c_str()), _TRUNCATE);
 				pai.hContact = it->hContact;
-				pai.format = ProtoGetAvatarFileFormat(pai.filename);
-
+				pai.format = ProtoGetAvatarFileFormat(wszExistingFile);
 				setByte(pai.hContact, DBKEY_AVATAR_TYPE, pai.format);
-				setWString(pai.hContact, DBKEY_AVATAR_PATH, pai.filename);
+
+				CMStringW wszAvatarPath(GetAvatarFilename(it->hContact));
+				wcsncpy_s(pai.filename, wszAvatarPath, _TRUNCATE);
+
+				MoveFileW(wszExistingFile, wszAvatarPath);
 
 				ProtoBroadcastAck(it->hContact, ACKTYPE_AVATAR, ACKRESULT_SUCCESS, &pai);
 				break;

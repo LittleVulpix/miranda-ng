@@ -56,8 +56,6 @@ CDiscordProto::CDiscordProto(const char *proto_name, const wchar_t *username) :
 	m_bSyncDeleteMsgs(this, "DeleteServerMsgs", true)
 {
 	// Services
-	CreateProtoService(PS_CREATEACCMGRUI, &CDiscordProto::SvcCreateAccMgrUI);
-
 	CreateProtoService(PS_GETAVATARINFO, &CDiscordProto::GetAvatarInfo);
 	CreateProtoService(PS_GETAVATARCAPS, &CDiscordProto::GetAvatarCaps);
 	CreateProtoService(PS_GETMYAVATAR, &CDiscordProto::GetMyAvatar);
@@ -70,10 +68,12 @@ CDiscordProto::CDiscordProto(const char *proto_name, const wchar_t *username) :
 
 	// Events
 	HookProtoEvent(ME_OPT_INITIALISE, &CDiscordProto::OnOptionsInit);
-	HookProtoEvent(ME_DB_EVENT_MARKED_READ, &CDiscordProto::OnDbEventRead);
 	HookProtoEvent(ME_PROTO_ACCLISTCHANGED, &CDiscordProto::OnAccountChanged);
 	
 	HookProtoEvent(PE_VOICE_CALL_STATE, &CDiscordProto::OnVoiceState);
+
+	// avatars
+	CreateDirectoryTreeW(GetAvatarPath());
 
 	// database
 	db_set_resident(m_szModuleName, "XStatusMsg");
@@ -95,7 +95,7 @@ CDiscordProto::CDiscordProto(const char *proto_name, const wchar_t *username) :
 
 	// Groupchat initialization
 	GCREGISTER gcr = {};
-	gcr.dwFlags = GC_TYPNOTIF | GC_CHANMGR;
+	gcr.dwFlags = GC_TYPNOTIF | GC_CHANMGR | GC_DATABASE;
 	gcr.ptszDispName = m_tszUserName;
 	gcr.pszModule = m_szModuleName;
 	Chat_Register(&gcr);
@@ -301,13 +301,13 @@ void CDiscordProto::SearchThread(void *param)
 	psr.firstName.w = L"";
 	psr.lastName.w = L"";
 	psr.id.w = L"";
-	ProtoBroadcastAck(0, ACKTYPE_SEARCH, ACKRESULT_DATA, (HANDLE)1, (LPARAM)&psr);
+	ProtoBroadcastAck(0, ACKTYPE_SEARCH, ACKRESULT_DATA, this, (LPARAM)&psr);
 
-	ProtoBroadcastAck(0, ACKTYPE_SEARCH, ACKRESULT_SUCCESS, (HANDLE)1, 0);
+	ProtoBroadcastAck(0, ACKTYPE_SEARCH, ACKRESULT_SUCCESS, this, 0);
 	mir_free(param);
 }
 
-HWND CDiscordProto::SearchAdvanced(HWND hwndDlg)
+HANDLE CDiscordProto::SearchAdvanced(HWND hwndDlg)
 {
 	if (!m_bOnline || !IsWindow(hwndDlg))
 		return nullptr;
@@ -322,7 +322,7 @@ HWND CDiscordProto::SearchAdvanced(HWND hwndDlg)
 		return nullptr;
 
 	ForkThread(&CDiscordProto::SearchThread, mir_wstrdup(wszNick));
-	return (HWND)1;
+	return this;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -332,7 +332,7 @@ void CDiscordProto::OnReceiveUserinfo(NETLIBHTTPREQUEST *pReply, AsyncHttpReques
 {
 	JsonReply root(pReply);
 	if (!root) {
-		ProtoBroadcastAck(0, ACKTYPE_SEARCH, ACKRESULT_FAILED, (HANDLE)1);
+		ProtoBroadcastAck(0, ACKTYPE_SEARCH, ACKRESULT_FAILED, this);
 		return;
 	}
 
@@ -595,17 +595,8 @@ void CDiscordProto::SendMarkRead()
 	}
 }
 
-int CDiscordProto::OnDbEventRead(WPARAM, LPARAM hDbEvent)
+void CDiscordProto::OnMarkRead(MCONTACT hContact, MEVENT)
 {
-	MCONTACT hContact = db_event_getContact(hDbEvent);
-	if (!hContact)
-		return 0;
-
-	// filter out only events of my protocol
-	const char *szProto = Proto_GetBaseAccountName(hContact);
-	if (mir_strcmp(szProto, m_szModuleName))
-		return 0;
-
 	if (m_bOnline) {
 		m_impl.m_markRead.Start(200);
 
@@ -616,7 +607,6 @@ int CDiscordProto::OnDbEventRead(WPARAM, LPARAM hDbEvent)
 				arMarkReadQueue.insert(pUser);
 		}
 	}
-	return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////

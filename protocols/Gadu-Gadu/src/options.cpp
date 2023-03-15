@@ -345,10 +345,8 @@ public:
 class GaduOptionsDlgAdvanced : public GaduDlgBase
 {
 	CCtrlCheck chkAutoReconnect;
-	CCtrlCheck chkKeepConnectionAlive;
 	CCtrlCheck chkMsgAcknowledge;
 	CCtrlCheck chkShowConnectionErrors;
-	CCtrlCheck chkSslConnection;
 
 	CCtrlCheck chkManualHosts;
 	CCtrlEdit edtServerHosts;
@@ -370,10 +368,8 @@ public:
 	GaduOptionsDlgAdvanced(GaduProto *proto) :
 		GaduDlgBase(proto, IDD_OPT_GG_ADVANCED),
 		chkAutoReconnect(this, IDC_ARECONNECT),
-		chkKeepConnectionAlive(this, IDC_KEEPALIVE),
 		chkMsgAcknowledge(this, IDC_MSGACK),
 		chkShowConnectionErrors(this, IDC_SHOWCERRORS),
-		chkSslConnection(this, IDC_SSLCONN),
 		chkManualHosts(this, IDC_MANUALHOST),
 		edtServerHosts(this, IDC_HOST),
 		txtServerHostsLabel(this, IDC_HOST_LIST_L),
@@ -388,10 +384,8 @@ public:
 		txtReconnectRequired(this, IDC_RELOADREQD)
 	{
 		CreateLink(chkAutoReconnect, proto->m_autoRecconect);
-		CreateLink(chkKeepConnectionAlive, proto->m_keepConnectionAlive);
 		CreateLink(chkMsgAcknowledge, proto->m_useMsgDeliveryAcknowledge);
 		CreateLink(chkShowConnectionErrors, proto->m_showConnectionErrors);
-		CreateLink(chkSslConnection, proto->m_useSslConnection);
 
 		CreateLink(chkManualHosts, proto->m_useManualHosts);
 		CreateLink(edtServerHosts, proto->m_serverHosts);
@@ -405,33 +399,14 @@ public:
 
 		chkManualHosts.OnChange = Callback(this, &GaduOptionsDlgAdvanced::onCheck_ManualHosts);
 		chkDirectConnections.OnChange = Callback(this, &GaduOptionsDlgAdvanced::onCheck_DirectConnections);
-		edtDirectPort.OnChange = Callback(this, &GaduOptionsDlgAdvanced::showRecconectRequired);
+		edtDirectPort.OnChange = Callback(this, &GaduOptionsDlgAdvanced::showReconnectRequired);
 		chkForwarding.OnChange = Callback(this, &GaduOptionsDlgAdvanced::onCheck_Forwarding);
-		edtForwardHost.OnChange = Callback(this, &GaduOptionsDlgAdvanced::showRecconectRequired);
-		edtForwardPort.OnChange = Callback(this, &GaduOptionsDlgAdvanced::showRecconectRequired);
+		edtForwardHost.OnChange = Callback(this, &GaduOptionsDlgAdvanced::showReconnectRequired);
+		edtForwardPort.OnChange = Callback(this, &GaduOptionsDlgAdvanced::showReconnectRequired);
 	}
 
 	bool OnInitDialog() override
 	{
-		chkKeepConnectionAlive.Disable();
-		chkSslConnection.Disable();
-
-		chkManualHosts.Disable();
-		bool useManualHosts = chkManualHosts.GetState() && chkManualHosts.Enabled();
-		edtServerHosts.Enable(useManualHosts);
-		txtServerHostsLabel.Enable(useManualHosts);
-
-		bool useDirectConnection = chkDirectConnections.GetState();
-		edtDirectPort.Enable(useDirectConnection);
-		txtDirectPortLabel.Enable(useDirectConnection);
-		chkForwarding.Enable(useDirectConnection);
-
-		bool useForwarding = useDirectConnection && chkForwarding.GetState();
-		edtForwardHost.Enable(useForwarding);
-		txtForwardHostLabel.Enable(useForwarding);
-		edtForwardPort.Enable(useForwarding);
-		txtForwardPortLabel.Enable(useForwarding);
-
 		txtReconnectRequired.Hide();
 		return true;
 	}
@@ -447,41 +422,41 @@ public:
 
 	void onCheck_ManualHosts(CCtrlCheck *)
 	{
-		bool useManualHosts = chkManualHosts.GetState();
+		bool useManualHosts = chkManualHosts.IsChecked();
 		edtServerHosts.Enable(useManualHosts);
 		txtServerHostsLabel.Enable(useManualHosts);
 
-		showRecconectRequired();
+		showReconnectRequired();
 	}
 
 	void onCheck_DirectConnections(CCtrlCheck *)
 	{
-		bool useDirectConnection = chkDirectConnections.GetState();
+		bool useDirectConnection = chkDirectConnections.IsChecked();
 		edtDirectPort.Enable(useDirectConnection);
 		txtDirectPortLabel.Enable(useDirectConnection);
 		chkForwarding.Enable(useDirectConnection);
 
-		bool useForwarding = useDirectConnection && chkForwarding.GetState();
+		bool useForwarding = useDirectConnection && chkForwarding.IsChecked();
 		edtForwardHost.Enable(useForwarding);
 		txtForwardHostLabel.Enable(useForwarding);
 		edtForwardPort.Enable(useForwarding);
 		txtForwardPortLabel.Enable(useForwarding);
 
-		showRecconectRequired();
+		showReconnectRequired();
 	}
 
 	void onCheck_Forwarding(CCtrlCheck *)
 	{
-		bool useForwarding = chkForwarding.GetState();
+		bool useForwarding = chkForwarding.IsChecked();
 		edtForwardHost.Enable(useForwarding);
 		txtForwardHostLabel.Enable(useForwarding);
 		edtForwardPort.Enable(useForwarding);
 		txtForwardPortLabel.Enable(useForwarding);
 
-		showRecconectRequired();
+		showReconnectRequired();
 	}
 
-	void showRecconectRequired(CCtrlBase* = nullptr)
+	void showReconnectRequired(CCtrlBase* = nullptr)
 	{
 		txtReconnectRequired.Show();
 	}

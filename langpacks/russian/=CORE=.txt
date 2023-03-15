@@ -1,7 +1,7 @@
 ;============================================================
 ;  File: miranda32/64.exe
 ;  Module: Miranda Core
-;  Version: 0.96.2
+;  Version: 0.96.3
 ;============================================================
 ;file \src\core\stdautoaway\res\resource.rc
 [Become idle if the following is left unattended:]
@@ -214,8 +214,8 @@
 Показывать панель статусов
 [Show icons]
 Показывать значки
-[Show protocol names]
-Показывать протоколы
+[Show account names]
+Показывать имена учётных записей
 [Show status text]
 Показывать текст статуса
 [Right click opens status menu]
@@ -1129,7 +1129,7 @@ UIN, E-mail и т.д.
 [Enable icon blinking]
 Включить мигание
 [Search works as filter]
-Поиск по списку контактов с фильтрацией результатов
+Поиск с фильтрацией результатов
 ['Hide offline' means to hide:]
 'Скрыть отключённых' - скрыть:
 [Tray]
@@ -1412,10 +1412,10 @@ Google Карты
 История сообщений
 [User menu]
 Меню пользователя
-[Canceled]
-Отменённые
 [This file transfer has been canceled by the other side]
 Передача файла отменена другой стороной
+[Canceled]
+Отменённые
 ;file \src\core\stdfile\src\filesenddlg.cpp
 [%d files]
 %d файла(ов)
@@ -2688,6 +2688,8 @@ ID учётной записи
 <неизвестно>
 [Protocol is not loaded.]
 Протокол не загружен.
+[Account is disabled.]
+Учётная запись отключена.
 [Create new account]
 Новая учётная запись
 [Editing account]
@@ -2778,6 +2780,8 @@ ANSI плагин
 Добавить группу
 [Warning]
 Предупреждение
+[Blank]
+Пустой
 [Always visible]
 Всегда видимый
 [Always invisible]
@@ -2808,6 +2812,8 @@ ANSI плагин
 [Log viewer]
 Просмотрщик журнала сообщений
 ;file \src\mir_app\src\srmm_log_rtf.cpp
+[Copy all]
+Копировать всё
 [Look up '%s':]
 Искать '%s':
 [No word to look up]

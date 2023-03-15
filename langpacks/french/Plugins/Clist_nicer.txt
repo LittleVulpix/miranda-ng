@@ -40,12 +40,6 @@ Appliquer le dernier mode d'affichage actif
 Afficher le menu et la barre d'état
 [Draw sunken edge]
 Activer l'effet 3D
-[System tray icon]
-Icône de la barre des tâches
-[Disable icon blinking]
-Sans clignotement
-[ms]
-ms
 [Event area]
 Zone d'évènements
 [Set base visibility on the frames menu]
@@ -268,8 +262,8 @@ Barre d'état
 Afficher la barre d'état
 [Show icons]
 Voir les icônes
-[Show protocol names]
-Afficher le nom des protocoles
+[Show account names]
+
 [Show status text]
 Afficher l'état du protocole
 [Right click opens status menu]

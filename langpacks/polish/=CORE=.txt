@@ -1,7 +1,7 @@
 ;============================================================
 ;  File: miranda32/64.exe
 ;  Module: Miranda Core
-;  Version: 0.96.2
+;  Version: 0.96.3
 ;============================================================
 ;file \src\core\stdautoaway\res\resource.rc
 [Become idle if the following is left unattended:]
@@ -66,16 +66,16 @@ Użyj Opcje -> Kontakty -> Ignorowanie by pokazać kontakty.
 Czy na pewno chcesz usunąć %s?
 [This will erase all history and settings for this contact!]
 To usunie wszystkie ustawienia i historię tego kontaktu!
+[Contact list sorting]
+Sortowanie kontaktów
 [Sort contacts by name]
 Sortowanie po nazwie
 [Sort contacts by status]
 Sortowanie po statusie
 [Sort contacts by protocol]
 Sortowanie po protokole
-[Disable icon blinking]
-Wyłącz miganie ikony
-[ms delay]
-ms opóźnienia
+[Move offline users to bottom]
+Przesuwaj rozłączonych na dół
 [Show]
 Pokaż
 [icon when statuses differ]
@@ -88,14 +88,8 @@ sekund(y), jeśli statusy się różnią
 Pokaż ikony osobno
 [Only when statuses differ]
 Tylko, jeśli statusy się różnią
-[System tray icon]
-Ikona w zasobniku
 [System tray icon when using multiple protocols]
 Ikona w zasobniku systemowym podczas korzystania z wielu protokołów
-[Contact list sorting]
-Sortowanie kontaktów
-[Don't move offline user to bottom]
-Nie przesuwaj rozłączonych na dół
 [Window]
 Okno
 [Always on top]
@@ -220,8 +214,8 @@ Pasek statusu
 Pokaż pasek statusu
 [Show icons]
 Pokaż ikony
-[Show protocol names]
-Pokaż nazwy protokołów
+[Show account names]
+
 [Show status text]
 Pokaż nazwę statusu
 [Right click opens status menu]
@@ -976,8 +970,6 @@ Włącz ikony
 Pokaż konta według kolejności\n(przeciągnij aby ją zmienić):
 [Account order and visibility]
 Kolejność i widoczność kont
-[Note: Miranda NG will have to be restarted for changes to take effect.]
-Info: Musisz ponownie uruchomić Mirandę aby zmiany przyniosły efekt.
 [Key bindings]
 Skróty klawiszowe
 [Shortcut:]
@@ -1134,12 +1126,16 @@ Włącz grupy
 Pytaj przed usunięciem kontaktów
 [Remove temporary contacts on exit]
 Usuń kontakty tymczasowe podczas wyłączania programu
+[Enable icon blinking]
+Włącz miganie ikony
 [Search works as filter]
 Wyszukiwanie działa jako filtr
 ['Hide offline' means to hide:]
 "Ukryj rozłączonych" tzn.:
 [Tray]
 Zasobnik
+[ms delay]
+ms opóźnienia
 [Single click interface]
 Pokaż/ukryj listę po pojedynczym kliknięciu
 [Always show status in tooltip]
@@ -1416,10 +1412,10 @@ Zobacz dane kontaktu
 Zobacz historię użytkownika
 [User menu]
 Menu użytkownika
-[Canceled]
-Anulowany
 [This file transfer has been canceled by the other side]
 Ten transfer pliku został anulowany przez drugą stronę
+[Canceled]
+Anulowany
 ;file \src\core\stdfile\src\filesenddlg.cpp
 [%d files]
 %d pliki
@@ -2586,6 +2582,8 @@ Krytyczny błąd
 Wczytywanie... %d%%
 [%s options]
 %s opcje
+[Options dialog is disabled by the system administrator. Contact him if you need to edit options]
+
 [Miranda NG options]
 Opcje Mirandy NG
 ;file \src\mir_app\src\path.cpp
@@ -2690,6 +2688,8 @@ ID konta
 <nieznany>
 [Protocol is not loaded.]
 Protokół nie jest załadowany.
+[Account is disabled.]
+
 [Create new account]
 Utwórz nowe konto
 [Editing account]
@@ -2780,6 +2780,8 @@ Ramki
 Dodaj grupę
 [Warning]
 Ostrzeżenie
+[Blank]
+
 [Always visible]
 Zawsze widoczny
 [Always invisible]
@@ -2810,6 +2812,8 @@ Unikalne ID
 [Log viewer]
 Dziennik wiadomości
 ;file \src\mir_app\src\srmm_log_rtf.cpp
+[Copy all]
+Kopiuj wszystko
 [Look up '%s':]
 Zobacz "%s":
 [No word to look up]

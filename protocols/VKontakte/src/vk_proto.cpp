@@ -46,8 +46,8 @@ CVkProto::CVkProto(const char *szModuleName, const wchar_t *pwszUserName) :
 	m_tWorkThreadTimer = m_tPoolThreadTimer = time(0);
 
 	InitQueue();
+	CheckUpdate();
 
-	CreateProtoService(PS_CREATEACCMGRUI, &CVkProto::SvcCreateAccMgrUI);
 	CreateProtoService(PS_GETAVATARINFO, &CVkProto::SvcGetAvatarInfo);
 	CreateProtoService(PS_GETAVATARCAPS, &CVkProto::SvcGetAvatarCaps);
 	CreateProtoService(PS_GETMYAVATAR, &CVkProto::SvcGetMyAvatar);
@@ -70,8 +70,12 @@ CVkProto::CVkProto(const char *szModuleName, const wchar_t *pwszUserName) :
 	// Set all contacts offline -- in case we crashed
 	SetAllContactStatuses(ID_STATUS_OFFLINE);
 
+	// Avatars
+	CreateDirectoryTreeW(GetAvatarPath());
+
 	// Group chats
 	GCREGISTER gcr = {};
+	gcr.dwFlags = GC_DATABASE;
 	gcr.ptszDispName = m_tszUserName;
 	gcr.pszModule = m_szModuleName;
 	Chat_Register(&gcr);
@@ -101,7 +105,6 @@ void CVkProto::OnModulesLoaded()
 
 	// Other hooks
 	HookProtoEvent(ME_MSG_WINDOWEVENT, &CVkProto::OnProcessSrmmEvent);
-	HookProtoEvent(ME_DB_EVENT_MARKED_READ, &CVkProto::OnDbEventRead);
 	HookProtoEvent(ME_DB_CONTACT_SETTINGCHANGED, &CVkProto::OnDbSettingChanged);
 
 	//Sounds

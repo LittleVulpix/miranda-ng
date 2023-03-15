@@ -40,12 +40,6 @@
 Паказваць кнопкі меню і статусу
 [Draw sunken edge]
 Патоплены край
-[System tray icon]
-Абразок у трэі
-[Disable icon blinking]
-Выключыць мігценне
-[ms]
-мс
 [Event area]
 Вобласць падзей
 [Set base visibility on the frames menu]
@@ -268,8 +262,8 @@
 Паказваць панэль статусу
 [Show icons]
 Паказваць абразкі
-[Show protocol names]
-Паказваць пратаколы
+[Show account names]
+
 [Show status text]
 Паказваць тэкст статусу
 [Right click opens status menu]

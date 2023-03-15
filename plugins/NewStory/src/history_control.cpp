@@ -823,6 +823,8 @@ LRESULT CALLBACK NewstoryListWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 			if (data->caret != idx)
 				data->EndEditItem(false);
 
+			auto *pItem = data->items[idx];
+
 			if (wParam & MK_CONTROL) {
 				SendMessage(hwnd, NSM_TOGGLEITEMS, idx, idx);
 				SendMessage(hwnd, NSM_SETCARET, idx, TRUE);
@@ -832,10 +834,11 @@ LRESULT CALLBACK NewstoryListWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 				SendMessage(hwnd, NSM_SETCARET, idx, TRUE);
 			}
 			else {
-				auto *pItem = data->items[idx];
 				pt.y -= pItem->savedTop;
-				if (pItem->isLink(pt)) {
-					Utils_OpenUrlW(pItem->getWBuf());
+
+				CMStringW wszUrl;
+				if (pItem->isLink(pt, wszUrl)) {
+					Utils_OpenUrlW(wszUrl);
 					return 0;
 				}
 					

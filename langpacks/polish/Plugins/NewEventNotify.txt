@@ -2,7 +2,7 @@
 ;============================================================
 ;  File: NewEventNotify.dll
 ;  Plugin: NewEventNotify
-;  Version: 0.2.2.5
+;  Version: 0.2.2.7
 ;  Authors: icebreaker, Prezes, vj, vlko, Joe @ Whale
 ;============================================================
 [Notifies you when you receive a message, URL, file or any other event by displaying a popup.]
@@ -12,14 +12,6 @@ Powiadamia o otrzymaniu wiadomości, linku, pliku itp.
 Limituj podgląd wiadomości do:
 [characters]
 znaków
-[Popup options]
-Opcje powiadomień
-[Text]
-Tekst
-[Background]
-Tło
-[Timeout, secs]
-
 [Message]
 Wiadomość
 [File]
@@ -28,6 +20,16 @@ Plik
 Błędy
 [Others]
 Inne
+[Text]
+Tekst
+[Background]
+Tło
+[Use default colors]
+Użyj domyślnych kolorów
+[Use Windows colors]
+Użyj kolorów Windows
+[Timeout, secs]
+
 [Preview]
 Podgląd
 [(timeout -1 means forever, 0 - default)]
@@ -84,8 +86,8 @@ Po upływie czasu
 
 [No popups for RSS contacts]
 Nie wyświetlaj powiadomień dla kanałów RSS
-[No popups for read messages]
-Nie wyświetlaj powiadomień dla przeczytanych wiadomości
+[No popups for read messages (conflicts with anti-spam plugin)]
+
 [Event Notify]
 Powiadomienia
 [Popups]
@@ -94,6 +96,8 @@ Powiadomienia
 Główne opcje
 [Message events]
 Zdarzenia wiadomości
+[Event types]
+
 ;file \plugins\NewEventNotify\src\popup.cpp
 [Received %d contacts.]
 Otrzymano %d kontakty.

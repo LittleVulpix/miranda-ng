@@ -99,7 +99,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <m_skin_eng.h>
 #include <m_gui.h>
 
-#include <m_voiceservice.h>
 #include <m_voice.h>
 
 #include <openssl/evp.h>
@@ -122,7 +121,7 @@ struct CJabberProto;
 
 struct CMPlugin : public ACCPROTOPLUGIN<CJabberProto>
 {
-	bool bMessageState = false, bSecureIM = false, bMirOTR = false, bNewGPG = false, bPlatform = false;
+	bool bMessageState = false, bSecureIM = false, bMirOTR = false, bNewGPG = false, bPlatform = false, bJingle = false;
 	char szRandom[17];
 
 	CMPlugin();

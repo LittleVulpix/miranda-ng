@@ -1,7 +1,7 @@
 ;============================================================
 ;  File: miranda32/64.exe
 ;  Module: Miranda Core
-;  Version: 0.96.2
+;  Version: 0.96.3
 ;============================================================
 ;file \src\core\stdautoaway\res\resource.rc
 [Become idle if the following is left unattended:]
@@ -66,16 +66,16 @@
 Сигурни ли сте, че желаете контактът "%s" да бъде изтрит?
 [This will erase all history and settings for this contact!]
 Ще бъде изтрита изтрита историята и настройките за контакта!
+[Contact list sorting]
+Сортиране на списъка с контакти по:
 [Sort contacts by name]
 име
 [Sort contacts by status]
 състояние
 [Sort contacts by protocol]
 протокол
-[Disable icon blinking]
-Без мигане на икони
-[ms delay]
-мс времетраене
+[Move offline users to bottom]
+
 [Show]
 Показване
 [icon when statuses differ]
@@ -88,14 +88,8 @@
 Всички икони
 [Only when statuses differ]
 Само при различни състояния
-[System tray icon]
-Икона в трея
 [System tray icon when using multiple protocols]
 Режим на иконата в трея, когато се използват няколко протокола
-[Contact list sorting]
-Сортиране на списъка с контакти по:
-[Don't move offline user to bottom]
-
 [Window]
 Прозорец
 [Always on top]
@@ -220,8 +214,8 @@
 Показване на лента за състояние
 [Show icons]
 Показване на икони
-[Show protocol names]
-Показване името на протокола
+[Show account names]
+
 [Show status text]
 Показване на текст за състоянието
 [Right click opens status menu]
@@ -976,8 +970,6 @@ Copyright:
 Показване на акаунтите в следния ред,\nвлачете, за да промените реда:
 [Account order and visibility]
 Ред и видимост на акаунтите
-[Note: Miranda NG will have to be restarted for changes to take effect.]
-Бележка: За осъществяване на промени е необходимо да рестартирате Miranda.
 [Key bindings]
 
 [Shortcut:]
@@ -1134,12 +1126,16 @@ Miranda NG се рестартира.\nМоля, изчакайте...
 Запитване преди изтриване на контакт
 [Remove temporary contacts on exit]
 
+[Enable icon blinking]
+С мигане на икони
 [Search works as filter]
 
 ['Hide offline' means to hide:]
 Скриване като извън линия:
 [Tray]
 Трей
+[ms delay]
+мс времетраене
 [Single click interface]
 Интерфейс с едно натискане
 [Always show status in tooltip]
@@ -1416,10 +1412,10 @@ Google Translate
 История на съобщенията
 [User menu]
 Потребителско меню
-[Canceled]
-Отказано
 [This file transfer has been canceled by the other side]
 Прехвърлянето на файла е отказано от отсрещната страна.
+[Canceled]
+Отказано
 ;file \src\core\stdfile\src\filesenddlg.cpp
 [%d files]
 %d файла
@@ -2586,6 +2582,8 @@ Win +\s
 Зареждане... %d%%
 [%s options]
 %s настройки
+[Options dialog is disabled by the system administrator. Contact him if you need to edit options]
+
 [Miranda NG options]
 Настройки на Miranda NG
 ;file \src\mir_app\src\path.cpp
@@ -2690,6 +2688,8 @@ ID на акаунта
 <неизвестно>
 [Protocol is not loaded.]
 Протоколът не е зареден.
+[Account is disabled.]
+
 [Create new account]
 Създаване на акаунт
 [Editing account]
@@ -2780,6 +2780,8 @@ ANSI приставка
 
 [Warning]
 Предупреждение
+[Blank]
+
 [Always visible]
 Винаги видимо
 [Always invisible]
@@ -2810,6 +2812,8 @@ WAV файлове
 [Log viewer]
 
 ;file \src\mir_app\src\srmm_log_rtf.cpp
+[Copy all]
+Копиране на всичко
 [Look up '%s':]
 Търсене за "%s":
 [No word to look up]

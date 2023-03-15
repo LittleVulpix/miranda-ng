@@ -21,6 +21,33 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "stdafx.h"
 
+void CIrcProto::CheckUpdate()
+{
+	if (getByte("Compatibility") < 1) {
+		for (auto &cc : AccContacts()) {
+			if (getByte(cc, "ChatRoom") == GCW_SERVER)
+				db_delete_contact(cc, true);
+			else {
+				ptrA szNick(getUStringA(cc, "Nick"));
+				if (szNick)
+					setUString(cc, "ID", szNick);
+			}
+		}
+
+		setByte("Compatibility", 1);
+	}
+}
+
+CHANNELINFO *CIrcProto::GetChannelInfo(const wchar_t *pwszChatName)
+{
+	return (CHANNELINFO *)Chat_GetUserInfo(Chat_Find(pwszChatName, m_szModuleName));
+}
+
+void CIrcProto::SetChannelInfo(const wchar_t *pwszChatName, CHANNELINFO *pInfo)
+{
+	Chat_SetUserInfo(Chat_Find(pwszChatName, m_szModuleName), pInfo);
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////
 
 void CIrcProto::AddToJTemp(wchar_t op, CMStringW& sCommand)
@@ -347,30 +374,37 @@ wchar_t* __stdcall DoColorCodes(const wchar_t *text, bool bStrip, bool bReplaceP
 	return szTemp;
 }
 
-INT_PTR CIrcProto::DoEvent(int iEvent, const wchar_t* pszWindow, const wchar_t* pszNick,
-	const wchar_t* pszText, const wchar_t* pszStatus, const wchar_t* pszUserInfo,
+INT_PTR CIrcProto::DoEvent(int iEvent, const wchar_t *pszWindow, const wchar_t *pszNick,
+	const wchar_t *pszText, const wchar_t *pszStatus, const wchar_t *pszUserInfo,
 	DWORD_PTR dwItemData, bool bAddToLog, bool bIsMe, time_t timestamp)
 {
-	CMStringW sID;
-	CMStringW sText;
-
 	if (iEvent == GC_EVENT_INFORMATION && bIsMe && !bEcho)
 		return false;
 
+	CMStringW sText;
 	if (pszText)
 		sText = DoColorCodes(pszText, FALSE, TRUE);
 
-	GCEVENT gce = { m_szModuleName, nullptr, iEvent };
-	if (pszWindow) {
-		sID = pszWindow;
-		gce.pszID.w = (wchar_t*)sID.c_str();
+	GCEVENT gce = {};
+	if (pszWindow)
+		gce.si = Chat_Find(pszWindow, m_szModuleName);
+	else if (iEvent == GC_EVENT_INFORMATION || iEvent == GC_EVENT_NOTICE)
+		gce.si = Chat_Find(SERVERWINDOW, m_szModuleName);
+	else {
+		gce.pszModule = m_szModuleName;
+		gce.dwFlags |= GCEF_BROADCAST;
 	}
-	else gce.pszID.w = nullptr;
 
+	if (bAddToLog)
+		gce.dwFlags |= GCEF_ADDTOLOG;
+
+	gce.iType = iEvent;
 	gce.pszStatus.w = pszStatus;
-	gce.dwFlags = (bAddToLog) ? GCEF_ADDTOLOG : 0;
 	gce.pszNick.w = pszNick;
 	gce.pszUID.w = pszNick;
+	gce.dwItemData = dwItemData;
+	gce.bIsMe = bIsMe;
+
 	if (iEvent == GC_EVENT_TOPIC)
 		gce.pszUserInfo.w = pszUserInfo;
 	else
@@ -379,12 +413,10 @@ INT_PTR CIrcProto::DoEvent(int iEvent, const wchar_t* pszWindow, const wchar_t* 
 	if (!sText.IsEmpty())
 		gce.pszText.w = sText.c_str();
 
-	gce.dwItemData = dwItemData;
 	if (timestamp == 1)
 		gce.time = time(0);
 	else
 		gce.time = timestamp;
-	gce.bIsMe = bIsMe;
 	return Chat_Event(&gce);
 }
 
@@ -500,7 +532,7 @@ int CIrcProto::SetChannelSBText(CMStringW sWindow, CHANNELINFO *wi)
 	if (wi->pszTopic)
 		sTemp += wi->pszTopic;
 	sTemp = DoColorCodes(sTemp.c_str(), TRUE, FALSE);
-	Chat_SetStatusbarText(m_szModuleName, sWindow, sTemp);
+	Chat_SetStatusbarText(Chat_Find(sWindow, m_szModuleName), sTemp);
 	return 0;
 }
 
@@ -508,7 +540,7 @@ bool CIrcProto::FreeWindowItemData(CMStringW window, CHANNELINFO *wis)
 {
 	CHANNELINFO *wi;
 	if (!wis)
-		wi = (CHANNELINFO*)Chat_GetUserInfo(m_szModuleName, window);
+		wi = GetChannelInfo(window);
 	else
 		wi = wis;
 	if (wi) {
@@ -524,7 +556,7 @@ bool CIrcProto::FreeWindowItemData(CMStringW window, CHANNELINFO *wis)
 
 bool CIrcProto::AddWindowItemData(CMStringW window, const wchar_t* pszLimit, const wchar_t* pszMode, const wchar_t* pszPassword, const wchar_t* pszTopic)
 {
-	CHANNELINFO *wi = (CHANNELINFO *)Chat_GetUserInfo(m_szModuleName, window);
+	auto *wi = GetChannelInfo(window);
 	if (wi) {
 		if (pszLimit) {
 			wi->pszLimit = (wchar_t*)realloc(wi->pszLimit, sizeof(wchar_t)*(mir_wstrlen(pszLimit) + 1));

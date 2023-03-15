@@ -50,8 +50,6 @@
 в других случаях
 [Advanced Configuration]
 Дополнительная настройка
-[Keep connection alive]
-Поддерживать соединение
 [Show connection errors]
 Показывать ошибки соединения
 [Automatically reconnect after unintentional disconnection]
@@ -62,8 +60,6 @@
 Указать серверы вручную
 [* new line is separator\n** hostname:port format]
 * перевод строки разделитель\n** хост:порт
-[Use SSL secure connection]
-Безопасное подключение (SSL)
 [File Transfer]
 Передача файла
 [Use direct connections]
@@ -153,8 +149,6 @@
 [Sign out all sessions]
 Выйти из всех сессий
 ;file \protocols\Gadu-Gadu\src\avatar.cpp
-[Cannot create avatars cache directory. ERROR: %d: %s\n%s]
-Не удалось создать папку для кэша аватаров. Ошибка: %d: %s\n%s
 [Cannot create avatar file. ERROR: %d: %s\n%s]
 Не удалось создать файл аватара. Ошибка: %d: %s\n%s
 [Cannot open avatar file. ERROR: %d: %s\n%s]
@@ -208,9 +202,9 @@ Miranda не может распознать имя сервера Gadu-Gadu п�
 Входящее изображение
 ;file \protocols\Gadu-Gadu\src\filetransfer.cpp
 [Cannot create transfer file. ERROR: %d: %s (dcc)\n%s]
-
+Не удалось создать передачу файла. Ошибка: %d: %s (dcc)\n%s
 [Cannot create transfer file. ERROR: %d: %s (dcc7)\n%s]
-
+Не удалось создать передачу файла. Ошибка: %d: %s (dcc7)\n%s
 ;file \protocols\Gadu-Gadu\src\gg.cpp
 [HTTP failed memory]
 HTTP ошибка памяти

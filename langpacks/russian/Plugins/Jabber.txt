@@ -379,10 +379,6 @@ XML Консоль
 ;file \protocols\JabberG\src\jabber.cpp
 [Jabber Link Protocol]
 Протокол Jabber
-[Frame title]
-Заголовок фрейма
-[Frame text]
-Текст фрейма
 [Jabber Activity]
 Занятие Jabber
 [Jabber Mood]
@@ -1452,6 +1448,8 @@ OMEMO не поддерживает шифрование приватных со
 Добавлять контакт после подтверждения авторизации
 [Automatically accept authorization requests]
 Автоматически принимать запросы авторизации
+[Automatically download files passed via HTTP File Upload]
+Автоматически принимать файлы, полученные через HTTP File Upload
 [Fix incorrect timestamps in incoming messages]
 Исправлять время во входящих сообщениях
 [Enable XMPP link processing (requires AssocMgr)]
@@ -1933,6 +1931,9 @@ Jabber vCard: редактирование телефона
 Контакты
 [Note]
 Заметка
+;file \protocols\JabberG\src\jabber_voip.cpp
+[Client's program does not support voice calls]
+Клиент собеседника не поддерживает голосовые вызовы
 ;file \protocols\JabberG\src\jabber_xstatus.cpp
 [<advanced status slot>]
 <слот расширенного статуса>

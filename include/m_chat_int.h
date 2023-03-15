@@ -141,7 +141,9 @@ struct MIR_APP_EXPORT GCSessionInfoBase : public MZeroedObject, public MNonCopya
 
 	bool        bInitDone;
 	bool        bHasToolTip;
+	bool        bHasNicklist;
 	bool        bTrimmed;
+	bool        bHistoryInit;
 
 	char*       pszModule;
 	wchar_t*    ptszID;
@@ -273,9 +275,6 @@ struct CHAT_MANAGER
 {
 	CHAT_MANAGER();
 
-	void          (*SetActiveSession)(SESSION_INFO *si);
-	SESSION_INFO* (*GetActiveSession)(void);
-
 	SESSION_INFO* (*SM_CreateSession)(void);
 	SESSION_INFO* (*SM_FindSession)(const wchar_t *pszID, const char *pszModule);
 	HICON         (*SM_GetStatusIcon)(SESSION_INFO *si, USERINFO * ui);
@@ -307,7 +306,6 @@ struct CHAT_MANAGER
 
 	BOOL          (*SetOffline)(MCONTACT hContact, BOOL bHide);
 	BOOL          (*SetAllOffline)(BOOL bHide, const char *pszModule);
-	MCONTACT      (*FindRoom)(const char *pszModule, const wchar_t *pszRoom);
 
 	char*         (*Log_CreateRTF)(LOGSTREAMDATA *streamData);
 	char*         (*Log_CreateRtfHeader)(void);
@@ -329,8 +327,6 @@ struct CHAT_MANAGER
 	void          (*CreateNick)(const SESSION_INFO *si, const LOGINFO *lin, CMStringW &dest);
 
 	int logPixelSY, logPixelSX;
-	char *szActiveWndModule;
-	wchar_t *szActiveWndID;
 	HICON  hStatusIcons[STATUSICONCOUNT];
 	HBRUSH hListBkgBrush, hListSelectedBkgBrush;
 	HANDLE hevWinPopup, hevPreCreate;
@@ -391,7 +387,8 @@ EXTERN_C MIR_APP_DLL(int) Chat_GetTextPixelSize(const wchar_t *pszText, HFONT hF
 EXTERN_C MIR_APP_DLL(bool) Chat_GetDefaultEventDescr(const SESSION_INFO *si, const LOGINFO *lin, CMStringW &res);
 
 // sets mute mode for a group chat
-EXTERN_C MIR_APP_DLL(void) Chat_Mute(SESSION_INFO *si, int mode);
+EXTERN_C MIR_APP_DLL(int) Chat_IsMuted(MCONTACT hContact);
+EXTERN_C MIR_APP_DLL(void) Chat_Mute(MCONTACT hContact, int mode);
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // common settings

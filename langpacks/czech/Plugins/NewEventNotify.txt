@@ -2,7 +2,7 @@
 ;============================================================
 ;  File: NewEventNotify.dll
 ;  Plugin: NewEventNotify
-;  Version: 0.2.2.5
+;  Version: 0.2.2.7
 ;  Authors: icebreaker, Prezes, vj, vlko, Joe @ Whale
 ;============================================================
 [Notifies you when you receive a message, URL, file or any other event by displaying a popup.]
@@ -12,14 +12,6 @@ Zobrazí oznámení při přijetí zprávy, odkazu, souboru nebo při výskytu j
 Omezit náhled zprávy na
 [characters]
 znaků
-[Popup options]
-Možnosti oznámení
-[Text]
-Text
-[Background]
-Pozadí
-[Timeout, secs]
-
 [Message]
 Zpráva
 [File]
@@ -28,6 +20,16 @@ Soubor
 Chyby
 [Others]
 Ostatní
+[Text]
+Text
+[Background]
+Pozadí
+[Use default colors]
+Použít výchozí barvy
+[Use Windows colors]
+Použít barvy Windows
+[Timeout, secs]
+
 [Preview]
 Náhled
 [(timeout -1 means forever, 0 - default)]
@@ -84,8 +86,8 @@ Při časové expiraci
 
 [No popups for RSS contacts]
 Nezobrazit oznámení pro zdroje RSS
-[No popups for read messages]
-Neoznamovat přečtené zprávy
+[No popups for read messages (conflicts with anti-spam plugin)]
+
 [Event Notify]
 Oznámení události
 [Popups]
@@ -94,6 +96,8 @@ Oznámení
 Hlavní možnosti
 [Message events]
 Zprávy
+[Event types]
+
 ;file \plugins\NewEventNotify\src\popup.cpp
 [Received %d contacts.]
 Přijato %d kontaktů

@@ -60,6 +60,11 @@ HGENMENU PROTO_INTERFACE::GetMenuItem(ProtoMenuItemType aType)
 	return nullptr;
 }
 
+CMStringW PROTO_INTERFACE::GetAvatarPath() const
+{
+	return CMStringW(FORMAT, L"%s\\%S", VARSW(L"%miranda_avatarcache%").get(), m_szModuleName);
+}
+
 void PROTO_INTERFACE::OnBuildProtoMenu()
 {}
 
@@ -69,10 +74,21 @@ void PROTO_INTERFACE::OnContactAdded(MCONTACT)
 void PROTO_INTERFACE::OnContactDeleted(MCONTACT)
 {}
 
+MWindow PROTO_INTERFACE::OnCreateAccMgrUI(MWindow)
+{
+	return nullptr; // error
+}
+
+void PROTO_INTERFACE::OnEventDeleted(MCONTACT, MEVENT)
+{}
+
 void PROTO_INTERFACE::OnEventEdited(MCONTACT, MEVENT)
 {}
 
 void PROTO_INTERFACE::OnErase()
+{}
+
+void PROTO_INTERFACE::OnMarkRead(MCONTACT, MEVENT)
 {}
 
 void PROTO_INTERFACE::OnModulesLoaded()
@@ -164,12 +180,12 @@ HANDLE PROTO_INTERFACE::SearchByName(const wchar_t*, const wchar_t*, const wchar
 	return nullptr; // error
 }
 
-HWND PROTO_INTERFACE::SearchAdvanced(HWND)
+HANDLE PROTO_INTERFACE::SearchAdvanced(MWindow)
 {
 	return nullptr; // error
 }
 
-HWND PROTO_INTERFACE::CreateExtendedSearchUI(HWND)
+MWindow PROTO_INTERFACE::CreateExtendedSearchUI(MWindow)
 {
 	return nullptr; // error
 }
@@ -190,9 +206,6 @@ MEVENT PROTO_INTERFACE::RecvMsg(MCONTACT hContact, PROTORECVEVENT *pre)
 	if (pre->szMessage == nullptr)
 		return 0;
 
-	ptrA pszTemp;
-	mir_ptr<uint8_t> pszBlob;
-
 	DBEVENTINFO dbei = {};
 	dbei.flags = DBEF_UTF;
 	dbei.szModule = Proto_GetBaseAccountName(hContact);
@@ -200,6 +213,7 @@ MEVENT PROTO_INTERFACE::RecvMsg(MCONTACT hContact, PROTORECVEVENT *pre)
 	dbei.eventType = EVENTTYPE_MESSAGE;
 	dbei.cbBlob = (uint32_t)mir_strlen(pre->szMessage) + 1;
 	dbei.pBlob = (uint8_t*)pre->szMessage;
+	dbei.szUserId = pre->szUserId;
 
 	if (pre->flags & PREF_CREATEREAD)
 		dbei.flags |= DBEF_READ;

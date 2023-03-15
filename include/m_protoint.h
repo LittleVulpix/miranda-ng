@@ -162,6 +162,11 @@ public:
 	__forceinline CMStringA getMStringA(MCONTACT hContact, const char *name, const char *szValue = nullptr) {
 		return db_get_sm(hContact, m_szModuleName, name, szValue); }
 
+	__forceinline CMStringA getMStringU(const char *name, const char *szValue = nullptr) {
+		return db_get_usm(0, m_szModuleName, name, szValue); }
+	__forceinline CMStringA getMStringU(MCONTACT hContact, const char *name, const char *szValue = nullptr) {
+		return db_get_usm(hContact, m_szModuleName, name, szValue); }
+
 	__forceinline CMStringW getMStringW(const char *name, const wchar_t *szValue = nullptr) {
 		return db_get_wsm(0, m_szModuleName, name, szValue); }
 	__forceinline CMStringW getMStringW(MCONTACT hContact, const char *name, const wchar_t *szValue = nullptr) {
@@ -202,6 +207,8 @@ public:
 
 	HGENMENU GetMenuItem(ProtoMenuItemType);
 
+	CMStringW GetAvatarPath() const;
+
 	//////////////////////////////////////////////////////////////////////////////////////
 	// Virtual functions
 
@@ -224,8 +231,8 @@ public:
 	virtual	HANDLE   SearchBasic(const wchar_t *id);
 	virtual	HANDLE   SearchByEmail(const wchar_t *email);
 	virtual	HANDLE   SearchByName(const wchar_t *nick, const wchar_t *firstName, const wchar_t *lastName);
-	virtual	HWND     SearchAdvanced(HWND owner);
-	virtual	HWND     CreateExtendedSearchUI(HWND owner);
+	virtual	HANDLE   SearchAdvanced(MWindow owner);
+	virtual	MWindow  CreateExtendedSearchUI(MWindow owner);
 
 	virtual	int      RecvContacts(MCONTACT hContact, PROTORECVEVENT *);
 	virtual	int      RecvFile(MCONTACT hContact, PROTORECVFILE *);
@@ -256,11 +263,20 @@ public:
 	// called when an account's contact is deleted
 	virtual void OnContactDeleted(MCONTACT);
 
+	// called when the Account Manager needs to draw short account's options
+	virtual MWindow OnCreateAccMgrUI(MWindow hwndParent);
+
+	// called when an event is altered in database
+	virtual void OnEventDeleted(MCONTACT, MEVENT);
+
 	// called when an event is altered in database
 	virtual void OnEventEdited(MCONTACT, MEVENT);
 
 	// called when an account gets physically removed from the database
 	virtual void OnErase();
+
+	// called when an event is marked read from Miranda (not from the server)
+	virtual void OnMarkRead(MCONTACT, MEVENT);
 
 	// the analog of ME_SYSTEM_MODULESLOADED for an account
 	virtual void OnModulesLoaded(void);

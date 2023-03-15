@@ -236,20 +236,16 @@ bool CMsgDialog::OnInitDialog()
 		UpdateStatusBar();
 		UpdateTitle();
 		UpdateNickList();
+		UpdateChatLog();
 
 		m_pParent->AddChild(this);
 		PopupWindow(false);
-
-		if (m_si->pMI->bDatabase) {
-			FindFirstEvent();
-			SendMessage(m_hwnd, DM_REMAKELOG, 0, 0);
-		}
 	}
 	else {
 		m_nickList.Hide();
 		m_splitterX.Hide();
 
-		bool notifyUnread = FindFirstEvent();
+		bool notifyUnread = GetFirstEvent();
 
 		m_pParent->AddChild(this);
 
@@ -1087,8 +1083,6 @@ INT_PTR CMsgDialog::DlgProc(UINT msg, WPARAM wParam, LPARAM lParam)
 		if (isChat()) {
 			SetFocus(m_message.GetHwnd());
 
-			g_chatApi.SetActiveSession(m_si);
-
 			if (db_get_w(m_hContact, m_si->pszModule, "ApparentMode", 0) != 0)
 				db_set_w(m_hContact, m_si->pszModule, "ApparentMode", 0);
 			if (g_clistApi.pfnGetEvent(m_hContact, 0))
@@ -1169,48 +1163,6 @@ INT_PTR CMsgDialog::DlgProc(UINT msg, WPARAM wParam, LPARAM lParam)
 			m_pLog->LogEvents(m_hDbEventFirst, -1, 0);
 
 		InvalidateRect(m_pLog->GetHwnd(), nullptr, FALSE);
-		break;
-
-	case HM_DBEVENTADDED:
-		if (wParam == m_hContact) {
-			MEVENT hDbEvent = lParam;
-			DBEVENTINFO dbei = {};
-			db_event_get(hDbEvent, &dbei);
-			if (m_hDbEventFirst == 0)
-				m_hDbEventFirst = hDbEvent;
-			if (DbEventIsShown(dbei)) {
-				bool bIsActive = IsActive();
-				if (dbei.eventType == EVENTTYPE_MESSAGE && !(dbei.flags & (DBEF_SENT))) {
-					/* store the event when the container is hidden so that clist notifications can be removed */
-					if (!IsWindowVisible(m_hwndParent) && m_hDbUnreadEventFirst == 0)
-						m_hDbUnreadEventFirst = hDbEvent;
-					m_lastMessage = dbei.timestamp;
-					UpdateStatusBar();
-					if (bIsActive)
-						Skin_PlaySound("RecvMsgActive");
-					else
-						Skin_PlaySound("RecvMsgInactive");
-					if (g_dat.flags2.bSwitchToActive && (IsIconic(m_hwndParent) || GetActiveWindow() != m_hwndParent) && IsWindowVisible(m_hwndParent))
-						m_pParent->ActivateChild(this);
-					if (IsAutoPopup(m_hContact))
-						PopupWindow(true);
-				}
-
-				if (isChat() || (hDbEvent != m_hDbEventFirst && db_event_next(m_hContact, hDbEvent) == 0))
-					m_pLog->LogEvents(hDbEvent, 1, 1);
-				else
-					SendMessage(m_hwnd, DM_REMAKELOG, 0, 0);
-
-				if (!(dbei.flags & DBEF_SENT) && !DbEventIsCustomForMsgWindow(&dbei)) {
-					if (!bIsActive) {
-						m_iShowUnread = 1;
-						UpdateIcon();
-						SetTimer(m_hwnd, TIMERID_UNREAD, TIMEOUT_UNREAD, nullptr);
-					}
-					StartFlashing();
-				}
-			}
-		}
 		break;
 
 	case WM_TIMER:

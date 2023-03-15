@@ -46,6 +46,7 @@ type
     cbBlob   : dword;     // size in bytes of pBlob^
     pBlob    : PByte;     // pointer to buffer containing the module defined event data
     szId     : PAnsiChar; // server id of event
+    szUserId : PAnsiChar; // user id of event
   end;
 
 (******************************************************************************
@@ -140,7 +141,7 @@ is invalid.
 This is the one database write operation that does not trigger an event.
 Modules should not save flags states for any length of time.
 }
-function db_event_markRead(hContact:TMCONTACT; hDbEvent:TMEVENT):int; stdcall; external CoreDLL;
+function db_event_markRead(hContact:TMCONTACT; hDbEvent:TMEVENT; flags:integer = 0):int; stdcall; external CoreDLL;
 
 {
 Retrieves a handle to the next event in a chain after hDbEvent
@@ -210,7 +211,6 @@ function db_set_resident(const szModule:PAnsiChar; const szSetting:PAnsiChar; bE
 ///////////////////////////////////////////////////////////////////////////////
 
 function db_add_contact() : TMCONTACT; stdcall; external CoreDLL;
-function db_delete_contact(hContact:TMCONTACT) : int; stdcall; external CoreDLL;
 
 function db_is_contact(hContact:TMCONTACT) : int; stdcall; external CoreDLL;
 

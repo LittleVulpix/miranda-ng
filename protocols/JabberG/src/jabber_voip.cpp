@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+#include <m_voiceservice.h>
+
 #include <gst/gst.h>
 #include <gst/sdp/sdp.h>
 #include <gst/rtp/rtp.h>
@@ -255,7 +257,6 @@ static gboolean check_plugins(void)
 		/*"vpx", "videotestsrc", "audiotestsrc",*/  };
 
 	GstRegistry *registry = gst_registry_get();
-	gst_registry_scan_path(registry, "libs\\gst_plugins");
 	gboolean ret = TRUE;
 	for (auto &it : needed) {
 		GstPlugin *plugin = gst_registry_find_plugin(registry, it);
@@ -276,7 +277,7 @@ void dbgprint(const gchar *string)
 
 bool CJabberProto::VOIPCreatePipeline(void)
 {
-	if (!m_bEnableVOIP)
+	if (!hasJingle())
 		goto err;
 
 	//gstreamer init
@@ -355,8 +356,9 @@ bool CJabberProto::VOIPTerminateSession(const char *reason)
 		gst_print("Pipeline stopped\n");
 	}
 
-	if (reason && !m_voipSession.IsEmpty() && !m_voipPeerJid.IsEmpty()) {
+	if (m_ThreadInfo && reason && !m_voipSession.IsEmpty() && !m_voipPeerJid.IsEmpty()) {
 		XmlNodeIq iq("set", SerialNext(), m_voipPeerJid);
+
 		TiXmlElement *jingleNode = iq << XCHILDNS("jingle", JABBER_FEAT_JINGLE);
 		jingleNode << XATTR("action", "session-terminate") << XATTR("sid", m_voipSession);
 		jingleNode << XATTR("initiator", m_isOutgoing ? m_ThreadInfo->fullJID : m_voipPeerJid);
@@ -444,7 +446,7 @@ bool CJabberProto::OnRTPDescription(const TiXmlElement *jingleNode)
 
 bool CJabberProto::OnICECandidate(const TiXmlElement *Node)
 {
-	if (!m_bEnableVOIP)
+	if (!hasJingle())
 		return false;
 
 	CMStringA scandidate;
@@ -479,15 +481,22 @@ bool CJabberProto::VOIPCallIinitiate(MCONTACT hContact)
 		return false;
 	}
 
-	if (!m_bEnableVOIP)
+	if (!hasJingle())
 		return false;
 
-	CMStringA jid(ptrA(getUStringA(hContact, "jid")));
+	CMStringA jid(getMStringA(hContact, "jid"));
 	if (jid.IsEmpty())
 		return false;
-	ptrA szResource(GetBestResourceName(jid));
-	if (szResource)
-		jid = MakeJid(jid, szResource);
+	
+	auto r = ListGetBestResource(jid);
+	if (r) {
+		if (!(r->m_pCaps->GetCaps() & JABBER_CAPS_JINGLE)) {
+			MsgPopup(hContact, TranslateT("Client's program does not support voice calls"), TranslateT("Error"));
+			return false;
+		}
+
+		jid = MakeJid(jid, r->m_szResourceName);
+	}
 
 	unsigned char tmp[16];
 	Utils_GetRandom(tmp, sizeof(tmp));
@@ -557,4 +566,24 @@ INT_PTR CJabberProto::JabberVOIP_dropcall(WPARAM id, LPARAM)
 
 	VOIPTerminateSession();
 	return 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// module entry point
+
+void CJabberProto::InitVoip(bool bEnable)
+{
+	// Voip
+	VOICE_MODULE vsr = {};
+	vsr.cbSize = sizeof(VOICE_MODULE);
+	vsr.description = L"XMPP/DTLS-SRTP";
+	vsr.name = m_szModuleName;
+	vsr.icon = g_plugin.getIconHandle(IDI_NOTES);
+	vsr.flags = 3;
+	if (bEnable)
+		CallService(MS_VOICESERVICE_REGISTER, (WPARAM)&vsr, 0);
+	else {
+		VOIPTerminateSession();
+		CallService(MS_VOICESERVICE_UNREGISTER, (WPARAM)&vsr, 0);
+	}
 }

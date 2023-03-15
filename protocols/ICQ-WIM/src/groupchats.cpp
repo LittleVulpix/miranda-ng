@@ -20,6 +20,24 @@
 
 #include "stdafx.h"
 
+SESSION_INFO* CIcqProto::CreateGroupChat(const wchar_t *pwszId, const wchar_t *pwszNick)
+{
+	auto *si = Chat_NewSession(GCW_CHATROOM, m_szModuleName, pwszId, pwszNick);
+	if (si != nullptr) {
+		Chat_AddGroup(si, TranslateT("admin"));
+		Chat_AddGroup(si, TranslateT("member"));
+		Chat_Control(si, m_bHideGroupchats ? WINDOW_HIDDEN : SESSION_INITDONE);
+		Chat_Control(si, SESSION_ONLINE);
+
+		// #3420 ICQ server will place our group chat into its own group
+		Clist_SetGroup(si->hContact, nullptr);
+	}
+
+	return si;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 void CIcqProto::LoadChatInfo(SESSION_INFO *si)
 {
 	int memberCount = getDword(si->hContact, "MemberCount");
@@ -35,9 +53,8 @@ void CIcqProto::LoadChatInfo(SESSION_INFO *si)
 		CMStringW role((*node)["role"].as_mstring());
 		CMStringW sn((*node)["sn"].as_mstring());
 
-		GCEVENT gce = { m_szModuleName, 0, GC_EVENT_JOIN };
+		GCEVENT gce = { si, GC_EVENT_JOIN };
 		gce.dwFlags = GCEF_SILENT;
-		gce.pszID.w = si->ptszID;
 		gce.pszNick.w = nick;
 		gce.pszUID.w = sn;
 		gce.time = ::time(0);
@@ -47,6 +64,16 @@ void CIcqProto::LoadChatInfo(SESSION_INFO *si)
 
 		json_delete(node);
 	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void CIcqProto::RetrieveChatInfo(SESSION_INFO *si)
+{
+	auto *pReq = new AsyncRapiRequest(this, "getChatInfo", &CIcqProto::OnGetChatInfo);
+	pReq->params << WCHAR_PARAM("sn", si->ptszID) << INT_PARAM("memberLimit", 100) << CHAR_PARAM("aimSid", m_aimsid);
+	pReq->pUserInfo = si;
+	Push(pReq);
 }
 
 void CIcqProto::OnGetChatInfo(NETLIBHTTPREQUEST *pReply, AsyncHttpRequest *pReq)
@@ -161,7 +188,7 @@ void CIcqProto::LeaveDestroyChat(SESSION_INFO *si)
 	Push(new AsyncHttpRequest(CONN_MAIN, REQUEST_GET, ICQ_API_SERVER "/buddylist/hideChat")
 		<< AIMSID(this) << WCHAR_PARAM("buddy", si->ptszID) << INT64_PARAM("lastMsgId", getId(si->hContact, DB_KEY_LASTMSGID)));
 
-	Chat_Terminate(si->pszModule, si->ptszID, true);
+	db_delete_contact(si->hContact);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -183,7 +210,7 @@ int CIcqProto::GroupchatMenuHook(WPARAM, LPARAM lParam)
 	if (mir_strcmpi(gcmi->pszModule, m_szModuleName))
 		return 0;
 
-	SESSION_INFO *si = g_chatApi.SM_FindSession(gcmi->pszID, gcmi->pszModule);
+	SESSION_INFO *si = Chat_Find(gcmi->pszID, gcmi->pszModule);
 	if (si == nullptr)
 		return 0;
 
@@ -202,7 +229,7 @@ int CIcqProto::GroupchatEventHook(WPARAM, LPARAM lParam)
 	if (mir_strcmpi(gch->si->pszModule, m_szModuleName))
 		return 0;
 
-	SESSION_INFO *si = g_chatApi.SM_FindSession(gch->si->ptszID, gch->si->pszModule);
+	SESSION_INFO *si = Chat_Find(gch->si->ptszID, gch->si->pszModule);
 	if (si == nullptr)
 		return 1;
 
@@ -247,14 +274,14 @@ void CIcqProto::Chat_ProcessLogMenu(SESSION_INFO *si, int iChoice)
 void CIcqProto::Chat_SendPrivateMessage(GCHOOK *gch)
 {
 	MCONTACT hContact;
-	auto *pCache = FindContactByUIN(gch->ptszUID);
-	if (pCache == nullptr) {
+	auto *pUser = FindUser(gch->ptszUID);
+	if (pUser == nullptr) {
 		hContact = CreateContact(gch->ptszUID, true);
 		setWString(hContact, "Nick", gch->ptszNick);
 		Contact::Hide(hContact);
 		db_set_dw(hContact, "Ignore", "Mask1", 0);
 	}
-	else hContact = pCache->m_hContact;
+	else hContact = pUser->m_hContact;
 
 	CallService(MS_MSG_SENDMESSAGE, hContact, 0);
 }
@@ -263,13 +290,12 @@ void CIcqProto::ProcessGroupChat(const JSONNode &ev)
 {
 	for (auto &it : ev["mchats"]) {
 		CMStringW wszId(it["sender"].as_mstring());
-		SESSION_INFO *si = g_chatApi.SM_FindSession(wszId, m_szModuleName);
+		auto *si = Chat_Find(wszId, m_szModuleName);
 		if (si == nullptr)
 			continue;
 
 		CMStringW method(it["method"].as_mstring());
-		GCEVENT gce = { m_szModuleName, 0, (method == "add_members") ? GC_EVENT_JOIN : GC_EVENT_PART };
-		gce.pszID.w = si->ptszID;
+		GCEVENT gce = { si, (method == "add_members") ? GC_EVENT_JOIN : GC_EVENT_PART };
 
 		int iStart = 0;
 		CMStringW members(it["members"].as_mstring());
@@ -278,11 +304,11 @@ void CIcqProto::ProcessGroupChat(const JSONNode &ev)
 			if (member.IsEmpty())
 				break;
 
-			auto *pCache = FindContactByUIN(member);
-			if (pCache == nullptr)
+			auto *pUser = FindUser(member);
+			if (pUser == nullptr)
 				continue;
 
-			gce.pszNick.w = Clist_GetContactDisplayName(pCache->m_hContact);
+			gce.pszNick.w = Clist_GetContactDisplayName(pUser->m_hContact);
 			gce.pszUID.w = member;
 			gce.time = ::time(0);
 			gce.bIsMe = member == m_szOwnId;

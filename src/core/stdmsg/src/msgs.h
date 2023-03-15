@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef SRMM_MSGS_H
 #define SRMM_MSGS_H
 
-#define HM_DBEVENTADDED      (WM_USER+12)
 #define DM_OPTIONSAPPLIED    (WM_USER+14)
 #define DM_UPDATETITLE       (WM_USER+16)
 #define DM_NEWTIMEZONE       (WM_USER+18)
@@ -55,7 +54,6 @@ class CMsgDialog : public CSrmmBaseDialog
 	friend class CTabbedWindow;
 	typedef CSrmmBaseDialog CSuper;
 
-	void FindFirstEvent();
 	void Init(void);
 	void NotifyTyping(int mode);
 	void SetButtonsPos(void);
@@ -141,8 +139,6 @@ public:
 		return ((CLogWindow *)m_pLog);
 	}
 
-	MEVENT m_hDbEventFirst, m_hDbEventLast;
-
 	int m_avatarWidth = 0, m_avatarHeight = 0;
 
 	bool m_bIsAutoRTL = false;
@@ -156,6 +152,8 @@ public:
 	}
 
 	void CloseTab() override;
+	void EventAdded(MEVENT, const DBEVENTINFO &dbei) override;
+	bool GetFirstEvent() override;
 	bool IsActive() const override;
 	void LoadSettings() override;
 	void SetStatusText(const wchar_t *, HICON) override;
@@ -173,8 +171,8 @@ extern LIST<CMsgDialog> g_arDialogs;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-int  DbEventIsForMsgWindow(DBEVENTINFO *dbei);
-int  DbEventIsShown(DBEVENTINFO *dbei);
+bool DbEventIsForMsgWindow(const DBEVENTINFO *dbei);
+bool DbEventIsShown(const DBEVENTINFO *dbei);
 int  SendMessageDirect(const wchar_t *szMsg, MCONTACT hContact);
 INT_PTR SendMessageCmd(MCONTACT hContact, wchar_t *msg);
 

@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 class MinecraftDynmapProto : public PROTO<MinecraftDynmapProto>
 {
-	ptrA szRoomName;
+	SESSION_INFO *m_si;
 
 public:
 	MinecraftDynmapProto(const char *proto_name, const wchar_t *username);
@@ -47,10 +47,8 @@ public:
 	int     SetStatus(int iNewStatus) override;
 
 	void    OnContactDeleted(MCONTACT) override;
+	MWindow OnCreateAccMgrUI(MWindow) override;
 	void    OnShutdown() override;
-
-	// Services
-	INT_PTR __cdecl SvcCreateAccMgrUI(WPARAM, LPARAM);
 
 	// Chat handling
 	int     __cdecl OnChatEvent(WPARAM,LPARAM);

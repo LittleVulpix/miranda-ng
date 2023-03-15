@@ -50,8 +50,6 @@ Gadu-Gadu номер:
 в друг случай
 [Advanced Configuration]
 Допълнителни настройки
-[Keep connection alive]
-Поддържане на връзката
 [Show connection errors]
 Показване на проблеми с връзката
 [Automatically reconnect after unintentional disconnection]
@@ -62,8 +60,6 @@ Gadu-Gadu номер:
 
 [* new line is separator\n** hostname:port format]
 
-[Use SSL secure connection]
-Защитаване на връзка с SSL
 [File Transfer]
 Обмен на файл
 [Use direct connections]
@@ -153,8 +149,6 @@ Gadu-Gadu номер:
 [Sign out all sessions]
 Отписване от всички сесии
 ;file \protocols\Gadu-Gadu\src\avatar.cpp
-[Cannot create avatars cache directory. ERROR: %d: %s\n%s]
-
 [Cannot create avatar file. ERROR: %d: %s\n%s]
 
 [Cannot open avatar file. ERROR: %d: %s\n%s]
@@ -206,29 +200,6 @@ Gadu-Gadu номер:
 
 [Incoming image]
 Входящо изображение
-;file \protocols\Gadu-Gadu\src\dialogs.cpp
-[<Last Status>]
-<Последно състояние>
-[System tray icon]
-Икона в трея
-[Popup window]
-Рopup прозорец
-[Message with [img] BBCode]
-Съобщение съдържащо "[img]" BBCode
-[You need to specify your registration e-mail first.]
-Необходимо е първо да зададете имейл за регистрацията.
-[Your password will be sent to your registration e-mail.\nDo you want to continue?]
-Паролата ще бъде изпратена на имейла посочен в регистрацията.\nНаистина ли желаете това?
-[You should disconnect before making any permanent changes with your account.\nDo you want to disconnect now?]
-Необходимо е да излезете от мрежата преди да промените акаунта за постоянно.\nЖелаете ли да излезете сега?
-[Network]
-Мрежа
-[General]
-Основни
-[Conference]
-Конференция
-[Advanced]
-Разширени
 ;file \protocols\Gadu-Gadu\src\filetransfer.cpp
 [Cannot create transfer file. ERROR: %d: %s (dcc)\n%s]
 
@@ -251,6 +222,8 @@ Gadu-Gadu номер:
 Деблокиране
 [&Block]
 Блокиране
+[Conference]
+Конференция
 [Contact list]
 Списък с контакти
 ;file \protocols\Gadu-Gadu\src\gg_proto.cpp
@@ -374,12 +347,32 @@ Gadu-Gadu номер
 [Gadu-Gadu Link Protocol]
 Протокол за Gadu-Gadu връзки
 ;file \protocols\Gadu-Gadu\src\options.cpp
+[<Last Status>]
+<Последно състояние>
+[System tray icon]
+Икона в трея
+[Popup window]
+Рopup прозорец
+[Message with [img] BBCode]
+Съобщение съдържащо "[img]" BBCode
+[You need to specify your registration e-mail first.]
+Необходимо е първо да зададете имейл за регистрацията.
+[Your password will be sent to your registration e-mail.\nDo you want to continue?]
+Паролата ще бъде изпратена на имейла посочен в регистрацията.\nНаистина ли желаете това?
+[You should disconnect before making any permanent changes with your account.\nDo you want to disconnect now?]
+Необходимо е да излезете от мрежата преди да промените акаунта за постоянно.\nЖелаете ли да излезете сега?
 [Allow]
 Позволи
 [Ask]
 
 [Ignore]
 Игнориране
+[Network]
+Мрежа
+[General]
+Основни
+[Advanced]
+Разширени
 ;file \protocols\Gadu-Gadu\src\ownerinfo.cpp
 [Password could not be reminded because of error:\n\t%s (Error: %d)]
 

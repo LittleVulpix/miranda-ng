@@ -186,14 +186,9 @@ INT_PTR __cdecl CJabberProto::OnMenuHandleJoinGroupchat(WPARAM, LPARAM)
 
 INT_PTR __cdecl CJabberProto::OnJoinChat(WPARAM hContact, LPARAM)
 {
-	ptrA jid(getUStringA(hContact, "ChatRoomID"));
+	ptrA jid(ContactToJID(hContact));
 	if (jid == nullptr)
 		return 0;
-
-	ptrA nick(getUStringA(hContact, "MyNick"));
-	if (nick == nullptr)
-		if ((nick = getUStringA("Nick")) == nullptr)
-			return 0;
 
 	ptrA password(getUStringA(hContact, "Password"));
 
@@ -201,7 +196,7 @@ INT_PTR __cdecl CJabberProto::OnJoinChat(WPARAM hContact, LPARAM)
 		char *p = strchr(jid, '@');
 		if (p != nullptr) {
 			*p++ = 0;
-			GroupchatJoinRoom(p, jid, nick, password);
+			GroupchatJoinRoom(p, jid, MyNick(hContact), password);
 		}
 	}
 
@@ -210,7 +205,7 @@ INT_PTR __cdecl CJabberProto::OnJoinChat(WPARAM hContact, LPARAM)
 
 INT_PTR __cdecl CJabberProto::OnLeaveChat(WPARAM hContact, LPARAM)
 {
-	ptrA jid(getUStringA(hContact, "ChatRoomID"));
+	ptrA jid(ContactToJID(hContact));
 	if (jid != nullptr) {
 		if (getWord(hContact, "Status", 0) != ID_STATUS_OFFLINE) {
 			JABBER_LIST_ITEM *item = ListGetItemPtr(LIST_CHATROOM, jid);
@@ -483,10 +478,7 @@ public:
 			delete pInfo;
 		}
 
-		ptrA tszNick(m_proto->getUStringA("Nick"));
-		if (tszNick == nullptr)
-			tszNick = JabberNickFromJID(m_proto->m_szJabberJID);
-		SetDlgItemTextUtf(m_hwnd, IDC_NICK, tszNick);
+		SetDlgItemTextUtf(m_hwnd, IDC_NICK, m_proto->MyNick());
 
 		TEXTMETRIC tm = { 0 };
 		HDC hdc = GetDC(m_hwnd);
@@ -558,6 +550,7 @@ public:
 		m_proto->ComboAddRecentString(m_hwnd, IDC_SERVER, "joinWnd_rcSvr", text);
 
 		cmbRoom.GetText(text, _countof(text));
+		CharLowerW(text);
 		T2Utf room(text);
 
 		GetDlgItemText(m_hwnd, IDC_NICK, text, _countof(text));
@@ -631,12 +624,10 @@ public:
 		HMENU hMenu = CreatePopupMenu();
 
 		LISTFOREACH(i, m_proto, LIST_BOOKMARK)
-		{
-			JABBER_LIST_ITEM *item = nullptr;
-			if (item = m_proto->ListGetItemPtrFromIndex(i))
+			if (auto *item = m_proto->ListGetItemPtrFromIndex(i))
 				if (!mir_strcmp(item->type, "conference"))
 					AppendMenu(hMenu, MF_STRING, (UINT_PTR)item, item->name);
-		}
+
 		AppendMenu(hMenu, MF_SEPARATOR, 0, nullptr);
 		AppendMenu(hMenu, MF_STRING, (UINT_PTR)-1, TranslateT("Bookmarks..."));
 		AppendMenu(hMenu, MF_STRING, (UINT_PTR)0, TranslateT("Cancel"));
@@ -763,16 +754,14 @@ void CJabberProto::RenameParticipantNick(JABBER_LIST_ITEM *item, const char *old
 	if (!mir_strcmp(item->nick, oldNick)) {
 		replaceStr(item->nick, newNick);
 
-		MCONTACT hContact = HContactFromJID(item->jid);
-		if (hContact != 0)
-			setUString(hContact, "MyNick", newNick);
+		if (item->hContact)
+			setUString(item->hContact, "MyNick", newNick);
 	}
 
-	Chat_ChangeUserId(m_szModuleName, Utf2T(item->jid), Utf2T(oldNick), Utf2T(newNick));
+	Chat_ChangeUserId(item->si, Utf2T(oldNick), Utf2T(newNick));
 
-	GCEVENT gce = { m_szModuleName, item->jid, GC_EVENT_NICK };
+	GCEVENT gce = { item->si, GC_EVENT_NICK };
 	gce.dwFlags = GCEF_UTF8;
-	gce.pszID.a = item->jid;
 	gce.pszUserInfo.a = jid;
 	gce.time = time(0);
 	gce.pszNick.a = oldNick;
@@ -1001,7 +990,7 @@ void CJabberProto::GroupchatProcessMessage(const TiXmlElement *node)
 	if (!mir_strcmp(type, "error"))
 		return;
 
-	GCEVENT gce = { m_szModuleName, item->jid, 0 };
+	GCEVENT gce = {};
 	gce.dwFlags = GCEF_UTF8;
 
 	const char *resource = strchr(from, '/'), *msgText;
@@ -1056,7 +1045,7 @@ void CJabberProto::GroupchatProcessMessage(const TiXmlElement *node)
 		else gce.iType = GC_EVENT_MESSAGE;
 	}
 
-	GcInit(item);
+	gce.si = GcInit(item);
 
 	time_t msgTime = 0;
 	if (!JabberReadXep203delay(node, msgTime)) {
@@ -1095,7 +1084,7 @@ void CJabberProto::GroupchatProcessMessage(const TiXmlElement *node)
 	Chat_Event(&gce);
 
 	if (gce.iType == GC_EVENT_TOPIC)
-		Chat_SetStatusbarText(m_szModuleName, Utf2T(item->jid), Utf2T(szText));
+		Chat_SetStatusbarText(item->si, Utf2T(szText));
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -1123,7 +1112,7 @@ public:
 
 		SetDlgItemTextUtf(m_hwnd, IDC_FROM, m_from);
 		SetDlgItemTextUtf(m_hwnd, IDC_REASON, m_reason);
-		SetDlgItemTextUtf(m_hwnd, IDC_NICK, JabberNickFromJID(m_proto->m_szJabberJID));
+		SetDlgItemTextUtf(m_hwnd, IDC_NICK, m_proto->MyNick());
 
 		Window_SetIcon_IcoLib(m_hwnd, g_plugin.getIconHandle(IDI_GROUP));
 
@@ -1155,12 +1144,7 @@ void CJabberProto::GroupchatProcessInvite(const char *roomJid, const char *from,
 		return;
 
 	if (m_bAutoAcceptMUC) {
-		ptrA nick(getUStringA(HContactFromJID(m_szJabberJID), "MyNick"));
-		if (nick == nullptr)
-			nick = getUStringA("Nick");
-		if (nick == nullptr)
-			nick = JabberNickFromJID(m_szJabberJID);
-		AcceptGroupchatInvite(roomJid, nick, password);
+		AcceptGroupchatInvite(roomJid, MyNick(), password);
 	}
 	else CallFunctionAsync(sttShowDialog, new CGroupchatInviteAcceptDlg(this, roomJid, from, reason, password));
 }

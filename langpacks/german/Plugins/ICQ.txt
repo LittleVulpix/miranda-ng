@@ -2,7 +2,7 @@
 ;============================================================
 ;  File: ICQ.dll
 ;  Plugin: ICQ-WIM protocol
-;  Version: 0.96.1.9
+;  Version: 0.96.2.3
 ;  Authors: George Hazan
 ;============================================================
 [ICQ protocol support for Miranda NG.]
@@ -56,6 +56,8 @@ Nick:
 Mitglied seit:
 [Last seen:]
 Zuletzt gesehen:
+[Phone number:]
+Telefonnummer:
 [Enter ICQ Password]
 ICQ-Passwort eingeben
 [Enter a password:]
@@ -67,6 +69,15 @@ Dieses Sitzungspasswort merken
 Benutzer e&inladen
 [&Leave/destroy chat]
 Chat ver&lassen/zerstören
+;file \protocols\ICQ-WIM\src\groups.cpp
+[Name]
+Name
+[Rename]
+Umbenennen
+[Delete]
+Löschen
+[Enter new group name]
+Neuen Gruppennamen eingeben
 ;file \protocols\ICQ-WIM\src\main.cpp
 [E-mail]
 E-Mail
@@ -87,14 +98,8 @@ Sie haben %d ungelesene E-Mails
 ;file \protocols\ICQ-WIM\src\proto.cpp
 [Synchronize server groups]
 Servergruppen synchronisieren
-[Name]
-Name
-[Rename]
-Umbenennen
-[Delete]
-Löschen
-[Enter new group name]
-Neuen Gruppennamen eingeben
+[Edit my web profile]
+
 [UIN/e-mail/phone]
 UIN/E-Mail/Telefon
 ;file \protocols\ICQ-WIM\src\server.cpp

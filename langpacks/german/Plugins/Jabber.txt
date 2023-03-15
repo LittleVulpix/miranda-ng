@@ -689,6 +689,12 @@ Nicknamen in %s ändern
 [Reason to destroy %s]
 Grund der Zerstörung von %s
 ;file \protocols\JabberG\src\jabber_console.cpp
+[Filter mode]
+Filtermodus
+[Refresh list]
+Liste neu laden
+[Presences]
+Status
 [Can't send data while you are offline.]
 Kann keine Daten senden, so lange Sie offline sind.
 [Jabber Error]
@@ -1446,6 +1452,8 @@ Transportagenten in der Kontaktliste anzeigen
 Kontakt bei akzeptierter Autorisierung automatisch hinzufügen
 [Automatically accept authorization requests]
 Autorisierungsanfragen automatisch akzeptieren
+[Automatically download files passed via HTTP File Upload]
+
 [Fix incorrect timestamps in incoming messages]
 Falsche Zeitangaben in empfangenen Nachrichten korrigieren
 [Enable XMPP link processing (requires AssocMgr)]
@@ -1786,6 +1794,8 @@ Passwort für %s eingeben
 Fehler: Nicht genug Speicher
 [Error: Cannot connect to the server]
 Fehler: Verbindung zum Server fehlgeschlagen
+[SSL intialization failed]
+
 [Error: Connection lost]
 Fehler: Verbindung unterbrochen
 [Requesting registration instruction...]
@@ -1796,8 +1806,6 @@ Autorisierung fehlgeschlagen für %s@%s.
 Nachricht weitergeleitet von: %s\r\n
 [Unable to decrypt a carbon copy of the encrypted outgoing message]
 Konnte eine Durchschlagskopie der verschlüsselten ausgehenden Nachricht nicht entschlüsseln
-[Description]
-Übersicht
 [Registration canceled]
 Registrierung abgebrochen
 [Sending registration information...]
@@ -1928,10 +1936,8 @@ Kontakte
 [Note]
 Hinweis
 ;file \protocols\JabberG\src\jabber_voip.cpp
-[Accept call from %S?\r\nIt will disclose IP address to the peer and his server]
+[Client's program does not support voice calls]
 
-[Incoming call]
-Eingehender Anruf
 ;file \protocols\JabberG\src\jabber_xstatus.cpp
 [<advanced status slot>]
 <erweiterter Statusslot>

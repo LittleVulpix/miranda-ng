@@ -118,6 +118,18 @@ char* JabberNickFromJID(const char *jid)
 	return (p != nullptr) ? mir_strndup(jid, p - jid) : mir_strdup(jid);
 }
 
+CMStringA CJabberProto::MyNick(MCONTACT hContact)
+{
+	CMStringA sNick;
+	if (hContact)
+		sNick = getMStringU(hContact, "MyNick");
+	if (sNick.IsEmpty())
+		sNick = getMStringU("Nick");
+	if (sNick.IsEmpty())
+		sNick = ptrA(JabberNickFromJID(m_szJabberJID));
+	return sNick;
+}
+
 pResourceStatus CJabberProto::ResourceInfoFromJID(const char *jid)
 {
 	if (jid == nullptr)
@@ -328,7 +340,7 @@ void CJabberProto::SendVisibleInvisiblePresence(bool invisible)
 
 	LISTFOREACH(i, this, LIST_ROSTER)
 	{
-		JABBER_LIST_ITEM *item = ListGetItemPtrFromIndex(i);
+		auto *item = ListGetItemPtrFromIndex(i);
 		if (item == nullptr)
 			continue;
 
@@ -536,7 +548,7 @@ void CJabberProto::SendPresence(int status, bool bSendToAll)
 	if (bSendToAll) {
 		LISTFOREACH(i, this, LIST_CHATROOM)
 		{
-			JABBER_LIST_ITEM *item = ListGetItemPtrFromIndex(i);
+			auto *item = ListGetItemPtrFromIndex(i);
 			if (item != nullptr && item->nick != nullptr)
 				SendPresenceTo(status == ID_STATUS_INVISIBLE ? ID_STATUS_ONLINE : status, MakeJid(item->jid, item->nick));
 		}
@@ -570,8 +582,7 @@ char* CJabberProto::GetClientJID(MCONTACT hContact, char *dest, size_t destLen)
 	if (hContact == 0)
 		return nullptr;
 
-	ptrA jid(getUStringA(hContact, isChatRoom(hContact) ? "ChatRoomID" : "jid"));
-	return GetClientJID(jid, dest, destLen);
+	return GetClientJID(ptrA(ContactToJID(hContact)), dest, destLen);
 }
 
 char* CJabberProto::GetClientJID(const char *jid, char *dest, size_t destLen)

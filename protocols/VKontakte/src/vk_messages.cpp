@@ -26,8 +26,8 @@ int CVkProto::SendMsg(MCONTACT hContact, int, const char *szMsg)
 		return 0;
 
 	bool bIsChat = isChatRoom(hContact);
-	LONG iUserID = getDword(hContact, bIsChat ? "vk_chat_id" : "ID", VK_INVALID_USER);
 
+	LONG iUserID = getDword(hContact, "ID", VK_INVALID_USER);
 	if (iUserID == VK_INVALID_USER || iUserID == VK_FEED_USER) {
 		ProtoBroadcastAsync(hContact, ACKTYPE_MESSAGE, ACKRESULT_SUCCESS, 0);
 		return 0;
@@ -131,20 +131,12 @@ void CVkProto::OnSendMessage(NETLIBHTTPREQUEST *reply, AsyncHttpRequest *pReq)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-int CVkProto::OnDbEventRead(WPARAM, LPARAM hDbEvent)
+void CVkProto::OnMarkRead(MCONTACT hContact, MEVENT)
 {
 	debugLogA("CVkProto::OnDbEventRead");
-	MCONTACT hContact = db_event_getContact(hDbEvent);
-	if (!hContact)
-		return 0;
-
-	CMStringA szProto(Proto_GetBaseAccountName(hContact));
-	if (szProto.IsEmpty() || szProto != m_szModuleName)
-		return 0;
 
 	if (m_vkOptions.iMarkMessageReadOn == MarkMsgReadOn::markOnRead)
 		MarkMessagesRead(hContact);
-	return 0;
 }
 
 INT_PTR CVkProto::SvcMarkMessagesAsRead(WPARAM hContact, LPARAM)
@@ -164,11 +156,11 @@ void CVkProto::MarkMessagesRead(const MCONTACT hContact)
 		return;
 
 	LONG userID = getDword(hContact, "ID", VK_INVALID_USER);
-	if (userID == VK_INVALID_USER || userID == VK_FEED_USER)
+	if (userID == VK_INVALID_USER || userID == VK_FEED_USER || isChatRoom(hContact))
 		return;
 
 	Push(new AsyncHttpRequest(this, REQUEST_GET, "/method/messages.markAsRead.json", true, &CVkProto::OnReceiveSmth, AsyncHttpRequest::rpLow)
-		<< INT_PARAM("start_message_id", 0)
+		<< INT_PARAM("mark_conversation_as_read", 1)
 		<< INT_PARAM("peer_id", userID));
 }
 

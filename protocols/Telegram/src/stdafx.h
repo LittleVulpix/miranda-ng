@@ -1,6 +1,7 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+#include <malloc.h>
 #include <time.h>
 #include <windows.h>
 
@@ -14,15 +15,21 @@
 
 #include <m_avatars.h>
 #include <m_clist.h>
-#include <m_chat.h>
+#include <m_chat_int.h>
 #include <m_contacts.h>
 #include <m_database.h>
 #include <m_extraicons.h>
+#include <m_history.h>
 #include <m_icolib.h>
 #include <m_langpack.h>
+#include <m_message.h>
 #include <m_netlib.h>
 #include <m_options.h>
 #include <m_popup.h>
+#include <m_skin.h>
+#include <m_smileyadd.h>
+
+#include "../../libs/freeimage/src/FreeImage.h"
 
 #include "td/telegram/Client.h"
 #include "td/telegram/td_api.h"
@@ -33,10 +40,10 @@ namespace TD = td::td_api;
 
 #include "version.h"
 #include "resource.h"
-#include "mt_proto.h"
+#include "proto.h"
 #include "utils.h"
 
-struct CMPlugin : public ACCPROTOPLUGIN<CMTProto>
+struct CMPlugin : public ACCPROTOPLUGIN<CTelegramProto>
 {
 	CMPlugin();
 

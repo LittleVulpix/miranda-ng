@@ -1,3 +1,3 @@
 #pragma once
 
-CMStringA getMessageText(TD::MessageContent *pBody);
+const char *getName(const TD::usernames *pName);

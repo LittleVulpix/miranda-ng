@@ -34,9 +34,9 @@ void CSkypeProto::SetContactStatus(MCONTACT hContact, uint16_t status)
 
 void CSkypeProto::SetChatStatus(MCONTACT hContact, int iStatus)
 {
-	ptrW tszChatID(getWStringA(hContact, "ChatRoomID"));
+	ptrW tszChatID(getWStringA(hContact, SKYPE_SETTINGS_ID));
 	if (tszChatID != NULL)
-		Chat_Control(m_szModuleName, tszChatID, (iStatus == ID_STATUS_OFFLINE) ? SESSION_OFFLINE : SESSION_ONLINE);
+		Chat_Control(Chat_Find(tszChatID, m_szModuleName), (iStatus == ID_STATUS_OFFLINE) ? SESSION_OFFLINE : SESSION_ONLINE);
 }
 
 MCONTACT CSkypeProto::GetContactFromAuthEvent(MEVENT hEvent)
@@ -130,7 +130,7 @@ void CSkypeProto::LoadContactsAuth(NETLIBHTTPREQUEST *response, AsyncHttpRequest
 
 		DB::AUTH_BLOB blob(hContact, displayName.c_str(), nullptr, nullptr, skypeId.c_str(), reason.c_str());
 
-		PROTORECVEVENT pre = { 0 };
+		PROTORECVEVENT pre = {};
 		pre.timestamp = time(0);
 		pre.lParam = blob.size();
 		pre.szMessage = blob;
@@ -239,7 +239,7 @@ void CSkypeProto::OnContactDeleted(MCONTACT hContact)
 {
 	if (IsOnline() && hContact) {
 		if (isChatRoom(hContact))
-			PushRequest(new DestroyChatroomRequest(getMStringA(hContact, "ChatRoomID")));
+			PushRequest(new DestroyChatroomRequest(getMStringA(hContact, SKYPE_SETTINGS_ID)));
 		else
 			PushRequest(new DeleteContactRequest(getId(hContact)));
 	}

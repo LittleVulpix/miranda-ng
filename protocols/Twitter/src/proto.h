@@ -58,7 +58,7 @@ struct CChatMark
 
 class CTwitterProto : public PROTO<CTwitterProto>
 {
-	ptrA m_szChatId;
+	SESSION_INFO *m_si;
 
 	http::response request_token();
 	http::response request_access_tokens();
@@ -98,8 +98,6 @@ class CTwitterProto : public PROTO<CTwitterProto>
 
 	twitter_id since_id_;
 	twitter_id dm_since_id_;
-
-	bool in_chat_;
 
 	int disconnectionCount;
 
@@ -168,6 +166,9 @@ public:
 
 	HANDLE   GetAwayMsg(MCONTACT) override;
 
+	void     OnContactDeleted(MCONTACT) override;
+	MWindow  OnCreateAccMgrUI(MWindow) override;
+	void     OnMarkRead(MCONTACT, MEVENT) override;
 	void     OnModulesLoaded() override;
 
 	void UpdateSettings();
@@ -175,7 +176,6 @@ public:
 	//////////////////////////////////////////////////////////////////////////////////////
 	// Services
 
-	INT_PTR __cdecl SvcCreateAccMgrUI(WPARAM,LPARAM);
 	INT_PTR __cdecl ReplyToTweet(WPARAM,LPARAM);
 	INT_PTR __cdecl VisitHomepage(WPARAM,LPARAM);
 	INT_PTR __cdecl GetAvatar(WPARAM,LPARAM);
@@ -191,8 +191,6 @@ public:
 
 	int  __cdecl OnBuildStatusMenu(WPARAM, LPARAM);
 	int  __cdecl OnChatOutgoing(WPARAM, LPARAM);
-	int  __cdecl OnContactDeleted(WPARAM,LPARAM);
-	int  __cdecl OnMarkedRead(WPARAM, LPARAM);
 	int  __cdecl OnOptionsInit(WPARAM,LPARAM);
 	int  __cdecl OnPrebuildContactMenu(WPARAM,LPARAM);
 

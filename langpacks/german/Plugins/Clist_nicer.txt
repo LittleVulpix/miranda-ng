@@ -40,12 +40,6 @@ Zuletzt aktiven Kontaktfilter wiederherstellen
 Menü- und Statusbutton anzeigen
 [Draw sunken edge]
 Versenkte Darstellung benutzen
-[System tray icon]
-Systemtray-Icon
-[Disable icon blinking]
-Iconblinken deaktivieren
-[ms]
-ms
 [Event area]
 Ereignisbereich
 [Set base visibility on the frames menu]
@@ -268,8 +262,8 @@ Statusleiste
 Statusleiste anzeigen
 [Show icons]
 Icons anzeigen
-[Show protocol names]
-Protokollnamen anzeigen
+[Show account names]
+
 [Show status text]
 Statustext anzeigen
 [Right click opens status menu]

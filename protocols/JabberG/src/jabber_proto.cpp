@@ -86,6 +86,7 @@ CJabberProto::CJabberProto(const char *aProtoName, const wchar_t *aUserName) :
 	m_bAutoJoinBookmarks(this, "AutoJoinBookmarks", true),
 	m_bAutoJoinConferences(this, "AutoJoinConferences", false),
 	m_bAutoJoinHidden(this, "AutoJoinHidden", true),
+	m_bAutoLoadOOB(this, "AutoLoadOOB", true),
 	m_bAutosaveNotes(this, "AutosaveNotes", false),
 	m_bBsDirect(this, "BsDirect", true),
 	m_bBsDirectManual(this, "BsDirectManual", false),
@@ -147,8 +148,6 @@ CJabberProto::CJabberProto(const char *aProtoName, const wchar_t *aUserName) :
 	m_hEventXStatusIconChanged = CreateProtoEvent(JE_CUSTOMSTATUS_EXTRAICON_CHANGED);
 	m_hEventXStatusChanged = CreateProtoEvent(JE_CUSTOMSTATUS_CHANGED);
 
-	CreateProtoService(PS_CREATEACCMGRUI, &CJabberProto::SvcCreateAccMgrUI);
-
 	CreateProtoService(PS_GETAVATARINFO, &CJabberProto::JabberGetAvatarInfo);
 	CreateProtoService(PS_GETMYAWAYMSG, &CJabberProto::GetMyAwayMsg);
 	CreateProtoService(PS_SET_LISTENINGTO, &CJabberProto::OnSetListeningTo);
@@ -198,14 +197,11 @@ CJabberProto::CJabberProto(const char *aProtoName, const wchar_t *aUserName) :
 	HookProtoEvent(ME_LANGPACK_CHANGED, &CJabberProto::OnLangChanged);
 	HookProtoEvent(ME_OPT_INITIALISE, &CJabberProto::OnOptionsInit);
 	HookProtoEvent(ME_SKIN_ICONSCHANGED, &CJabberProto::OnReloadIcons);
-	HookProtoEvent(ME_DB_EVENT_MARKED_READ, &CJabberProto::OnDbMarkedRead);
 	HookProtoEvent(ME_DB_CONTACT_SETTINGCHANGED, &CJabberProto::OnDbSettingChanged);
 
 	m_iqManager.FillPermanentHandlers();
 	m_messageManager.FillPermanentHandlers();
 	m_adhocManager.FillDefaultNodes();
-
-	UpdateFeatHash();
 
 	IconsInit();
 
@@ -216,6 +212,9 @@ CJabberProto::CJabberProto(const char *aProtoName, const wchar_t *aUserName) :
 		db_set_resident(m_szModuleName, "OmemoSessionChecked");
 		OmemoInitDevice();
 	}
+
+	// avatars
+	CreateDirectoryTreeW(GetAvatarPath());
 
 	// network initialization
 	NETLIBUSER nlu = {};
@@ -248,17 +247,6 @@ CJabberProto::CJabberProto(const char *aProtoName, const wchar_t *aUserName) :
 		m_tszSelectedLang = mir_strdup("en");
 
 	g_plugin.addPopupOption(CMStringW(FORMAT, TranslateT("%s error notifications"), m_tszUserName), m_bUsePopups);
-
-	// Voip
-	if (m_bEnableVOIP) {
-		VOICE_MODULE vsr = {};
-		vsr.cbSize = sizeof(VOICE_MODULE);
-		vsr.description = L"XMPP/DTLS-SRTP";
-		vsr.name = m_szModuleName;
-		vsr.icon = g_plugin.getIconHandle(IDI_NOTES);
-		vsr.flags = 3;
-		CallService(MS_VOICESERVICE_REGISTER, (WPARAM)&vsr, 0);
-	}
 }
 
 CJabberProto::~CJabberProto()
@@ -276,15 +264,8 @@ CJabberProto::~CJabberProto()
 	DestroyHookableEvent(m_hVoiceEvent);
 
 	// Voice
-	VOIPTerminateSession();
-
-	VOICE_MODULE vsr = {};
-	vsr.cbSize = sizeof(VOICE_MODULE);
-	vsr.description = L"XMPP/DTLS-SRTP";
-	vsr.name = m_szModuleName;
-	vsr.icon = g_plugin.getIconHandle(IDI_NOTES);
-	vsr.flags = 3;
-	CallService(MS_VOICESERVICE_UNREGISTER, (WPARAM)&vsr, 0);
+	if (hasJingle())
+		InitVoip(false);
 
 	// Lists & strings
 	ListWipe();
@@ -321,6 +302,7 @@ void CJabberProto::OnModulesLoaded()
 
 	InitPopups();
 	GlobalMenuInit();
+	UpdateFeatHash();
 
 	StatusIconData sid = {};
 	sid.szModule = m_szModuleName;
@@ -345,6 +327,10 @@ void CJabberProto::OnModulesLoaded()
 	HookProtoEvent(ME_IDLE_CHANGED, &CJabberProto::OnIdleChanged);
 
 	CheckAllContactsAreTransported();
+
+	// Voip
+	if (hasJingle())
+		InitVoip(true);
 
 	// Set all contacts to offline
 	for (auto &hContact : AccContacts()) {
@@ -525,6 +511,9 @@ HANDLE CJabberProto::FileAllow(MCONTACT /*hContact*/, HANDLE hTransfer, const wc
 	switch (ft->type) {
 	case FT_OOB:
 		ForkThread((MyThreadFunc)&CJabberProto::FileReceiveThread, ft);
+		break;
+	case FT_HTTP:
+		ForkThread((MyThreadFunc)&CJabberProto::FileReceiveHttpThread, ft);
 		break;
 	case FT_BYTESTREAM:
 		FtAcceptSiRequest(ft);
@@ -1076,8 +1065,6 @@ int CJabberProto::SetStatus(int iNewStatus)
 		}
 		m_StrmMgmt.ResetState();
 		m_iDesiredStatus = ID_STATUS_OFFLINE;
-		//m_iStatus = m_iDesiredStatus = ID_STATUS_OFFLINE;
-		//ProtoBroadcastAck(0, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE)oldStatus, m_iStatus);
 	}
 	else if (!m_ThreadInfo && !IsStatusConnecting(m_iStatus)) {
 		m_iStatus = ID_STATUS_CONNECTING;

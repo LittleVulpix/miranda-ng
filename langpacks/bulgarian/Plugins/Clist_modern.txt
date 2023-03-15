@@ -116,8 +116,8 @@
 Частни настройки на акаунта
 [Hide account completely]
 Цялостно скриване на акаунта
-[Show protocol names]
-Показване името на протокола
+[Show account names]
+
 [Show status name]
 Името на състоянието
 [Show xStatus name]
@@ -144,23 +144,9 @@
 Отстъп отляво
 [Space on right]
 Отстъп отдясно
-[Delete contact]
-Изтриване на контакта
-[No]
-Не
-[Yes]
-Да
-[Hide from list only, in order to keep their history and ignore/visibility settings]
-Скриване (запазва историята и настройките за игнориране/видимост)
-[Use Options -> Contacts -> Ignore to unhide contacts.]
-Може да отмените скриването от "Настройки > Контакти > Игнориране".
-[Are you sure you want to delete %s?]
-Сигурни ли сте, че желаете контактът "%s" да бъде изтрит?
-[This will erase all history and settings for this contact!]
-Ще бъде изтрита изтрита историята и настройките за контакта!
 [Contact list sorting]
 Сортиране на списъка с контакти по:
-[Don't move offline user to bottom]
+[Move offline users to bottom]
 
 [1st:]
 1ви:
@@ -272,10 +258,6 @@ x100 ms
 Без вертикална лента за придвижване
 [Fade out entire list when:]
 Избледняване на списъка, когато:
-[Disable icon blinking]
-Без мигане на икони
-[ms, delay between icon blinking]
-ms между две мигания
 [System tray icon]
 Икона в трея
 [Use xStatus icon]
@@ -482,56 +464,6 @@ ms между две мигания
 Показване на трети ред
 [Draw smileys on third line]
 Показване на усмивки в третия ред
-[Preview]
-Образец
-[Top/Left]
-Горе вляво
-[Bottom/Right]
-Долу вдясно
-[Position (vertical)]
-Позиция (по вертикала)
-[Align]
-Подреждане
-[Options]
-Настройки
-[Visible]
-Видима
-[Show title]
-Показване на заглавие
-[Locked]
-Заключена
-[Border]
-Рамка
-[Floating]
-Плаващо
-[Frames order]
-Подреждане на рамките
-[UNDER CONSTRUCTION!!!           IT DOES NOT WORK]
-В РЕМОНТ!!!           НЕ РАБОТИ
-[Row template]
-
-[Add container]
-Добавяне на контейнер
-[Remove container]
-Премахване на контейнер
-[Vertical align:]
-Вертикално подреждане:
-[Horizontal align:]
-Хоризонтално подреждане:
-[Container type:]
-Тип контейнер:
-[Container width:]
-Ширина на контейнера:
-[Container height:]
-Височина на контейнера
-[Layered]
-
-[Move up]
-Местене нагоре
-[Move down]
-Местене надолу
-[OPTION PAGE IS UNDER CONSTRUCTION Please DO NOT notice about any issues here.\n Only high-level design comments are applicable.]
-Страницата с настройки е в процес на разработване!
 ;file \plugins\Clist_modern\src\cluiframes.cpp
 [&Visible]
 Видима
@@ -561,6 +493,10 @@ ms между две мигания
 Надолу
 [Lock frame]
 Заключване на рамката
+[Visible]
+Видима
+[Floating]
+Плаващо
 [Show all frames]
 Показване на всички рамки
 [Show all title bars]
@@ -788,6 +724,10 @@ Modern contact list
 [(Unknown contact)]
 (Непознат контакт)
 ;file \plugins\Clist_modern\src\modern_clui.cpp
+[Contract meta]
+
+[Expand meta]
+
 [Show avatar]
 Показване на аватара
 [Hide avatar]

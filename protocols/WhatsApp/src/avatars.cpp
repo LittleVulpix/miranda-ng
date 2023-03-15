@@ -46,7 +46,7 @@ INT_PTR WhatsAppProto::GetAvatarInfo(WPARAM wParam, LPARAM lParam)
 {
 	PROTO_AVATAR_INFORMATION *pai = (PROTO_AVATAR_INFORMATION*)lParam;
 
-	ptrA jid(getStringA(pai->hContact, isChatRoom(pai->hContact) ? "ChatRoomID" : DBKEY_ID));
+	ptrA jid(getStringA(pai->hContact, DBKEY_ID));
 	if (jid == NULL)
 		return GAIR_NOAVATAR;
 
@@ -90,11 +90,11 @@ INT_PTR WhatsAppProto::GetAvatarCaps(WPARAM wParam, LPARAM lParam)
 
 CMStringW WhatsAppProto::GetAvatarFileName(MCONTACT hContact)
 {
-	CMStringW result = m_tszAvatarFolder + L"\\";
+	CMStringW result = GetAvatarPath() + L"\\";
 
 	CMStringA jid;
 	if (hContact != NULL) {
-		ptrA szId(getStringA(hContact, isChatRoom(hContact) ? "ChatRoomID" : DBKEY_ID));
+		ptrA szId(getStringA(hContact, DBKEY_ID));
 		if (szId == NULL)
 			return L"";
 
@@ -107,7 +107,7 @@ CMStringW WhatsAppProto::GetAvatarFileName(MCONTACT hContact)
 
 INT_PTR WhatsAppProto::GetMyAvatar(WPARAM wParam, LPARAM lParam)
 {
-	std::wstring tszOwnAvatar(m_tszAvatarFolder + L"\\myavatar.jpg");
+	CMStringW tszOwnAvatar(GetAvatarPath() + L"\\myavatar.jpg");
 	wcsncpy_s((wchar_t*)wParam, lParam, tszOwnAvatar.c_str(), _TRUNCATE);
 	return 0;
 }

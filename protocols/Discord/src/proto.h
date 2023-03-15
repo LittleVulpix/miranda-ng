@@ -86,6 +86,7 @@ struct CDiscordUser : public MZeroedObject
 	bool      bSynced;
 
 	struct CDiscordGuild *pGuild;
+	SESSION_INFO *si;
 
 	CMStringW wszUsername, wszChannelName, wszTopic;
 	int       iDiscriminator;
@@ -330,7 +331,7 @@ class CDiscordProto : public PROTO<CDiscordProto>
 	void Chat_ProcessNickMenu(GCHOOK* gch);
 
 	void CreateChat(CDiscordGuild *pGuild, CDiscordUser *pUser);
-	void ProcessChatUser(CDiscordUser *pChat, const CMStringW &wszUserId, const JSONNode &pRoot);
+	void ProcessChatUser(CDiscordUser *pChat, SnowFlake userId, const JSONNode &pRoot);
 	void ParseSpecialChars(SESSION_INFO *si, CMStringW &str);
 
 	//////////////////////////////////////////////////////////////////////////////////////
@@ -352,7 +353,7 @@ public:
 	INT_PTR  GetCaps(int, MCONTACT = 0) override;
 
 	HWND     CreateExtendedSearchUI(HWND owner) override;
-	HWND     SearchAdvanced(HWND owner) override;
+	HANDLE   SearchAdvanced(HWND owner) override;
 
 	HANDLE   SearchBasic(const wchar_t *id) override;
 	MCONTACT AddToList(int flags, PROTOSEARCHRESULT *psr) override;
@@ -376,6 +377,8 @@ public:
 
 	void     OnBuildProtoMenu() override;
 	void     OnContactDeleted(MCONTACT) override;
+	MWindow  OnCreateAccMgrUI(MWindow) override;
+	void     OnMarkRead(MCONTACT, MEVENT) override;
 	void     OnModulesLoaded() override;
 	void     OnShutdown() override;
 
@@ -383,7 +386,6 @@ public:
 	// Services
 
 	INT_PTR __cdecl RequestFriendship(WPARAM, LPARAM);
-	INT_PTR __cdecl SvcCreateAccMgrUI(WPARAM, LPARAM);
 
 	INT_PTR __cdecl GetAvatarCaps(WPARAM, LPARAM);
 	INT_PTR __cdecl GetAvatarInfo(WPARAM, LPARAM);
@@ -397,7 +399,6 @@ public:
 
 	int  __cdecl OnOptionsInit(WPARAM, LPARAM);
 	int  __cdecl OnAccountChanged(WPARAM, LPARAM);
-	int  __cdecl OnDbEventRead(WPARAM, LPARAM);
 	
 	int  __cdecl OnVoiceState(WPARAM, LPARAM);
 

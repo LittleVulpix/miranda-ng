@@ -689,6 +689,12 @@ Zmień nick w %s
 [Reason to destroy %s]
 Powód zniszczenia pokoju %s
 ;file \protocols\JabberG\src\jabber_console.cpp
+[Filter mode]
+
+[Refresh list]
+Odśwież listę
+[Presences]
+
 [Can't send data while you are offline.]
 Nie można przesyłać danych, gdy jesteś rozłączony.
 [Jabber Error]
@@ -1446,6 +1452,8 @@ Pokazuj agenty transportów na liście kontaktów
 Automatycznie dodaj kontakt po autoryzacji
 [Automatically accept authorization requests]
 Automatycznie akceptuj prośby o autoryzację
+[Automatically download files passed via HTTP File Upload]
+
 [Fix incorrect timestamps in incoming messages]
 Naprawiaj błędne czasy przychodzących wiadomości
 [Enable XMPP link processing (requires AssocMgr)]
@@ -1786,6 +1794,8 @@ Wprowadź hasło dla %s
 Błąd: Brak pamięci
 [Error: Cannot connect to the server]
 Błąd: Nie można połączyć się z serwerem
+[SSL intialization failed]
+
 [Error: Connection lost]
 Błąd: Utracono połączenie
 [Requesting registration instruction...]
@@ -1796,8 +1806,6 @@ Autoryzacja nieudana dla %s@%s.
 Wiadomość przekierowana z: %s\r\n
 [Unable to decrypt a carbon copy of the encrypted outgoing message]
 Nie można odszyfrować kopii wiadomości do zaszyfrowanej wiadomości wychodzącej
-[Description]
-Opis
 [Registration canceled]
 Rejestracja anulowana
 [Sending registration information...]
@@ -1928,10 +1936,8 @@ Kontakty
 [Note]
 Uwagi
 ;file \protocols\JabberG\src\jabber_voip.cpp
-[Accept call from %S?\r\nIt will disclose IP address to the peer and his server]
+[Client's program does not support voice calls]
 
-[Incoming call]
-Połączenie przychodzące
 ;file \protocols\JabberG\src\jabber_xstatus.cpp
 [<advanced status slot>]
 <miejsce zaawansowanego statusu>

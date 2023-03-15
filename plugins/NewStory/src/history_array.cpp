@@ -51,18 +51,47 @@ void ItemData::checkCreate(HWND hwnd)
 	if (data == nullptr) {
 		data = MTextCreateW(htuLog, Proto_GetBaseAccountName(hContact), ptrW(TplFormatString(getTemplate(), hContact, this)));
 		MTextSetParent(data, hwnd);
+		MTextActivate(data, true);
 	}
 }
 
-bool ItemData::isLink(POINT pt) const
+bool ItemData::isLink(POINT pt, CMStringW &url) const
 {
 	int cp = MTextSendMessage(0, data, EM_CHARFROMPOS, 0, LPARAM(&pt));
 	if (cp == -1)
 		return false;
 	
-	CHARRANGE cr = { cp, cp + 1 };
-	MTextSendMessage(0, data, EM_EXSETSEL, 0, LPARAM(&cr));
-	
+	if (!isLinkChar(cp))
+		return false;
+
+	CHARRANGE sel = { cp, cp };
+	for (sel.cpMin = cp; sel.cpMin >= 0; sel.cpMin--)
+		if (!isLinkChar(sel.cpMin))
+			break;
+
+	for (sel.cpMax = cp + 1; isLinkChar(sel.cpMax); sel.cpMax++)
+		;
+
+	if (sel.cpMax > sel.cpMin) {
+		url.Truncate(sel.cpMax - sel.cpMin + 1);
+
+		TEXTRANGE tr = { 0 };
+		tr.chrg = sel;
+		tr.lpstrText = url.GetBuffer();
+		int iRes = MTextSendMessage(0, data, EM_GETTEXTRANGE, 0, (LPARAM)&tr);
+		if (iRes > 0)
+			url.Trim();
+		else
+			url.Empty();
+	}
+	return true;
+}
+
+bool ItemData::isLinkChar(int idx) const
+{
+	CHARRANGE sel = { idx, idx + 1 };
+	MTextSendMessage(0, data, EM_EXSETSEL, 0, LPARAM(&sel));
+
 	CHARFORMAT2 cf = {};
 	cf.cbSize = sizeof(cf);
 	cf.dwMask = CFM_LINK;
@@ -92,6 +121,28 @@ void ItemData::load(bool bFullLoad)
 
 		case EVENTTYPE_STATUSCHANGE:
 			wtext = mir_utf8decodeW((char *)dbe.pBlob);
+			break;
+
+		case EVENTTYPE_FILE:
+			wchar_t buf[MAX_PATH];
+			CallService(MS_FILE_GETRECEIVEDFILESFOLDERW, hContact, (LPARAM)buf);
+			{
+				CMStringW wszFileName(buf);
+				wszFileName.Append(ptrW(DbEvent_GetTextW(&dbe, CP_ACP)));
+
+				// if a filename contains spaces, URL will be broken
+				if (wszFileName.Find(' ') != -1) {
+					wchar_t wszShortPath[MAX_PATH];
+					if (GetShortPathNameW(wszFileName, wszShortPath, _countof(wszShortPath))) {
+						wszFileName = wszShortPath;
+						wszFileName.MakeLower();
+					}
+				}
+
+				wszFileName.Replace('\\', '/');
+				wszFileName.Insert(0, L"file://");
+				wtext = wszFileName.Detach();
+			}
 			break;
 
 		default:

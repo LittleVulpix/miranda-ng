@@ -119,11 +119,8 @@ class CUserInfoDlg : public CDlgBase
 		
 		for (auto &it : items.rev_iter()) {
 			it->pDialog->SetContact(hContact);
-			if (!it->pDialog->IsEmpty())
-				continue;
-
-			delete it;
-			items.remove(items.indexOf(&it));
+			if (it->pDialog->IsEmpty())
+				delete items.removeItem(&it);
 		}
 
 		if (items.getCount() == 0)

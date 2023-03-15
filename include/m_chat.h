@@ -147,7 +147,7 @@ struct GCREGISTER
 	int            iMaxText;       // Max message length the protocol supports. Will limit the typing area input. 0 = no limit
 };
 
-EXTERN_C MIR_APP_DLL(int) Chat_Register(const GCREGISTER*);
+MIR_APP_DLL(int) Chat_Register(const GCREGISTER*);
 
 /*
 	Step 2. -- CREATE a new SESSION --
@@ -166,8 +166,9 @@ EXTERN_C MIR_APP_DLL(int) Chat_Register(const GCREGISTER*);
                         // A hContact will be added for the session, but it will default to being hidden (on the CList)
 #define GCW_PRIVMESS 3  // NOT SUPPORTED YET! the session is a 1 to 1 session, but with additional
                         // support for adding more users etc. ex "MSN session".
+#define GCW_CHANNEL  4  // same as GCW_CHATROOM, but without user list/nick list
 
-EXTERN_C MIR_APP_DLL(struct SESSION_INFO*) Chat_NewSession(
+MIR_APP_DLL(struct SESSION_INFO*) Chat_NewSession(
 	int            iType,           // Use one of the GCW_* flags above to set the type of session
 	const char    *pszModule,       // The name of the protocol owning the session (the same as pszModule when you register)
 	const wchar_t *ptszID,          // The unique identifier for the session.
@@ -354,11 +355,17 @@ EXTERN_C MIR_APP_DLL(struct SESSION_INFO*) Chat_NewSession(
 #define GCEF_SILENT         0x0002   // never add to log
 #define GCEF_NOTNOTIFY      0x0004
 #define GCEF_UTF8           0x0008
+#define GCEF_BROADCAST      0x0010   // means that pszModule is used
+
+struct SESSION_INFO;
 
 struct GCEVENT
 {
-	LPCSTR       pszModule;        // Name of the protocol (same as you registered with)
-	MAllCStrings pszID;            // Unique identifier of the session, or NULL to broadcast to all sessions as specified above
+	union {
+		SESSION_INFO *si;           // session to deal with
+		const char *pszModule;      // module name to broadcast
+	};
+	
 	int          iType;            // Use GC_EVENT_* as defined above. Only one event per service call.
 			   
 	MAllCStrings pszText;          //
@@ -374,21 +381,23 @@ struct GCEVENT
 	uint32_t     time;             // Timestamp of the event
 };
 
-EXTERN_C MIR_APP_DLL(int) Chat_Event(GCEVENT*);
+MIR_APP_DLL(int) Chat_Event(GCEVENT*);
 
-EXTERN_C MIR_APP_DLL(void*) Chat_GetUserInfo(const char *szModule, const wchar_t *wszId);
-EXTERN_C MIR_APP_DLL(int) Chat_SetUserInfo(const char *szModule, const wchar_t *wszId, void *pItemData);
+MIR_APP_DLL(void*) Chat_GetUserInfo(SESSION_INFO *si);
+MIR_APP_DLL(int) Chat_SetUserInfo(SESSION_INFO *si, void *pItemData);
 
-EXTERN_C MIR_APP_DLL(int) Chat_AddGroup(SESSION_INFO *si, const wchar_t *wszText);
-EXTERN_C MIR_APP_DLL(int) Chat_ChangeSessionName(const char *szModule, const wchar_t *wszId, const wchar_t *wszNewName);
-EXTERN_C MIR_APP_DLL(int) Chat_ChangeUserId(const char *szModule, const wchar_t *wszId, const wchar_t *wszOldId, const wchar_t *wszNewId);
-EXTERN_C MIR_APP_DLL(int) Chat_SendUserMessage(const char *szModule, const wchar_t *wszId, const wchar_t *wszText);
-EXTERN_C MIR_APP_DLL(int) Chat_SetStatusbarText(const char *szModule, const wchar_t *wszId, const wchar_t *wszText);
+MIR_APP_DLL(int) Chat_AddGroup(SESSION_INFO *si, const wchar_t *wszText);
+MIR_APP_DLL(int) Chat_ChangeSessionName(SESSION_INFO *si, const wchar_t *wszNewName);
+MIR_APP_DLL(int) Chat_ChangeUserId(const char *szModule, const wchar_t *wszOldId, const wchar_t *wszNewId);
+MIR_APP_DLL(int) Chat_ChangeUserId(SESSION_INFO *si, const wchar_t *wszOldId, const wchar_t *wszNewId);
+MIR_APP_DLL(int) Chat_SendUserMessage(const char *szModule, const wchar_t *wszText);
+MIR_APP_DLL(int) Chat_SendUserMessage(SESSION_INFO *si, const wchar_t *wszText);
+MIR_APP_DLL(int) Chat_SetStatusbarText(SESSION_INFO *si, const wchar_t *wszText);
 
-EXTERN_C MIR_APP_DLL(wchar_t*) Chat_GetGroup(void);
-EXTERN_C MIR_APP_DLL(void) Chat_SetGroup(const wchar_t*);
+MIR_APP_DLL(wchar_t*) Chat_GetGroup(void);
+MIR_APP_DLL(void) Chat_SetGroup(const wchar_t*);
 
-EXTERN_C MIR_APP_DLL(wchar_t*) Chat_UnescapeTags(wchar_t *str_in);
+MIR_APP_DLL(wchar_t*) Chat_UnescapeTags(wchar_t *str_in);
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -397,8 +406,8 @@ EXTERN_C MIR_APP_DLL(wchar_t*) Chat_UnescapeTags(wchar_t *str_in);
 #define GC_SSE_TABDELIMITED   0x0004  // use tabs as delimiters
 #define GC_SSE_OFFLINE        0x0008  // displays a contact offline, otherwise away
 
-// if wszId == NULL, the status is applied to all windows of specified szModule
-EXTERN_C MIR_APP_DLL(int) Chat_SetStatusEx(const char *szModule, const wchar_t *wszId, int flags, const wchar_t *wszText);
+MIR_APP_DLL(int) Chat_SetStatusEx(const char *szModule, int flags, const wchar_t *wszText);
+MIR_APP_DLL(int) Chat_SetStatusEx(SESSION_INFO *si, int flags, const wchar_t *wszText);
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -411,23 +420,16 @@ EXTERN_C MIR_APP_DLL(int) Chat_SetStatusEx(const char *szModule, const wchar_t *
 #define WINDOW_HIDDEN			3   // close the room window. Session is not terminated.
 #define WINDOW_CLEARLOG			6   // clear the log of the room window
 
-// if wszId == NULL, this message is broadcasted to all windows of specified szModule
-EXTERN_C MIR_APP_DLL(int) Chat_Control(const char *szModule, const wchar_t *wszId, int command);
-EXTERN_C MIR_APP_DLL(int) Chat_Terminate(const char *szModule, const wchar_t *wszId, bool bRemoveContact = false);
+MIR_APP_DLL(int) Chat_Control(SESSION_INFO *si, int command);
+MIR_APP_DLL(int) Chat_Terminate(SESSION_INFO *si);
+
+// these functions broadcast a command to all windows of specified szModule
+MIR_APP_DLL(int) Chat_Control(const char *szModule, int command);
+MIR_APP_DLL(int) Chat_Terminate(const char *szModule);
 
 /////////////////////////////////////////////////////////////////////////////////////////
-// This hook is fired when MS_GC_EVENT is called, with the same wParam and lParam as above.
-// It allows external plugins to intercept chat events and display then in other ways
-
-#define ME_GC_HOOK_EVENT "GChat/HookEvent"
-
-/*
-	 -- GETTING info about a SESSION or session data --
-	Use this service to get information on different aspects of the sessions that are registered with Chat.
-
-	* Use MS_GC_GETINFO like this: CallService(MS_GC_GETINFO, 0, (LPARAM)(GC_INFO *) &gci;
-	* returns 0 on success or error code on failure
-*/
+// Use this function to get information on different aspects of the sessions that are registered with Chat.
+// returns 0 on success or error code on failure
 
 // Flags
 #define GCF_BYINDEX   0x0001   // iItem is valid and should contain the index of the session to get
@@ -440,10 +442,9 @@ EXTERN_C MIR_APP_DLL(int) Chat_Terminate(const char *szModule, const wchar_t *ws
 #define GCF_COUNT     0x0080   // iCount is valid
 #define GCF_USERS     0x0100   // pszUsers is valid
 
-// The GC_INFO structure
 struct GC_INFO
 {
-	uint32_t  Flags;        // use a combination of the above flags
+	uint32_t  Flags;        // use a combination of the GCF_* flags (look above)
 	int       iItem;        // session type (GCW_*)
 	int       iType;        // session type (GCW_*)
 	LPCSTR    pszModule;    // the module name as registered in MS_GC_REGISTER
@@ -456,9 +457,22 @@ struct GC_INFO
 	MCONTACT  hContact;     // hContact for the session (can be NULL)
 };
 
-EXTERN_C MIR_APP_DLL(int) Chat_GetInfo(GC_INFO*);
+MIR_APP_DLL(int) Chat_GetInfo(GC_INFO *pInfo);
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// Finds a session by its module & unique id
+// returns a pointer to session or NULL on error
+
+MIR_APP_DLL(SESSION_INFO*) Chat_Find(const wchar_t *pszID, const char *pszModule);
 
 //------------------------- HOOKS ------------------------
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// This hook is fired when MS_GC_EVENT is called, with the same wParam and lParam as above.
+// It allows external plugins to intercept chat events and display then in other ways
+
+#define ME_GC_HOOK_EVENT "GChat/HookEvent"
+
 /*
 	-- user interaction --
 	Hook this to receive notifications about when user take actions in a chat room window.
@@ -541,7 +555,7 @@ typedef struct {
 
 #define ME_GC_BUILDMENU  "GChat/BuildMenu"
 
-EXTERN_C MIR_APP_DLL(void) Chat_AddMenuItems(HMENU hMenu, int nItems, const gc_item *Item, HPLUGIN pPlugin);
+MIR_APP_DLL(void) Chat_AddMenuItems(HMENU hMenu, int nItems, const gc_item *Item, HPLUGIN pPlugin);
 
 //////////////////////////////////////////////////////////////////////////
 // Get Chat ToolTip Text for buddy

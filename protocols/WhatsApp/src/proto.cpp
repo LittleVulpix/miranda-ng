@@ -58,8 +58,6 @@ WhatsAppProto::WhatsAppProto(const char *proto_name, const wchar_t *username) :
 {
 	db_set_resident(m_szModuleName, "StatusMsg");
 
-	CreateProtoService(PS_CREATEACCMGRUI, &WhatsAppProto::SvcCreateAccMgrUI);
-
 	CreateProtoService(PS_GETAVATARINFO, &WhatsAppProto::GetAvatarInfo);
 	CreateProtoService(PS_GETAVATARCAPS, &WhatsAppProto::GetAvatarCaps);
 	CreateProtoService(PS_GETMYAVATAR, &WhatsAppProto::GetMyAvatar);
@@ -85,10 +83,7 @@ WhatsAppProto::WhatsAppProto(const char *proto_name, const wchar_t *username) :
 	CreateDirectoryTreeW(CMStringW(VARSW(L"%miranda_userdata%")) + L"\\" + _A2T(m_szModuleName));
 
 	// Avatars folder
-	m_tszAvatarFolder = CMStringW(VARSW(L"%miranda_avatarcache%")) + L"\\" + _A2T(m_szModuleName);
-	DWORD dwAttributes = GetFileAttributes(m_tszAvatarFolder.c_str());
-	if (dwAttributes == 0xffffffff || (dwAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
-		CreateDirectoryTreeW(m_tszAvatarFolder.c_str());
+	CreateDirectoryTreeW(GetAvatarPath());
 
 	// default contacts group
 	if (m_tszDefaultGroup == NULL)
@@ -156,10 +151,9 @@ void WhatsAppProto::OnModulesLoaded()
 		m_arUsers.insert(new WAUser(0, m_szJid, false));
 
 	for (auto &cc : AccContacts()) {
-		bool bIsChat = isChatRoom(cc);
-		CMStringA szId(getMStringA(cc, bIsChat ? "ChatRoomID" : DBKEY_ID));
+		CMStringA szId(getMStringA(cc, DBKEY_ID));
 		if (!szId.IsEmpty())
-			m_arUsers.insert(new WAUser(cc, szId, bIsChat));
+			m_arUsers.insert(new WAUser(cc, szId, isChatRoom(cc)));
 	}
 }
 

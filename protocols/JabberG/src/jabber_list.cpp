@@ -89,16 +89,9 @@ void JABBER_RESOURCE_STATUS::Release()
 void CJabberProto::ListInit(void)
 {
 	for (auto &hContact : AccContacts()) {
-		if (isChatRoom(hContact)) {
-			ptrA jid(getUStringA(hContact, "ChatRoomID"));
-			if (jid != nullptr)
-				ListAdd(LIST_CHATROOM, jid, hContact);
-		}
-		else {
-			ptrA jid(getUStringA(hContact, "jid"));
-			if (jid != nullptr)
-				ListAdd(LIST_ROSTER, jid, hContact);
-		}
+		ptrA jid(ContactToJID(hContact));
+		if (jid != nullptr)
+			ListAdd(isChatRoom(hContact) ? LIST_CHATROOM : LIST_ROSTER, jid, hContact);
 	}
 }
 
@@ -376,6 +369,16 @@ JABBER_RESOURCE_STATUS* JABBER_LIST_ITEM::getTemp()
 		m_pItemResource = new JABBER_RESOURCE_STATUS();
 
 	return m_pItemResource;
+}
+
+pResourceStatus CJabberProto::ListGetBestResource(const char *jid)
+{
+	mir_cslock lck(m_csLists);
+	JABBER_LIST_ITEM *LI = ListGetItemPtr(LIST_ROSTER, jid);
+	if (LI == nullptr)
+		return nullptr;
+
+	return pResourceStatus(LI->getBestResource());
 }
 
 char* CJabberProto::ListGetBestClientResourceNamePtr(const char *jid)

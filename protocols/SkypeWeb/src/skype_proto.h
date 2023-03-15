@@ -69,6 +69,8 @@ public:
 
 	void     OnBuildProtoMenu(void) override;
 	void     OnContactDeleted(MCONTACT) override;
+	MWindow  OnCreateAccMgrUI(MWindow) override;
+	void     OnMarkRead(MCONTACT, MEVENT) override;
 	void     OnModulesLoaded() override;
 	void     OnShutdown() override;
 
@@ -78,16 +80,12 @@ public:
 	// menus
 	static void InitMenus();
 
-	//popups
+	// popups
 	void InitPopups();
 	void UninitPopups();
 
 	// languages
 	static void InitLanguages();
-
-	// events
-	static int	OnModulesLoaded(WPARAM, LPARAM);
-	int __cdecl OnDbEventRead(WPARAM, LPARAM);
 
 	// search
 	void __cdecl SearchBasicThread(void* id);
@@ -160,8 +158,12 @@ public:
 	void OnGetChatInfo(NETLIBHTTPREQUEST *response, AsyncHttpRequest *pRequest);
 	void OnReceiveAwayMsg(NETLIBHTTPREQUEST *response, AsyncHttpRequest *pRequest);
 
+	void CheckConvert(void);
+
 	bool CheckOauth(const char *szResponse);
 	void LoadProfile(NETLIBHTTPREQUEST *response, AsyncHttpRequest *pRequest);
+
+	static INT_PTR __cdecl GlobalParseSkypeUriService(WPARAM, LPARAM lParam);
 
 private:
 	bool m_bHistorySynced;
@@ -186,10 +188,6 @@ private:
 	EventHandle m_hTrouterEvent;
 
 	EventHandle m_hTrouterHealthEvent;
-
-	INT_PTR __cdecl OnAccountManagerInit(WPARAM, LPARAM);
-
-	std::wstring m_tszAvatarFolder;
 
 	INT_PTR __cdecl SvcGetAvatarInfo(WPARAM, LPARAM);
 	INT_PTR __cdecl SvcGetAvatarCaps(WPARAM, LPARAM);
@@ -359,7 +357,6 @@ private:
 	INT_PTR __cdecl GetContactHistory(WPARAM hContact, LPARAM lParam);
 	INT_PTR __cdecl SvcCreateChat(WPARAM, LPARAM);
 	INT_PTR __cdecl ParseSkypeUriService(WPARAM, LPARAM lParam);
-	static INT_PTR __cdecl GlobalParseSkypeUriService(WPARAM, LPARAM lParam);
 
 	template<INT_PTR(__cdecl CSkypeProto::*Service)(WPARAM, LPARAM)>
 	static INT_PTR __cdecl GlobalService(WPARAM wParam, LPARAM lParam)

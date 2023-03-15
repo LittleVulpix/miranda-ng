@@ -67,13 +67,16 @@ static int SRMMStatusToPf2(int status)
 
 static int MessageEventAdded(WPARAM hContact, LPARAM lParam)
 {
+	if (hContact == 0 || Contact::IsGroupChat(hContact))
+		return 0;
+
 	DBEVENTINFO dbei = {};
-	db_event_get(lParam, &dbei);
+	if (db_event_get(lParam, &dbei))
+		return 0;
 
 	if (dbei.flags & (DBEF_SENT | DBEF_READ) || !(dbei.eventType == EVENTTYPE_MESSAGE || DbEventIsForMsgWindow(&dbei)))
 		return 0;
 
-	g_clistApi.pfnRemoveEvent(hContact, 1);
 	/* does a window for the contact exist? */
 	HWND hwnd = Srmm_FindWindow(hContact);
 	if (hwnd) {
@@ -224,9 +227,9 @@ static int MessageSettingChanged(WPARAM hContact, LPARAM lParam)
 }
 
 // If a contact gets deleted, close its message window if there is any
-static int ContactDeleted(WPARAM wParam, LPARAM)
+static int ContactDeleted(WPARAM hContact, LPARAM)
 {
-	auto *pDlg = Srmm_FindDialog(wParam);
+	auto *pDlg = Srmm_FindDialog(hContact);
 	if (pDlg)
 		pDlg->CloseTab();
 

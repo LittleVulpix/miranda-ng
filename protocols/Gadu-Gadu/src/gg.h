@@ -104,7 +104,7 @@ struct GGGC
 {
 	uin_t *recipients;
 	int recipients_count;
-	wchar_t id[32];
+	SESSION_INFO *si;
 	BOOL ignore;
 };
 
@@ -199,7 +199,16 @@ struct GGGETAVATARDATA
 #define GG_KEYDEF_IMGMETHOD		1
 
 // newline separated list of hosts for server connection
-#define GG_KEYDEF_SERVERHOSTS	L"91.214.237.7\r\n91.214.237.8\r\n91.214.237.9\r\n91.214.237.10\r\n91.214.237.11\r\n91.214.237.12\r\n91.214.237.13\r\n91.214.237.14\r\n91.214.237.15\r\n91.214.237.16\r\n91.214.237.17"
+#define GG_KEYDEF_SERVERHOSTS	\
+	L"ggproxy-secure-10.gadu-gadu.pl\r\n" \
+	L"ggproxy-secure-11.gadu-gadu.pl\r\n" \
+	L"ggproxy-secure-12.gadu-gadu.pl\r\n" \
+	L"ggproxy-secure-13.gadu-gadu.pl\r\n" \
+	L"ggproxy-secure-14.gadu-gadu.pl\r\n" \
+	L"ggproxy-secure-15.gadu-gadu.pl\r\n" \
+	L"ggproxy-secure-16.gadu-gadu.pl\r\n" \
+	L"ggproxy-secure-17.gadu-gadu.pl\r\n" \
+	L"ggproxy-secure-18.gadu-gadu.pl" 
 
 #define GG_KEY_CLIENTIP 		"IP"			// Contact IP (by notify)
 #define GG_KEY_CLIENTPORT		"ClientPort"	// Contact port

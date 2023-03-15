@@ -8,7 +8,7 @@ Last-Modified-Using: Miranda NG 0.96.1
 ;============================================================
 ;  File: miranda32/64.exe
 ;  Module: Miranda Core
-;  Version: 0.96.2
+;  Version: 0.96.3
 ;============================================================
 [Become idle if the following is left unattended:]
 Перайсці ў рэжым чакання, калі неактыўныя:
@@ -70,16 +70,16 @@ Last-Modified-Using: Miranda NG 0.96.1
 Выдаліць %s са спісу?
 [This will erase all history and settings for this contact!]
 Гэта выдаліць усю гісторыю і налады для дадзенага кантакту!
+[Contact list sorting]
+Сартаванне спісу кантактаў
 [Sort contacts by name]
 Сартаванне па імені
 [Sort contacts by status]
 Сартаванне па статусе
 [Sort contacts by protocol]
 Сартаванне па конту
-[Disable icon blinking]
-Выключыць мігценне
-[ms delay]
-Затрымка (мс)
+[Move offline users to bottom]
+Перасоўваць адключаных уніз
 [Show]
 Паказаць
 [icon when statuses differ]
@@ -92,14 +92,8 @@ Last-Modified-Using: Miranda NG 0.96.1
 Некалькі абразкоў
 [Only when statuses differ]
 Пры розных статусах
-[System tray icon]
-Абразок у трэі
 [System tray icon when using multiple protocols]
 Абразкі пратаколаў у сістэмным лапку
-[Contact list sorting]
-Сартаванне спісу кантактаў
-[Don't move offline user to bottom]
-Не перасоўваць адключаных уніз
 [Window]
 Вакно
 [Always on top]
@@ -224,8 +218,6 @@ Last-Modified-Using: Miranda NG 0.96.1
 Паказваць панэль статусу
 [Show icons]
 Паказваць абразкі
-[Show protocol names]
-Паказваць пратаколы
 [Show status text]
 Паказваць тэкст статусу
 [Right click opens status menu]
@@ -966,8 +958,6 @@ Cлужба:
 Паслядоўнасць адлюстравання контаў.\nПерацягвайце для змены:
 [Account order and visibility]
 Паслядоўнасць контаў
-[Note: Miranda NG will have to be restarted for changes to take effect.]
-Нататка: Змены запрацуюць пасля перазапуску праграмы.
 [Key bindings]
 Гарачыя клавішы
 [Shortcut:]
@@ -1114,10 +1104,14 @@ UIN, E-mail і г.д.
 Уключыць гурты
 [Ask before deleting contacts]
 Пацверджанне выдалення
+[Enable icon blinking]
+Уключыць мігценне
 ['Hide offline' means to hide:]
 'Схаваць адключаных' - схаваць:
 [Tray]
 Трэй
+[ms delay]
+Затрымка (мс)
 [Single click interface]
 Адна пстрычка
 [Always show status in tooltip]
@@ -2574,6 +2568,8 @@ ANSI плагін
 Мянушка
 [Unique ID]
 Асабісты конт
+[Copy all]
+Капіяваць усё
 [Look up '%s':]
 Шукаць '%s':
 [No word to look up]
@@ -4445,7 +4441,7 @@ Miranda NG аўтаматычна зачынецца праз %u секунд(ы
 ;============================================================
 ;  File: AVS.dll
 ;  Plugin: Avatar service
-;  Version: 0.98.1.4
+;  Version: 0.98.1.6
 ;  Authors: Nightwish, Pescuma
 ;============================================================
 [Loads and manages contact pictures for other plugins.]
@@ -4520,6 +4516,14 @@ Miranda NG аўтаматычна зачынецца праз %u секунд(ы
 Розныя аватары пратаколаў
 [Protocols have different avatars]
 Ва ўсіх пратаколаў розныя аватары
+[Contact has no avatar]
+У кантакту няма аватара
+[Set avatar options for %s]
+Налады аватара для %s
+[Delete picture file from disk (may be necessary to force a reload, but will delete local pictures)?]
+Выдаліць аватар з дыска (магчыма, неабходна для скіду, але выдаліць лакальны малюнак)?
+[Reset contact picture]
+Скід аватара кантакту
 [Avatars]
 Аватары
 [My Avatars]
@@ -4532,14 +4536,6 @@ Miranda NG аўтаматычна зачынецца праз %u секунд(ы
 Аватар для ўсіх контаў %s
 [Global avatar]
 Глабальны аватар
-[Set avatar options for %s]
-Налады аватара для %s
-[Delete picture file from disk (may be necessary to force a reload, but will delete local pictures)?]
-Выдаліць аватар з дыска (магчыма, неабходна для скіду, але выдаліць лакальны малюнак)?
-[Reset contact picture]
-Скід аватара кантакту
-[Contact has no avatar]
-У кантакту няма аватара
 [Contacts]
 Кантакты
 [Protocols]
@@ -5771,8 +5767,6 @@ Pounce адпраўлены %s за %d секунд
 Паказваць панэль статусу
 [Show icons]
 Паказваць абразкі
-[Show protocol names]
-Паказваць пратаколы
 [Show status text]
 Паказваць тэкст статусу
 [Right click opens status menu]
@@ -5916,8 +5910,6 @@ Ctrl + Левы клік укл. фільтр па пратаколу, клік 
 Наладзіць конт
 [Hide account completely]
 Схаваць конт
-[Show protocol names]
-Паказваць пратаколы
 [Show status name]
 Імя Статуса
 [Show xStatus name]
@@ -5944,24 +5936,10 @@ Ctrl + Левы клік укл. фільтр па пратаколу, клік 
 Водступ злева
 [Space on right]
 Водступ справа
-[Delete contact]
-Выдаліць кантакт
-[No]
-Не
-[Yes]
-Так
-[Hide from list only, in order to keep their history and ignore/visibility settings]
-Схаваць са спісу (захаваецца гісторыя і налады бачнасці)
-[Use Options -> Contacts -> Ignore to unhide contacts.]
-"Налады -> Кантакты -> Ігнараваць", каб адлюстраваць кантакты.
-[Are you sure you want to delete %s?]
-Выдаліць %s са спісу?
-[This will erase all history and settings for this contact!]
-Гэта выдаліць усю гісторыю і налады для дадзенага кантакту!
 [Contact list sorting]
 Сартаванне спісу кантактаў
-[Don't move offline user to bottom]
-Не перасоўваць адключаных уніз
+[Move offline users to bottom]
+Перасоўваць адключаных уніз
 [1st:]
 1-шы:
 [2nd:]
@@ -6072,10 +6050,6 @@ Ctrl + Левы клік укл. фільтр па пратаколу, клік 
 Схаваць паласу прагорткі
 [Fade out entire list when:]
 Прыцьміць увесь ліст калі:
-[Disable icon blinking]
-Выключыць мігценне
-[ms, delay between icon blinking]
-мс, паміж мігценнямі значка
 [System tray icon]
 Абразок у трэі
 [Use xStatus icon]
@@ -6266,56 +6240,6 @@ Ctrl + Левы клік укл. фільтр па пратаколу, клік 
 Паказваць трэці радок
 [Draw smileys on third line]
 Смайлікі на трэцяй сцёку
-[Preview]
-Прагляд
-[Top/Left]
-Вышэй/Лявей
-[Bottom/Right]
-Ніжэй/Правей
-[Position (vertical)]
-Палажэнне (вертыкальна)
-[Align]
-Выраўняць
-[Options]
-Налады
-[Visible]
-Мабыць
-[Show title]
-Загаловак
-[Locked]
-Заблакавана
-[Border]
-Рамка
-[Floating]
-Плывучае
-[Frames order]
-Рамка фрэймаў
-[UNDER CONSTRUCTION!!!           IT DOES NOT WORK]
-У РАСПРАЦОЎЦЫ!!!                      ГЭТА НЕ ПРАЦУЕ
-[Row template]
-Радок шаблона
-[Add container]
-Дадаць кантэйнер
-[Remove container]
-Выдаліць кантэйнер
-[Vertical align:]
-Раўняць па вертыкалі:
-[Horizontal align:]
-Раўняць по гарызанталі:
-[Container type:]
-Тып кантэйнера:
-[Container width:]
-Шырыня кантэйнера:
-[Container height:]
-Вышыня кантэйнера:
-[Layered]
-Слаіста
-[Move up]
-Вышэй
-[Move down]
-Ніжэй
-[OPTION PAGE IS UNDER CONSTRUCTION Please DO NOT notice about any issues here.\n Only high-level design comments are applicable.]
-Гэта старонка ў распрацоўцы.
 [&Visible]
 &Бачнасць
 [&Show title]
@@ -6344,6 +6268,10 @@ Ctrl + Левы клік укл. фільтр па пратаколу, клік 
 У&ніз
 [Lock frame]
 Замацаваць фрэйм
+[Visible]
+Мабыць
+[Floating]
+Плывучае
 [Show all frames]
 Паказаць усе
 [Show all title bars]
@@ -6743,12 +6671,6 @@ Angeli-Ka (графіка), FYR (шаблон)
 Паказваць кнопкі меню і статусу
 [Draw sunken edge]
 Патоплены край
-[System tray icon]
-Абразок у трэі
-[Disable icon blinking]
-Выключыць мігценне
-[ms]
-мс
 [Event area]
 Вобласць падзей
 [Set base visibility on the frames menu]
@@ -6971,8 +6893,6 @@ Angeli-Ka (графіка), FYR (шаблон)
 Паказваць панэль статусу
 [Show icons]
 Паказваць абразкі
-[Show protocol names]
-Паказваць пратаколы
 [Show status text]
 Паказваць тэкст статусу
 [Right click opens status menu]
@@ -8281,7 +8201,7 @@ GnuPG плагін - Абярыце адкрыты ключ:
 ;============================================================
 ;  File: DbEditorPP.dll
 ;  Plugin: Database editor++
-;  Version: 4.1.0.2
+;  Version: 4.1.0.3
 ;  Authors: Bio, Jonathan Gordon
 ;============================================================
 [Advanced Database Editor.]
@@ -8590,7 +8510,7 @@ INI файлы
 ;============================================================
 ;  File: Dbx_sqlite.dll
 ;  Plugin: Miranda NG SQLite database driver
-;  Version: 0.96.1.2
+;  Version: 0.96.2.4
 ;  Authors: Miranda-NG project
 ;============================================================
 [Provides Miranda database support: global settings, contacts, history, settings per contact.]
@@ -9682,8 +9602,6 @@ SFTP (Абаронены FTP праз SSH)
 у іншых выпадках
 [Advanced Configuration]
 Дадатковая налада
-[Keep connection alive]
-Падтрымліваць злучэнне
 [Show connection errors]
 Паказваць памылкі злучэння
 [Automatically reconnect after unintentional disconnection]
@@ -9694,8 +9612,6 @@ SFTP (Абаронены FTP праз SSH)
 Паказаць серверы ўручную
 [* new line is separator\n** hostname:port format]
 * перавод радка падзельнік\n** хост:порт
-[Use SSL secure connection]
-Бяспечнае далучэнне (SSL)
 [File Transfer]
 Перадача файла
 [Use direct connections]
@@ -9784,8 +9700,6 @@ SFTP (Абаронены FTP праз SSH)
 Інфармацыя пра актыўныя адначасовыя сесіі
 [Sign out all sessions]
 Выйсці з усіх сесій
-[Cannot create avatars cache directory. ERROR: %d: %s\n%s]
-Не атрымалася стварыць кэш для аватараў. ПАМЫЛКА: %d: %s\n%s
 [Cannot create avatar file. ERROR: %d: %s\n%s]
 Не атрымалася стварыць файл аватара. ПАМЫЛКА: %d: %s\n%s
 [Cannot open avatar file. ERROR: %d: %s\n%s]
@@ -9836,28 +9750,6 @@ Miranda не можа распазнаць імя сервера Gadu-Gadu па 
 Вы ўвайшлі з іншага месца
 [Incoming image]
 Уваходнае паведамленне
-[<Last Status>]
-<Апошні статус>
-[System tray icon]
-Абразок у трэі
-[Popup window]
-Усплывальнае вакно
-[Message with [img] BBCode]
-Паведамленне з [img] BB-кодам
-[You need to specify your registration e-mail first.]
-Неабходна азначыць ваш e-mail.
-[Your password will be sent to your registration e-mail.\nDo you want to continue?]
-Ваш пароль будзе высланы на рэгістрацыйны e-mail.\nПрацягнуць?
-[You should disconnect before making any permanent changes with your account.\nDo you want to disconnect now?]
-Вы павінны адключыцца перад зменай параметраў карыстача.\nВырабіць адключэнне?
-[Network]
-Сеціва
-[General]
-Агульнае
-[Conference]
-Чат
-[Advanced]
-Дадаткова
 [Cannot create transfer file. ERROR: %d: %s (dcc)\n%s]
 Немагчыма стварыць файл для перадачы. ПАМЫЛКА: %d: %s (dcc)\n%s
 [Cannot create transfer file. ERROR: %d: %s (dcc7)\n%s]
@@ -9878,6 +9770,8 @@ HTTP невядомая памылка
 Разблакаваць
 [&Block]
 Блакаваць
+[Conference]
+Чат
 [Contact list]
 Спіс кантактаў
 [Images]
@@ -9994,12 +9888,32 @@ HTTP невядомая памылка
 Выбар конта Gadu-Gadu
 [Gadu-Gadu Link Protocol]
 Спасылка Gadu-Gadu
+[<Last Status>]
+<Апошні статус>
+[System tray icon]
+Абразок у трэі
+[Popup window]
+Усплывальнае вакно
+[Message with [img] BBCode]
+Паведамленне з [img] BB-кодам
+[You need to specify your registration e-mail first.]
+Неабходна азначыць ваш e-mail.
+[Your password will be sent to your registration e-mail.\nDo you want to continue?]
+Ваш пароль будзе высланы на рэгістрацыйны e-mail.\nПрацягнуць?
+[You should disconnect before making any permanent changes with your account.\nDo you want to disconnect now?]
+Вы павінны адключыцца перад зменай параметраў карыстача.\nВырабіць адключэнне?
 [Allow]
 Дазволіць
 [Ask]
 Спытаць
 [Ignore]
 Ігнараваць
+[Network]
+Сеціва
+[General]
+Агульнае
+[Advanced]
+Дадаткова
 [Password could not be reminded because of error:\n\t%s (Error: %d)]
 Пароль немагчыма нагадаць з-за памылкі:\n\t%s (Памылка: %d)
 [Password was sent to your e-mail.]
@@ -11812,7 +11726,7 @@ HTTP Новы агульны файл
 ;============================================================
 ;  File: ICQ.dll
 ;  Plugin: ICQ-WIM protocol
-;  Version: 0.96.1.9
+;  Version: 0.96.2.3
 ;  Authors: George Hazan
 ;============================================================
 [ICQ protocol support for Miranda NG.]
@@ -11839,6 +11753,8 @@ HTTP Новы агульны файл
 Мянушка:
 [Last seen:]
 Апошняе з'яўленне:
+[Phone number:]
+Тэлефон:
 [Enter ICQ Password]
 Увядзіце пароль ICQ
 [Enter a password:]
@@ -11847,6 +11763,12 @@ HTTP Новы агульны файл
 Запомніць пароль сеансу
 [&Invite a user]
 Запрасіць кантакт
+[Name]
+Імя
+[Rename]
+Пераназваць
+[Delete]
+Выдаліць
 [E-mail]
 Пошта
 [Network]
@@ -11855,12 +11777,6 @@ HTTP Новы агульны файл
 Агульнае
 [Advanced]
 Дадаткова
-[Name]
-Імя
-[Rename]
-Пераназваць
-[Delete]
-Выдаліць
 [admin]
 адмін
 [member]
@@ -12583,12 +12499,6 @@ CTCP %s адказ ад %s: %s
 Затрымка праверкі сяброў усталяваны па змаўчанні
 [The time interval for the buddy check function is now %u seconds]
 Інтэрвал праверкі сяброў роўны %u секунд(ам)
-[This command is not recommended on a network of this size!\r\nIt will probably cause high CPU usage and/or high bandwidth\r\nusage for around %u to %u minute(s).\r\n\r\nDo you want to continue?]
-Гэта каманда не рэкамендавана для сеткі такога памеру!\r\nГэта можа заняць рэсурсы сістэмы прыкладна ад %u да %u хвілін.\r\n Жадаеце працягнуць?
-[IRC warning]
-Заўвага IRC
-[Aborted]
-Скасавана
 [CTCP %s request sent to %s]
 CTCP %s запыт пасланы для %s
 [DCC ERROR: Unable to automatically resolve external IP]
@@ -12937,6 +12847,8 @@ Nickserv забіць фантому
 Усталяваць тэму для канала
 [You have not applied all changes!\n\nApply before exiting?]
 Вы не ўжылі змены!\n\n Ужыць перад выйсцем?
+[IRC warning]
+Заўвага IRC
 [Add ban]
 Дадаць бан
 [Add invite]
@@ -13580,6 +13492,8 @@ xHTML фармат чат-паведамленняў
 Змяніць мянушку ў %s
 [Reason to destroy %s]
 Чыннік знішчэння %s
+[Refresh list]
+Абнавіць спіс
 [Can't send data while you are offline.]
 Немагчыма адаслаць - не ў сеціве.
 [Jabber Error]
@@ -14528,8 +14442,6 @@ XML (кадзіроўка UTF-8)
 Памылка: Злучэнне страчана
 [Requesting registration instruction...]
 Запыт рэгістрацыйнай інструкцыі...
-[Description]
-Апісанне
 [Sending registration information...]
 Дасылка рэгістрацыйнай інфармацыі...
 [<not specified>]
@@ -14974,6 +14886,13 @@ Jabber vCard: рэдагаванне тэлефона
 Настроі
 [Activities]
 Заняткі
+#muuid {D3E24A92-E2C3-440F-bc87-002Ab822abf8}
+;============================================================
+;  File: Jingle
+;  Plugin: Jingle
+;  Version: 0.0.0.1
+;  Authors: George Hazan
+;============================================================
 #muuid {119d7288-2050-448d-9900-d86ac70426bf}
 ;============================================================
 ;  File: KeyboardNotify.dll
@@ -16723,7 +16642,7 @@ Miranda NG (Плагін экспарту паведамленняў)
 ;============================================================
 ;  File: MyDetails.dll
 ;  Plugin: My details
-;  Version: 0.1.0.1
+;  Version: 0.1.0.2
 ;  Authors: Ricardo Pescuma Domenecci, Drugwash
 ;============================================================
 [Shows and allows you to edit your details for all accounts.]
@@ -17179,7 +17098,7 @@ NewAwaySys: Уваходны запыт статуснага паведамле�
 ;============================================================
 ;  File: NewEventNotify.dll
 ;  Plugin: NewEventNotify
-;  Version: 0.2.2.5
+;  Version: 0.2.2.7
 ;  Authors: icebreaker, Prezes, vj, vlko, Joe @ Whale
 ;============================================================
 [Notifies you when you receive a message, URL, file or any other event by displaying a popup.]
@@ -17188,14 +17107,6 @@ NewAwaySys: Уваходны запыт статуснага паведамле�
 Ліміт прадпрагляду
 [characters]
 знакаў
-[Popup options]
-Налады ўсплывальных вокнаў
-[Text]
-Тэкст
-[Background]
-Фон
-[Timeout, secs]
-Час затрымкі, сек
 [Message]
 Паведамленне
 [File]
@@ -17204,6 +17115,16 @@ NewAwaySys: Уваходны запыт статуснага паведамле�
 Памылкі
 [Others]
 Іншае
+[Text]
+Тэкст
+[Background]
+Фон
+[Use default colors]
+Колеры па змаўчанні
+[Use Windows colors]
+Колеры Windows
+[Timeout, secs]
+Час затрымкі, сек
 [Preview]
 Паргляд
 [Don't show popup when message dialog is already open]
@@ -17254,8 +17175,6 @@ NewAwaySys: Уваходны запыт статуснага паведамле�
 Па заканчэнні часу
 [No popups for RSS contacts]
 Выключыць для RSS навін
-[No popups for read messages]
-Не паказваць для прачытаных паведамленняў
 [Event Notify]
 Падзеі
 [Popups]
@@ -17447,7 +17366,7 @@ ID навіны.
 ;============================================================
 ;  File: NewStory.dll
 ;  Plugin: NewStory
-;  Version: 0.1.0.2
+;  Version: 0.1.0.3
 ;  Authors: nullbie
 ;============================================================
 [History viewer for Miranda NG.]
@@ -18871,17 +18790,6 @@ Omegle гэта новы спосаб сяброўства!
 Адчыніць тэчку
 [Main]
 Галоўны
-#muuid {b649702c-13de-408a-b6c2-fb8fed2a2c90}
-;============================================================
-;  File: OpenSSL.dll
-;  Plugin: OpenSSL SSL API module
-;  Version: 0.1.0.2
-;  Authors: Miranda NG team
-;============================================================
-[Client cannot decode host message. Possible causes: host does not support SSL or requires not existing security package]
-Кліент не можа дэкадаваць паведамлення хаста. Магчымыя прычыны: вузел не падтрымлівае SSL ці патрабуе неіснуючы пакет бяспекі
-[Host we are connecting to is not the one certificate was issued for]
-Выдадзены сертыфікат не адпавядае хасту далчэння
 #muuid {29517be5-779a-48e5-8950-cb4de1d43172}
 ;============================================================
 ;  File: PackUpdater.dll
@@ -19335,7 +19243,7 @@ TCP злучэнне
 ;============================================================
 ;  File: PluginUpdater.dll
 ;  Plugin: Plugin updater
-;  Version: 0.2.1.3
+;  Version: 0.2.1.4
 ;  Authors: Mataes, George Hazan
 ;============================================================
 [Updates found!]
@@ -22434,23 +22342,11 @@ URI аб'ект
 ;============================================================
 ;  File: SmileyAdd.dll
 ;  Plugin: SmileyAdd
-;  Version: 0.3.2.1
+;  Version: 0.3.2.2
 ;  Authors: Peacow, nightwish, bid, borkra
 ;============================================================
 [Smiley support for Miranda NG.]
 Падтрымка смайлаў у Miranda NG.
-[Smiley categories]
-Катэгорыі смайлаў
-[Specify smiley pack for each category]
-Катэгорыі з унікальнымі наборамі смайлаў
-[Name:]
-Імя:
-[Author:]
-Аўтар:
-[Version:]
-Версія:
-[Preview]
-Прагляд
 [Display]
 Паказваць
 [Replace only smileys surrounded by spaces]
@@ -22477,6 +22373,16 @@ URI аб'ект
 Памер усіх смайлаў як у першага
 [IEView style window]
 Акно ў стылі IEView
+[Specify smiley pack for each category]
+Катэгорыі з унікальнымі наборамі смайлаў
+[Name:]
+Імя:
+[Author:]
+Аўтар:
+[Version:]
+Версія:
+[Preview]
+Прагляд
 [Show smiley selection window]
 Акно выбару эмоцый
 [SmileyAdd]
@@ -22499,6 +22405,10 @@ URI аб'ект
 Смайлы
 [Customize]
 Тонкая налада
+[General]
+Агульнае
+[Categories]
+Катэгорыі
 [Protocol specific]
 У адпаведнасці з пратаколам
 [There were problems loading smiley pack (it should be corrected).\nSee network log for details.]
@@ -23545,7 +23455,7 @@ StopSpam: адпраўце паведамленне і адкажыце на п�
 ;============================================================
 ;  File: TabSRMM.dll
 ;  Plugin: TabSRMM
-;  Version: 3.6.2.5
+;  Version: 3.6.2.6
 ;  Authors: The Miranda developers team and contributors
 ;============================================================
 [IM and group chat module for Miranda NG.]
@@ -23668,8 +23578,6 @@ StopSpam: адпраўце паведамленне і адкажыце на п�
 пунктаў
 [More about advanced tweaks]
 Падрабязней пра дадатковыя налады
-[Revert to (safe) defaults]
-Налады па змаўчанні
 [Dialog]
 Гутарка
 [Cancel]
@@ -24062,8 +23970,6 @@ RTL па змаўчанні
 &Капіяваць
 [&Quote]
 &Цытаваць
-[Co&py all]
-Капіяваць усё
 [Select &all]
 Вылучыць &усё
 [Clear log]
@@ -24088,8 +23994,6 @@ RTL па змаўчанні
 Уставіць фарматаваны тэкст
 [Paste and send immediately]
 Уставіць і адправіць
-[Copy all]
-Капіяваць усё
 [Select all]
 Вылучыць усё
 [Show message length indicator]
@@ -24436,8 +24340,6 @@ RTL па змаўчанні
 Фон журнала чата
 [Appearance and functionality of chat room windows]
 Выгляд і функцыянальнасць вокнаў чата
-[Appearance of the message log]
-Вонкавы выгляд лога паведамленняў
 [Open new chat rooms in the default container]
 Адкрываць чаты і гутаркі ў адным вакне
 [Flash window when someone speaks]
@@ -24454,8 +24356,6 @@ RTL па змаўчанні
 Паказаць тэму чата ў спісе кантактаў як паведамленне статусу
 [Do not pop up the window when joining a chat room]
 Не адчыняць вакно чата пры ўваходзе ў чат
-[Sync splitter position with standard IM sessions]
-Сінхранізаваць пазіцыю падзельніка са стандартам
 [Show contact's status modes if supported by the protocol]
 Паказваць значкі статусаў, калі падтрымліваецца пратаколам
 [Display contact's status icon before user role icon]
@@ -24464,6 +24364,8 @@ RTL па змаўчанні
 IRC-стыль (тэкставы) індыкатараў роляў удзельнікаў у спісе
 [Use alternative sorting method in member list]
 Альтэрнатыўнае сартаванне мянушак у спісе
+[Appearance of the message log]
+Вонкавы выгляд лога паведамленняў
 [Prefix all events with a timestamp]
 Падстаўляць час ва ўсе падзеі
 [Only prefix with timestamp if it has changed]
@@ -24812,6 +24714,8 @@ TabSRMM: Набірае
 Файл ужо існуе. Перазахаваць?
 [JPEG-compressed images]
 Файлы jpeg
+[Copy all]
+Капіяваць усё
 [Save and close session]
 Захаваць набранае і зачыніць вакно
 [, %d %s, %d %s idle]
@@ -24926,16 +24830,16 @@ UID: %s (Shift+клік -> капіяваць у буфер)\nКлік - Інф�
 Загрузіць тэму
 [Message window behavior]
 Паводзіны вакна паведамленняў
+[Always flash contact list and tray icon for new messages]
+Заўсёды міргаць значком у трэі і спісе кантактаў пры новым паведамленні
+[Delete temporary contacts on close]
+Выдаляць часовыя кантакты пры зачыненні
 [Sending messages]
 Адпраўка паведамленняў
 [Minimize the message window on send]
 Згортваць вакно пасля адпраўкі
 [Close the message window on send]
 Зачыняць вакно пасля адпраўкі
-[Always flash contact list and tray icon for new messages]
-Заўсёды міргаць значком у трэі і спісе кантактаў пры новым паведамленні
-[Delete temporary contacts on close]
-Выдаляць часовыя кантакты пры зачыненні
 [Enable "Paste and send" feature]
 Уключыць функцыю "ўставіць і адправіць"
 [Allow BBCode formatting in outgoing messages]
@@ -24954,24 +24858,10 @@ UID: %s (Shift+клік -> капіяваць у буфер)\nКлік - Інф�
 Шаблоны скінуты. Калі ласка, зачыніце і адкрыйце зноў усе вокны паведамленняў. Гэта вакно зараз будзе зачынена.
 [Message log appearance]
 Вонкавы выгляд лога
-[Support for external plugins]
-Падтрымка вонкавых плагінаў
-[Timestamp settings (note: timestamps also depend on your templates)]
-Адлюстраванне часу (таксама залежыць ад вашых шаблонаў)
-[Message log icons]
-Значкі лога паведамленняў
-[Show dates in timestamps]
-Паказваць дату
-[Show seconds in timestamps]
-Паказваць секунды
-[Use contacts local time (if timezone info available)]
-Лакальны час кантакту (калі даступны гадзінны пояс)
 [Draw grid lines]
 Маляваць лініі сеткі
 [Log status changes]
 Запісваць змены статусаў
-[Use incoming/outgoing icons]
-Выкарыстоўваць значкі ўваходнага/выходнага паведамлення
 [Use message grouping]
 Гуртаваць паведамленні
 [Simple text formatting (*bold*, etc.)]
@@ -24982,14 +24872,28 @@ UID: %s (Shift+клік -> капіяваць у буфер)\nКлік - Інф�
 Ставіць падзельнік у логе пасля таго, як вакно губляе фокус
 [Only place a separator when an incoming event is announced with a popup]
 Ставіць падзельнік толькі пры падзеі, які суправаджаецца успл. вакном
+[Use normal templates (uncheck to use simple templates if your template set supports them)]
+Звычайныя шаблоны (адключыце для простых шаблонаў, калі ваш шаблон гэта падтрымлівае)
+[Support for external plugins]
+Падтрымка вонкавых плагінаў
 [Show events at the new line (IEView Compatibility Mode)]
 Паказваць падзеі ў новым радку (Рэжым сумяшчальнасці з IEView)
 [Underline timestamp/nickname (IEView Compatibility Mode)]
 Падкрэсліваць час/мянушку (Рэжым сумяшчальнасці з IEView)
 [Show timestamp after nickname (IEView Compatibility Mode)]
 Паказваць час пасля мянушкі (Рэжым сумяшчальнасці з IEView)
-[Use normal templates (uncheck to use simple templates if your template set supports them)]
-Звычайныя шаблоны (адключыце для простых шаблонаў, калі ваш шаблон гэта падтрымлівае)
+[Timestamp settings (note: timestamps also depend on your templates)]
+Адлюстраванне часу (таксама залежыць ад вашых шаблонаў)
+[Show dates in timestamps]
+Паказваць дату
+[Show seconds in timestamps]
+Паказваць секунды
+[Use contacts local time (if timezone info available)]
+Лакальны час кантакту (калі даступны гадзінны пояс)
+[Message log icons]
+Значкі лога паведамленняў
+[Use incoming/outgoing icons]
+Выкарыстоўваць значкі ўваходнага/выходнага паведамлення
 [** New contacts **]
 ** Новыя кантакты **
 [** Unknown contacts **]
@@ -25000,14 +24904,14 @@ UID: %s (Shift+клік -> капіяваць у буфер)\nКлік - Інф�
 Заўсёды, але не паказваць калі вакно ў фокусе
 [Only when no message window is open]
 Толькі калі не адкрыта вакно паведамленняў
-[How to create tabs and windows for incoming messages]
-Налады стварэння ўкладак і вокнаў для ўваходных паведамленняў
 [Show status text on tabs]
 Паказваць тэкст статусу ва ўкладцы
 [Prefer xStatus icons when available]
 Паказваць абразок xСтатуса, калі даступна (замест статусу)
 [Detailed tooltip on tabs (requires Tipper plugin)]
 Паказваць падказку на ўкладках (патрабуецца плагін Tipper)
+[How to create tabs and windows for incoming messages]
+Налады стварэння ўкладак і вокнаў для ўваходных паведамленняў
 [ALWAYS activate new message sessions (has PRIORITY over the options below)]
 Заўсёды ствараць укладку пры новым паведамленні (мае прыярытэт над наступнымі опцыямі)
 [Automatically create new message sessions without activating them]
@@ -25032,16 +24936,16 @@ UID: %s (Shift+клік -> капіяваць у буфер)\nКлік - Інф�
 Зачыніць ці схаваць вакно, залежыць ад налады кнопкі зачынення
 [Message window tweaks]
 Налады вакна паведамленняў
-[Error feedback]
-Памылкі дастаўкі паведамленняў
 [Close current tab on send]
 Зачыняць укладку пры адпраўцы
 [Enable unattended send (experimental feature, required for multisend and send later)]
 Уключыць аўтаматычную адпраўку (эксперыментальная опцыя, неабходна для мультыадпраўкі і адпраўкі з затрымкай)
 [Show client description in info panel]
 Паказваць у інфо-панэлі кліент кантакту
-[Disable error popups on sending failures]
-Адключыць усплывальныя вокны пра няўдалую дастаўку
+[Error feedback]
+Памылкі дастаўкі паведамленняў
+[Enable error popups on sending failures]
+Уключыць усплывальныя вокны пра няўдалую дастаўку
 [Choose status modes]
 Выбар рэжымаў статусу
 [General]
@@ -25236,6 +25140,8 @@ UID: %s (Shift+клік -> капіяваць у буфер)\nКлік - Інф�
 Налады гутарак для %s
 [TabSRMM message (%s)]
 TabSRMM: %s
+[TabSRMM warning message]
+Заўвага TabSRMM
 [Edit user notes|You are editing the user notes. Click the button again or use the hotkey (default: Alt+N) to save the notes and return to normal messaging mode]
 Рэдагаванне нататак пра карыстача|Вы рэдагуеце нататкі пра кантакт. Націсніце на кнопку яшчэ раз ці скарыстайце гарачыя клавішы (па змаўчанні: Alt+N), каб захаваць нататкі і вярнуцца ў нармальны рэжым паведамленняў
 [Missing component|The icon pack is missing. Please install it to the default icons folder.\n\nNo icons will be available]
@@ -25254,8 +25160,41 @@ TabSRMM: %s
 Зачыненне налад|Каб паказаць змены, злучаныя з імпартам схемы, у вакне налад, яно павінна быць зачынена пасля загрузкі схемы \\b1 і незахаваныя змены могуць быць страчаны\\b0 .\n\nВы жадаеце працягнуць?
 [Loading a theme|Loading a color and font theme can overwrite the settings defined by your skin.\n\nDo you want to continue?]
 Загрузка схемы|Загрузка колераў і шрыфтоў можа змяніць налады, усталяваныя Вашым скінам.\n\nВы жадаеце працягнуць?
-[TabSRMM warning message]
-Заўвага TabSRMM
+#muuid {ae708252-0df8-42ba-9ef9-9acc038eeda7}
+;============================================================
+;  File: Telegram.dll
+;  Plugin: Telegram protocol
+;  Version: 0.11.0.1
+;  Authors: Miranda NG team
+;============================================================
+[Telegram protocol support for Miranda NG.]
+Падтрымка пратакола Telegram.
+[Country:]
+Краіна:
+[Phone number:]
+Тэлефон:
+[Default group:]
+Гурт:
+[Enter password]
+Увядзіце пароль
+[Error]
+Памылка
+[Admin]
+Адмін
+[Participant]
+Удзельнік
+[Visitor]
+Наведвальнік
+[Network]
+Сеціва
+[Account]
+Конт
+[Advanced]
+Дадаткова
+[none]
+няма
+[Errors]
+Памылкі
 #muuid {8392df1d-9090-4f8e-9df6-2fe058edd800}
 ;============================================================
 ;  File: Tipper.dll
@@ -25964,8 +25903,8 @@ xСтатус: пустое імя ў імя па змаўчанні
 ;============================================================
 [Preview]
 Прагляд
-[Enabled]
-Уключаны
+[Enable popups]
+Уключыць усплывальныя вокны
 [Information]
 Інфармацыя
 [Warning]
@@ -26381,7 +26320,7 @@ xСтатус: пустое імя ў імя па змаўчанні
 ;============================================================
 ;  File: Twitter.dll
 ;  Plugin: Twitter protocol
-;  Version: 1.3.1.6
+;  Version: 1.3.1.7
 ;  Authors: dentist, omniwolf, Thief
 ;============================================================
 [Twitter protocol support for Miranda NG.]
@@ -27985,7 +27924,7 @@ x, і захоўвае y, як зменную з імем x
 ;============================================================
 ;  File: VKontakte.dll
 ;  Plugin: VKontakte protocol
-;  Version: 0.1.14.0
+;  Version: 0.1.14.2
 ;  Authors: Miranda NG team
 ;============================================================
 [VKontakte protocol support for Miranda NG.]
@@ -28194,7 +28133,7 @@ x, і захоўвае y, як зменную з імем x
 ;============================================================
 ;  File: VoiceService.dll
 ;  Plugin: Voice Service
-;  Version: 0.1.3.0
+;  Version: 0.1.3.1
 ;  Authors: Ricardo Pescuma Domenecci
 ;============================================================
 [Enable popups]
@@ -28229,16 +28168,18 @@ x, і захоўвае y, як зменную з імем x
 Фрэйм
 [Audio]
 Аўдыё
+[Voice call]
+Званок
 [M]
 м
-[Voice Calls]
-Званкі
 [Main]
 Галоўны
 [Talking]
 Размаўляю
-[Background]
-Фон
+[Ready]
+Выканана
+[Voice Calls]
+Званкі
 [Do nothing]
 Нічога не рабіць
 [Close popup]
@@ -28249,10 +28190,12 @@ x, і захоўвае y, як зменную з імем x
 Тэставае апісанне
 [Popups]
 Усплывальныя вокны
-[General]
-Агульнае
-[Voice call]
-Званок
+[Resume]
+Працягнуць
+[Close]
+Зачыніць
+[Cancel]
+Скасаваць
 #muuid {fc6c81f4-837e-4430-9601-a0aa43177ae3}
 ;============================================================
 ;  File: Watrack.dll
@@ -31159,11 +31102,46 @@ T-навальніцы, 30% верагоднасць ападкаў
 Абярыце сайт у Знайсці...
 [Popup plugin]
 Успл. вокны
+#muuid {008b9ce1-154b-44e4-9823-97c1aab00c3c}
+;============================================================
+;  File: WhatsApp.dll
+;  Plugin: WhatsApp protocol
+;  Version: 0.0.1.1
+;  Authors: George Hazan
+;============================================================
+[WhatsApp protocol support for Miranda NG.]
+Падтрымка пратакола WhatsApp.
+[Nick:]
+Мянушка:
+[Default group:]
+Гурт:
+[Use BBCode]
+Выкарыстоўваць BBCode
+[&Invite]
+Запрасіць
+[Cancel]
+Скасаваць
+[Owner]
+Уладальнік
+[Admin]
+Адмін
+[Participant]
+Удзельнік
+[Network]
+Сеціва
+[Account]
+Конт
+[%s (server)]
+%s (сервер)
+[Error]
+Памылка
+[Errors]
+Памылкі
 #muuid {2ff96c84-b0b5-470e-bbf9-907b9f3f5d2f}
 ;============================================================
 ;  File: WhenWasIt.dll
 ;  Plugin: Birthday reminder
-;  Version: 0.4.0.1
+;  Version: 0.4.0.2
 ;  Authors: Cristian Libotean
 ;============================================================
 [Notifies you of upcoming birthdays.]
@@ -31246,8 +31224,6 @@ T-навальніцы, 30% верагоднасць ападкаў
 Плагін пратаколу
 [Birthday list (%d)]
 Спіс дзён нараджэння (%d)
-[Unknown]
-Невядома
 [Protocol]
 Пратакол
 [Contact]
@@ -31260,6 +31236,10 @@ T-навальніцы, 30% верагоднасць ападкаў
 Узрост
 [Module]
 Плагін
+[Closing in %d seconds]
+Закрыецца праз %d секунд...
+[Closing in %d second]
+Зачыненне праз %d секунд
 [Check for birthdays]
 Праверыць дні нараджэння
 [WhenWasIt]
@@ -31312,10 +31292,6 @@ T-навальніцы, 30% верагоднасць ападкаў
 %s\n%s будзе %d .
 [%s\n%s just turned %d.]
 %s\n%s споўнілася %d
-[Closing in %d seconds]
-Закрыецца праз %d секунд...
-[Closing in %d second]
-Зачыненне праз %d секунд
 [Upcoming age]
 Будучы ўзрост
 [Current age]
@@ -31344,22 +31320,6 @@ T-навальніцы, 30% верагоднасць ападкаў
 Пачатак абнаўлення інфармацыі пра кантакты
 [Done refreshing user details]
 Абнаўленне інфармацыі пра кантакты завершана
-[Birthdays files]
-Файлы дзён нараджэнняў
-[Please select a file to import birthdays from...]
-Абярыце файл для імпарту дзён нараджэння
-[Importing birthdays from file: %s]
-Ідзе імпарт у файл %s
-[Done importing birthdays]
-Імпарт завершаны
-[All Files]
-Усе файлы
-[Please select a file to export birthdays to...]
-Абярыце файл для экспарту дзён нараджэння
-[Exporting birthdays to file: %s]
-Ідзе экспарт у файл %s
-[Done exporting birthdays]
-Экспарт завершаны
 [Could not open file to import birthdays]
 Не атрымалася адкрыць файл імпарту дзён нараджэння
 [Error]
@@ -31368,10 +31328,26 @@ T-навальніцы, 30% верагоднасць ападкаў
 Не знайшоўся UID '%s [%S]' у бягучай базе дадзеных, пропуск
 [Warning]
 Увага
+[Birthdays files]
+Файлы дзён нараджэнняў
+[Please select a file to import birthdays from...]
+Абярыце файл для імпарту дзён нараджэння
+[Importing birthdays from file: %s]
+Ідзе імпарт у файл %s
+[Done importing birthdays]
+Імпарт завершаны
 [Could not open file to export birthdays]
 Не атрымалася адкрыць файл каб экспартаваць дні нараджэння
 [Please do not edit this file by hand. Use the export function of WhenWasIt plugin.\n]
 Не трэба рэдагаваць гэты файл ўручную. Карыстайцеся функцыяй экспарту плагіна WhenWasIt.\n
+[All Files]
+Усе файлы
+[Please select a file to export birthdays to...]
+Абярыце файл для экспарту дзён нараджэння
+[Exporting birthdays to file: %s]
+Ідзе экспарт у файл %s
+[Done exporting birthdays]
+Экспарт завершаны
 [Birthdays (When Was It)]
 Дні нараджэння
 [Add/change user &birthday]
@@ -31714,10 +31690,6 @@ WUMF: Паказаць падлучэнні
 Асноўныя налады
 [TopToolBar button "Check mail"]
 Кнопка "Праверыць пошту" ў Панэлі кнопак
-[Enable YAMN Main Menu]
-Пункт YAMN ў галоўным меню
-[Show YAMN as a Protocol (Require Restart)]
-Паказваць YAMN як пратакол (патрэбен перазапуск)
 [MailBrowser Options]
 Налады прагляду лістоў
 [Enable Close on Delete Button]

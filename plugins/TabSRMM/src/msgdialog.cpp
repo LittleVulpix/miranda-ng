@@ -572,15 +572,14 @@ bool CMsgDialog::OnInitDialog()
 		UpdateTitle();
 		m_hTabIcon = m_hTabStatusIcon;
 
-		UpdateNickList();
+		if (!m_SendFormat)
+			ShowMultipleControls(m_hwnd, formatControls, _countof(formatControls), SW_HIDE);
 
-		if (m_si->pMI->bDatabase) {
-			FindFirstEvent();
-			RemakeLog();
-		}
+		UpdateNickList();
+		UpdateChatLog();
 	}
 	else {
-		FindFirstEvent();
+		GetFirstEvent();
 
 		DM_OptionsApplied();
 
@@ -1039,7 +1038,6 @@ void CMsgDialog::onDblClick_List(CCtrlListBox *pList)
 		CMStringW tszName(ui->pszNick);
 		if (selStart == 0 && mir_wstrlen(g_Settings.pwszAutoText))
 			tszName.Append(g_Settings.pwszAutoText);
-		tszName.AppendChar(' ');
 
 		m_message.SendMsg(EM_REPLACESEL, FALSE, (LPARAM)tszName.GetString());
 		PostMessage(m_hwnd, WM_MOUSEACTIVATE, 0, 0);
@@ -2489,13 +2487,6 @@ INT_PTR CMsgDialog::DlgProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 		else if (m_hContact == wParam && db_mc_isSub(wParam) && db_event_getContact(lParam) != wParam)
 			StreamEvents(lParam, 1, 1);
-		return 0;
-
-	case HM_DBEVENTADDED:
-		// this is called whenever a new event has been added to the database.
-		// this CAN be posted (some sanity checks required).
-		if (this)
-			DM_EventAdded(m_hContact, lParam);
 		return 0;
 
 	case WM_TIMER:

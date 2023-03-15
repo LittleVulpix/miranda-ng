@@ -98,7 +98,7 @@ MIR_CORE_DLL(MCONTACT) db_add_contact(void)
 	return hNew;
 }
 
-MIR_CORE_DLL(int) db_delete_contact(MCONTACT hContact)
+MIR_CORE_DLL(int) db_delete_contact(MCONTACT hContact, bool bFromProto)
 {
 	ptrW wszPhoto(db_get_wsa(hContact, "ContactPhoto", "File"));
 	if (wszPhoto != nullptr) {
@@ -108,6 +108,10 @@ MIR_CORE_DLL(int) db_delete_contact(MCONTACT hContact)
          remove(T2Utf(wszPhoto));
       #endif
    }
+
+	if (!bFromProto)
+		if (auto *ppro = Proto_GetInstance(hContact))
+			ppro->OnContactDeleted(hContact);
 
 	Netlib_Logf(nullptr, "Contact deleted: %d", hContact);
 	return (g_pCurrDb) ? g_pCurrDb->DeleteContact(hContact) : 0;
@@ -245,6 +249,18 @@ MIR_CORE_DLL(CMStringA) db_get_sm(MCONTACT hContact, LPCSTR szModule, LPCSTR szS
 		return (szValue == nullptr) ? CMStringA() : CMStringA(szValue);
 
 	DBVARIANT dbv = { DBVT_ASCIIZ };
+	if (g_pCurrDb->GetContactSettingStr(hContact, szModule, szSetting, &dbv))
+		return (szValue == nullptr) ? CMStringA() : CMStringA(szValue);
+
+	return CMStringA(ptrA(dbv.pszVal).get());
+}
+
+MIR_CORE_DLL(CMStringA) db_get_usm(MCONTACT hContact, LPCSTR szModule, LPCSTR szSetting, const char *szValue)
+{
+	if (g_pCurrDb == nullptr)
+		return (szValue == nullptr) ? CMStringA() : CMStringA(szValue);
+
+	DBVARIANT dbv = { DBVT_UTF8 };
 	if (g_pCurrDb->GetContactSettingStr(hContact, szModule, szSetting, &dbv))
 		return (szValue == nullptr) ? CMStringA() : CMStringA(szValue);
 
@@ -396,9 +412,18 @@ MIR_CORE_DLL(int) db_event_count(MCONTACT hContact)
 	return (g_pCurrDb == nullptr) ? 0 : g_pCurrDb->GetEventCount(hContact);
 }
 
-MIR_CORE_DLL(int) db_event_delete(MEVENT hDbEvent)
+MIR_CORE_DLL(int) db_event_delete(MEVENT hDbEvent, bool bFromServer)
 {
-	return (g_pCurrDb == nullptr) ? 0 : g_pCurrDb->DeleteEvent(hDbEvent);
+	if (g_pCurrDb == nullptr)
+		return 0;
+	
+	if (!bFromServer) {
+		MCONTACT hContact = g_pCurrDb->GetEventContact(hDbEvent);
+		if (auto *ppro = Proto_GetInstance(hContact))
+			ppro->OnEventDeleted(hContact, hDbEvent);
+	}
+
+	return g_pCurrDb->DeleteEvent(hDbEvent);
 }
 
 MIR_CORE_DLL(int) db_event_edit(MCONTACT hContact, MEVENT hDbEvent, const DBEVENTINFO *dbei)
@@ -436,9 +461,21 @@ MIR_CORE_DLL(MEVENT) db_event_last(MCONTACT hContact)
 	return (g_pCurrDb == nullptr) ? 0 : g_pCurrDb->FindLastEvent(hContact);
 }
 
-MIR_CORE_DLL(int) db_event_markRead(MCONTACT hContact, MEVENT hDbEvent)
+MIR_CORE_DLL(int) db_event_markRead(MCONTACT hContact, MEVENT hDbEvent, bool bFromServer)
 {
-	return (g_pCurrDb == nullptr) ? 0 : g_pCurrDb->MarkEventRead(hContact, hDbEvent);
+	if (g_pCurrDb == nullptr)
+		return 1;
+	
+	if (!g_pCurrDb->MarkEventRead(hContact, hDbEvent))
+		return 1;
+
+	if (!bFromServer)
+		if (auto *ppro = Proto_GetInstance(hContact)) {
+			ppro->OnMarkRead(hContact, hDbEvent);
+			return 0;
+		}
+
+	return 1;
 }
 
 MIR_CORE_DLL(MEVENT) db_event_next(MCONTACT hContact, MEVENT hDbEvent)

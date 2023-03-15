@@ -50,8 +50,6 @@ wenn Anzahl unbekannter Teilnehmer größer ist als:
 in anderem Fall
 [Advanced Configuration]
 Erweiterte Einstellungen
-[Keep connection alive]
-Verbindung aufrechterhalten
 [Show connection errors]
 Über Verbindungsfehler benachrichtigen
 [Automatically reconnect after unintentional disconnection]
@@ -62,8 +60,6 @@ Nachrichten langsamer, aber mit voller Bestätigung senden
 Manuell Server/Hosts eintragen
 [* new line is separator\n** hostname:port format]
 * Zeilenumbruch ist Trenner\n ** hostname:port-Format
-[Use SSL secure connection]
-Sichere SSL-Verbindung verwenden
 [File Transfer]
 Dateiübertragungen
 [Use direct connections]
@@ -153,8 +149,6 @@ Informationen zu aktiven gleichzeitigen Sitzungen anzeigen
 [Sign out all sessions]
 Alle Sitzungen abmelden
 ;file \protocols\Gadu-Gadu\src\avatar.cpp
-[Cannot create avatars cache directory. ERROR: %d: %s\n%s]
-Kann Avatarcacheverzeichnis nicht erzeugen. Fehler: %d: %s\n%s
 [Cannot create avatar file. ERROR: %d: %s\n%s]
 Kann Avatardatei nicht erzeugen. Fehler: %d: %s\n%s
 [Cannot open avatar file. ERROR: %d: %s\n%s]
@@ -206,29 +200,6 @@ Sie sind von einem anderen Ort aus angemeldet
 Sie sind von einem anderen Ort aus angemeldet
 [Incoming image]
 Eingehendes Bild
-;file \protocols\Gadu-Gadu\src\dialogs.cpp
-[<Last Status>]
-<Letzter Status>
-[System tray icon]
-Systemtray-Icon
-[Popup window]
-Popupfenster
-[Message with [img] BBCode]
-Nachricht mit [img]-BBCode
-[You need to specify your registration e-mail first.]
-Fur die Anmeldung mussen Sie ihre registrierte E-Mail-Adresse erst angeben.
-[Your password will be sent to your registration e-mail.\nDo you want to continue?]
-Ihr Passwort wird zur Ihrer Registrierungs-E-Mail gesendet.\nMöchten Sie fortfahren?
-[You should disconnect before making any permanent changes with your account.\nDo you want to disconnect now?]
-Sie sollten die Verbindung trennen bevor sie permanente Änderungen mit ihrem Account vornehmen.\nWollen sie nun die Verbindung trennen?
-[Network]
-Netzwerk
-[General]
-Allgemein
-[Conference]
-Konferenz
-[Advanced]
-Erweitert
 ;file \protocols\Gadu-Gadu\src\filetransfer.cpp
 [Cannot create transfer file. ERROR: %d: %s (dcc)\n%s]
 Kann Datei nicht übertragen. Fehler: %d: %s (dcc)\n%s
@@ -251,6 +222,8 @@ Unbekannter HTTP-Fehler
 Blockieren a&ufheben
 [&Block]
 &Blockieren
+[Conference]
+Konferenz
 [Contact list]
 Kontaktliste
 ;file \protocols\Gadu-Gadu\src\gg_proto.cpp
@@ -374,12 +347,32 @@ Gadu-Gadu-Kontenauswahl
 [Gadu-Gadu Link Protocol]
 Gadu-Gadu-Link-Protokoll
 ;file \protocols\Gadu-Gadu\src\options.cpp
+[<Last Status>]
+<Letzter Status>
+[System tray icon]
+Systemtray-Icon
+[Popup window]
+Popupfenster
+[Message with [img] BBCode]
+Nachricht mit [img]-BBCode
+[You need to specify your registration e-mail first.]
+Fur die Anmeldung mussen Sie ihre registrierte E-Mail-Adresse erst angeben.
+[Your password will be sent to your registration e-mail.\nDo you want to continue?]
+Ihr Passwort wird zur Ihrer Registrierungs-E-Mail gesendet.\nMöchten Sie fortfahren?
+[You should disconnect before making any permanent changes with your account.\nDo you want to disconnect now?]
+Sie sollten die Verbindung trennen bevor sie permanente Änderungen mit ihrem Account vornehmen.\nWollen sie nun die Verbindung trennen?
 [Allow]
 Erlauben
 [Ask]
 Fragen
 [Ignore]
 Ignorieren
+[Network]
+Netzwerk
+[General]
+Allgemein
+[Advanced]
+Erweitert
 ;file \protocols\Gadu-Gadu\src\ownerinfo.cpp
 [Password could not be reminded because of error:\n\t%s (Error: %d)]
 Das Passwort konnte wegen eines Fehlers nicht gespeichert werden:\n\t%s (Fehler: %d)

@@ -218,7 +218,6 @@ struct { char *szCode; wchar_t *szDescription; } g_LanguageCodes[] = {
 	{ "yo", LPGENW("Yoruba") },
 	{ "za", LPGENW("Zhuang; Chuang") },
 	{ "zu", LPGENW("Zulu") },
-	{ nullptr, nullptr }
 };
 
 class CJabberDlgRegister : public CJabberDlgBase
@@ -446,9 +445,9 @@ protected:
 		}
 		else m_cbResource.SetText(L"Miranda");
 
-		for (int i = 0; g_LanguageCodes[i].szCode; i++) {
-			int iItem = m_cbLocale.AddString(TranslateW(g_LanguageCodes[i].szDescription), (LPARAM)g_LanguageCodes[i].szCode);
-			if (!mir_strcmp(m_proto->m_tszSelectedLang, g_LanguageCodes[i].szCode))
+		for (auto &it : g_LanguageCodes) {
+			int iItem = m_cbLocale.AddString(TranslateW(it.szDescription), (LPARAM)it.szCode);
+			if (!mir_strcmp(m_proto->m_tszSelectedLang, it.szCode))
 				m_cbLocale.SetCurSel(iItem);
 		}
 
@@ -706,7 +705,8 @@ public:
 		m_options.AddOption(LPGENW("Messaging"), LPGENW("Enable server-side history (XEP-0136)"), m_proto->m_bEnableMsgArchive);
 		m_options.AddOption(LPGENW("Messaging"), LPGENW("Enable Message Archive Management (XEP-0313)"), m_proto->m_bEnableMam);
 		m_options.AddOption(LPGENW("Messaging"), LPGENW("Enable carbon copies (XEP-0280)"), m_proto->m_bEnableCarbons);
-		m_options.AddOption(LPGENW("Messaging"), LPGENW("Enable VOIP (experimental)"), m_proto->m_bEnableVOIP);
+		if (g_plugin.bJingle)
+			m_options.AddOption(LPGENW("Messaging"), LPGENW("Enable VOIP (experimental)"), m_proto->m_bEnableVOIP);
 
 		m_options.AddOption(LPGENW("Server options"), LPGENW("Use Stream Management (XEP-0198) if possible (experimental)"), m_proto->m_bEnableStreamMgmt);
 		m_options.AddOption(LPGENW("Server options"), LPGENW("Disable SASL authentication (for old servers)"), m_proto->m_bDisable3920auth);
@@ -717,6 +717,7 @@ public:
 		m_options.AddOption(LPGENW("Other"), LPGENW("Show transport agents on contact list"), m_proto->m_bShowTransport);
 		m_options.AddOption(LPGENW("Other"), LPGENW("Automatically add contact when accept authorization"), m_proto->m_bAutoAdd);
 		m_options.AddOption(LPGENW("Other"), LPGENW("Automatically accept authorization requests"), m_proto->m_bAutoAcceptAuthorization);
+		m_options.AddOption(LPGENW("Other"), LPGENW("Automatically download files passed via HTTP File Upload"), m_proto->m_bAutoLoadOOB);
 		m_options.AddOption(LPGENW("Other"), LPGENW("Fix incorrect timestamps in incoming messages"), m_proto->m_bFixIncorrectTimestamps);
 		m_options.AddOption(LPGENW("Other"), LPGENW("Enable XMPP link processing (requires AssocMgr)"), m_proto->m_bProcessXMPPLinks);
 		m_options.AddOption(LPGENW("Other"), LPGENW("Embrace picture URLs with [img]"), m_proto->m_bEmbraceUrls);
@@ -741,9 +742,7 @@ public:
 	{
 		BOOL bChecked = m_proto->m_bShowTransport;
 		LISTFOREACH(index, m_proto, LIST_ROSTER)
-		{
-			JABBER_LIST_ITEM *item = m_proto->ListGetItemPtrFromIndex(index);
-			if (item != nullptr) {
+			if (auto *item = m_proto->ListGetItemPtrFromIndex(index)) {
 				if (strchr(item->jid, '@') == nullptr) {
 					MCONTACT hContact = m_proto->HContactFromJID(item->jid);
 					if (hContact != 0) {
@@ -757,26 +756,13 @@ public:
 					}
 				}
 			}
-		}
 
 		if (m_proto->m_bUseOMEMO)
 			m_proto->m_omemo.init();
 		else
 			m_proto->m_omemo.deinit();
 
-		// Voip
-		VOICE_MODULE vsr = {};
-		vsr.cbSize = sizeof(VOICE_MODULE);
-		vsr.description = L"XMPP/DTLS-SRTP";
-		vsr.name = m_proto->m_szModuleName;
-		vsr.icon = g_plugin.getIconHandle(IDI_NOTES);
-		vsr.flags = 3;
-		if (m_proto->m_bEnableVOIP)
-			CallService(MS_VOICESERVICE_REGISTER, (WPARAM)&vsr, 0);
-		else {
-			m_proto->VOIPTerminateSession();
-			CallService(MS_VOICESERVICE_UNREGISTER, (WPARAM)&vsr, 0);
-		}
+		m_proto->InitVoip(m_proto->hasJingle());
 
 		m_proto->UpdateFeatHash();
 		m_proto->SendPresence(m_proto->m_iStatus, true);
@@ -1399,11 +1385,11 @@ private:
 	}
 };
 
-INT_PTR CJabberProto::SvcCreateAccMgrUI(WPARAM, LPARAM lParam)
+MWindow CJabberProto::OnCreateAccMgrUI(MWindow hwndParent)
 {
-	CJabberDlgAccMgrUI *dlg = new CJabberDlgAccMgrUI(this, (HWND)lParam);
+	CJabberDlgAccMgrUI *dlg = new CJabberDlgAccMgrUI(this, hwndParent);
 	dlg->Show();
-	return (INT_PTR)dlg->GetHwnd();
+	return dlg->GetHwnd();
 }
 
 INT_PTR __cdecl CJabberProto::OnMenuOptions(WPARAM, LPARAM)

@@ -16,7 +16,7 @@ Last-Modified-Using: Miranda NG 0.96.1
 ;============================================================
 ;  File: miranda32/64.exe
 ;  Module: Miranda Core
-;  Version: 0.96.2
+;  Version: 0.96.3
 ;============================================================
 [Become idle if the following is left unattended:]
 Перейти в режим ожидания, если неактивны:
@@ -226,8 +226,8 @@ Last-Modified-Using: Miranda NG 0.96.1
 Показывать панель статусов
 [Show icons]
 Показывать значки
-[Show protocol names]
-Показывать протоколы
+[Show account names]
+Показывать имена учётных записей
 [Show status text]
 Показывать текст статуса
 [Right click opens status menu]
@@ -1135,7 +1135,7 @@ UIN, E-mail и т.д.
 [Enable icon blinking]
 Включить мигание
 [Search works as filter]
-Поиск по списку контактов с фильтрацией результатов
+Поиск с фильтрацией результатов
 ['Hide offline' means to hide:]
 'Скрыть отключённых' - скрыть:
 [Tray]
@@ -1404,10 +1404,10 @@ Google Карты
 История сообщений
 [User menu]
 Меню пользователя
-[Canceled]
-Отменённые
 [This file transfer has been canceled by the other side]
 Передача файла отменена другой стороной
+[Canceled]
+Отменённые
 [%d files]
 %d файла(ов)
 [%d directories]
@@ -2600,6 +2600,8 @@ ID учётной записи
 <неизвестно>
 [Protocol is not loaded.]
 Протокол не загружен.
+[Account is disabled.]
+Учётная запись отключена.
 [Create new account]
 Новая учётная запись
 [Editing account]
@@ -2686,6 +2688,8 @@ ANSI плагин
 Добавить группу
 [Warning]
 Предупреждение
+[Blank]
+Пустой
 [Always visible]
 Всегда видимый
 [Always invisible]
@@ -2712,6 +2716,8 @@ ANSI плагин
 Уник. ID
 [Log viewer]
 Просмотрщик журнала сообщений
+[Copy all]
+Копировать всё
 [Look up '%s':]
 Искать '%s':
 [No word to look up]
@@ -6143,8 +6149,8 @@ Windows не активен
 Показывать панель статусов
 [Show icons]
 Показывать значки
-[Show protocol names]
-Показывать протоколы
+[Show account names]
+Показывать имена учётных записей
 [Show status text]
 Показывать текст статуса
 [Right click opens status menu]
@@ -6292,8 +6298,8 @@ Ctrl+Левый клик вкл. фильтр по протоколу, клик 
 Настроить учётную запись
 [Hide account completely]
 Скрыть учётную запись
-[Show protocol names]
-Показывать протоколы
+[Show account names]
+Показывать имена учётных записей
 [Show status name]
 Имя статуса
 [Show xStatus name]
@@ -6320,24 +6326,10 @@ Ctrl+Левый клик вкл. фильтр по протоколу, клик 
 Отступ слева
 [Space on right]
 Отступ справа
-[Delete contact]
-Удалить контакт
-[No]
-Нет
-[Yes]
-Да
-[Hide from list only, in order to keep their history and ignore/visibility settings]
-Скрыть из списка (останутся история и настройки видимости)
-[Use Options -> Contacts -> Ignore to unhide contacts.]
-Управление отображением контактов осуществляется в разделе "Настройки -> Контакты -> Игнорировать".
-[Are you sure you want to delete %s?]
-Удалить %s из списка?
-[This will erase all history and settings for this contact!]
-Будет удалена вся история и все настройки для данного контакта!
 [Contact list sorting]
 Сортировка списка контактов
-[Don't move offline user to bottom]
-Не перемещать отключённых вниз
+[Move offline users to bottom]
+Перемещать отключённых вниз
 [1st:]
 1-й:
 [2nd:]
@@ -6654,56 +6646,6 @@ Ctrl+Левый клик вкл. фильтр по протоколу, клик 
 Показывать третью строку
 [Draw smileys on third line]
 Смайлы на третьей строке
-[Preview]
-Тест
-[Top/Left]
-Лево/верх
-[Bottom/Right]
-Право/низ
-[Position (vertical)]
-Положение (вертикаль)
-[Align]
-Выравнивание
-[Options]
-Настройки
-[Visible]
-Видимо
-[Show title]
-Заголовок
-[Locked]
-Заблокирован
-[Border]
-Рамка
-[Floating]
-Плавающее
-[Frames order]
-Порядок фреймов
-[UNDER CONSTRUCTION!!!           IT DOES NOT WORK]
-РАЗРАБАТЫВАЕТСЯ!!!           НЕ РАБОТАЕТ
-[Row template]
-Шаблон
-[Add container]
-Добавить
-[Remove container]
-Удалить
-[Vertical align:]
-Вертикально:
-[Horizontal align:]
-Горизонтально:
-[Container type:]
-Тип контейнера:
-[Container width:]
-Ширина:
-[Container height:]
-Высота:
-[Layered]
-Слои
-[Move up]
-Выше
-[Move down]
-Ниже
-[OPTION PAGE IS UNDER CONSTRUCTION Please DO NOT notice about any issues here.\n Only high-level design comments are applicable.]
-ЭТА СТРАНИЦА ТОЛЬКО РАЗРАБАТЫВАЕТСЯ. Пожалуйста, НЕ СООБЩАЙТЕ об ошибках. Принимаются только замечания к дизайну.
 [&Visible]
 &Показывать
 [&Show title]
@@ -6732,6 +6674,10 @@ Ctrl+Левый клик вкл. фильтр по протоколу, клик 
 В&низ
 [Lock frame]
 Закрепить фрейм
+[Visible]
+Видимо
+[Floating]
+Плавающее
 [Show all frames]
 Показать все фреймы
 [Show all title bars]
@@ -6950,6 +6896,10 @@ Ctrl+Левый клик вкл. фильтр по протоколу, клик 
 Строка
 [(Unknown contact)]
 (Неизвестный контакт)
+[Contract meta]
+Свернуть метаконтакт
+[Expand meta]
+Развернуть метаконтакт
 [Show avatar]
 Показать аватар
 [Hide avatar]
@@ -7369,8 +7319,8 @@ Angeli-Ka (графика), FYR (шаблон)
 Показывать панель статусов
 [Show icons]
 Показывать значки
-[Show protocol names]
-Показывать протоколы
+[Show account names]
+Показывать имена учётных записей
 [Show status text]
 Показывать текст статуса
 [Right click opens status menu]
@@ -9194,7 +9144,7 @@ Miranda нашла повреждения в вашей базе. Miranda буд
 ;============================================================
 ;  File: Dbx_sqlite.dll
 ;  Plugin: Miranda NG SQLite database driver
-;  Version: 0.96.1.2
+;  Version: 0.96.2.4
 ;  Authors: Miranda-NG project
 ;============================================================
 [Provides Miranda database support: global settings, contacts, history, settings per contact.]
@@ -10349,10 +10299,14 @@ FTP файл менеджер
 Вы должны добавить хотя бы один FTP сервер в настройках.
 [Clear All]
 Снять всё
+[FTP (Standard)]
+FTP (обычный)
 [FTP+SSL (Explicit)]
 FTP+SSL (явный)
 [FTP+SSL (Implicit)]
 FTP+SSL (неявный)
+[SFTP (Secure FTP over SSH)]
+SFTP (FTP через SSH)
 [minutes]
 минут(ы)
 [hours]
@@ -10416,8 +10370,6 @@ FTP+SSL (неявный)
 в других случаях
 [Advanced Configuration]
 Дополнительная настройка
-[Keep connection alive]
-Поддерживать соединение
 [Show connection errors]
 Показывать ошибки соединения
 [Automatically reconnect after unintentional disconnection]
@@ -10428,8 +10380,6 @@ FTP+SSL (неявный)
 Указать серверы вручную
 [* new line is separator\n** hostname:port format]
 * перевод строки разделитель\n** хост:порт
-[Use SSL secure connection]
-Безопасное подключение (SSL)
 [File Transfer]
 Передача файла
 [Use direct connections]
@@ -10518,8 +10468,6 @@ FTP+SSL (неявный)
 Информация об активных одновременных сессиях
 [Sign out all sessions]
 Выйти из всех сессий
-[Cannot create avatars cache directory. ERROR: %d: %s\n%s]
-Не удалось создать папку для кэша аватаров. Ошибка: %d: %s\n%s
 [Cannot create avatar file. ERROR: %d: %s\n%s]
 Не удалось создать файл аватара. Ошибка: %d: %s\n%s
 [Cannot open avatar file. ERROR: %d: %s\n%s]
@@ -10570,6 +10518,10 @@ Miranda не может распознать имя сервера Gadu-Gadu п�
 Вы подключены из другого места
 [Incoming image]
 Входящее изображение
+[Cannot create transfer file. ERROR: %d: %s (dcc)\n%s]
+Не удалось создать передачу файла. Ошибка: %d: %s (dcc)\n%s
+[Cannot create transfer file. ERROR: %d: %s (dcc7)\n%s]
+Не удалось создать передачу файла. Ошибка: %d: %s (dcc7)\n%s
 [HTTP failed memory]
 HTTP ошибка памяти
 [HTTP failed connecting]
@@ -12795,6 +12747,14 @@ UIN/почта:
 &Пригласить пользователя
 [&Leave/destroy chat]
 &Покинуть/уничтожить чат
+[Name]
+Имя
+[Rename]
+Переименовать
+[Delete]
+Удалить
+[Enter new group name]
+Введите имя новой группы
 [E-mail]
 Почта
 [E-mail notification]
@@ -12813,14 +12773,6 @@ UIN/почта:
 Синхронизировать группы с сервером
 [Edit my web profile]
 Редактировать профиль на веб-сайте
-[Name]
-Имя
-[Rename]
-Переименовать
-[Delete]
-Удалить
-[Enter new group name]
-Введите имя новой группы
 [UIN/e-mail/phone]
 UIN/почта/телефон
 [SmileyAdd plugin required to support stickers]
@@ -14444,10 +14396,6 @@ XML Консоль
 Отправить
 [Jabber Link Protocol]
 Протокол Jabber
-[Frame title]
-Заголовок фрейма
-[Frame text]
-Текст фрейма
 [Jabber Activity]
 Занятие Jabber
 [Jabber Mood]
@@ -15470,6 +15418,8 @@ OMEMO не поддерживает шифрование приватных со
 Добавлять контакт после подтверждения авторизации
 [Automatically accept authorization requests]
 Автоматически принимать запросы авторизации
+[Automatically download files passed via HTTP File Upload]
+Автоматически принимать файлы, полученные через HTTP File Upload
 [Fix incorrect timestamps in incoming messages]
 Исправлять время во входящих сообщениях
 [Enable XMPP link processing (requires AssocMgr)]
@@ -15928,6 +15878,8 @@ Jabber vCard: редактирование телефона
 Контакты
 [Note]
 Заметка
+[Client's program does not support voice calls]
+Клиент собеседника не поддерживает голосовые вызовы
 [<advanced status slot>]
 <слот расширенного статуса>
 [Afraid]
@@ -16274,6 +16226,15 @@ Jabber vCard: редактирование телефона
 Я использую Miranda NG (https://miranda-ng.org/.)
 [/me slaps %s around a bit with a large trout]
 /me шарахнул %s веслом по голове
+#muuid {D3E24A92-E2C3-440F-bc87-002Ab822abf8}
+;============================================================
+;  File: Jingle
+;  Plugin: Jingle
+;  Version: 0.0.0.1
+;  Authors: George Hazan
+;============================================================
+[Jingle support for Jabber protocol.]
+��������� Jingle ��� ��������� Jabber.
 #muuid {119d7288-2050-448d-9900-d86ac70426bf}
 ;============================================================
 ;  File: KeyboardNotify.dll
@@ -18585,7 +18546,7 @@ NewAwaySys: входящий запрос статусного сообщени�
 ;============================================================
 ;  File: NewEventNotify.dll
 ;  Plugin: NewEventNotify
-;  Version: 0.2.2.5
+;  Version: 0.2.2.7
 ;  Authors: icebreaker, Prezes, vj, vlko, Joe @ Whale
 ;============================================================
 [Notifies you when you receive a message, URL, file or any other event by displaying a popup.]
@@ -18594,14 +18555,6 @@ NewAwaySys: входящий запрос статусного сообщени�
 Ограничить предпросмотр
 [characters]
 символами
-[Popup options]
-Всплывающие окна
-[Text]
-Текст
-[Background]
-Фон
-[Timeout, secs]
-Длительность, сек.
 [Message]
 Сообщение
 [File]
@@ -18610,6 +18563,16 @@ NewAwaySys: входящий запрос статусного сообщени�
 Ошибка
 [Others]
 Другое
+[Text]
+Текст
+[Background]
+Фон
+[Use default colors]
+Цвета по умолчанию
+[Use Windows colors]
+Цвета Windows
+[Timeout, secs]
+Длительность, сек.
 [Preview]
 Тест
 [(timeout -1 means forever, 0 - default)]
@@ -18664,8 +18627,8 @@ NewAwaySys: входящий запрос статусного сообщени�
 Различные настройки
 [No popups for RSS contacts]
 Выключить для RSS новостей
-[No popups for read messages]
-Выключить для прочтённых
+[No popups for read messages (conflicts with anti-spam plugin)]
+Выключить для прочтённых сообщений (несовместима с антиспамом)
 [Event Notify]
 Уведомления о событиях
 [Popups]
@@ -18674,6 +18637,8 @@ NewAwaySys: входящий запрос статусного сообщени�
 Основные настройки
 [Message events]
 Сообщения
+[Event types]
+Типы событий
 [Received %d contacts.]
 Получено %d контактов.
 [ added you to the contact list]
@@ -18859,7 +18824,7 @@ URL страницы с комментариями к новости.
 ;============================================================
 ;  File: NewStory.dll
 ;  Plugin: NewStory
-;  Version: 0.1.0.2
+;  Version: 0.1.0.3
 ;  Authors: nullbie
 ;============================================================
 [History viewer for Miranda NG.]
@@ -20703,23 +20668,6 @@ Omegle - отличный способ найти новых друзей!
 Открыть папку
 [Main]
 Главный
-#muuid {b649702c-13de-408a-b6c2-fb8fed2a2c90}
-;============================================================
-;  File: OpenSSL.dll
-;  Plugin: OpenSSL SSL API module
-;  Version: 0.1.0.2
-;  Authors: Miranda NG team
-;============================================================
-[Core driver to provide OpenSSL-based SSL services. It provides TLS 1.2/1.3 support for legacy operating systems.]
-Драйвер ядра, использующий OpenSSL для предоставления услуг шифрования. Добавляет поддержку TLS 1.2/1.3 в устаревшие операционные системы.
-[Client cannot decode host message. Possible causes: host does not support SSL or requires not existing security package]
-Клиент не может расшифровать сообщение сервера. Возможные причины: сервер не поддерживает SSL, либо требует не существующий пакет безопасности
-[Host we are connecting to is not the one certificate was issued for]
-Выданный сертификат не соответствует имени сервера, к которому производится подключение
-[OpenSSL library loading failed]
-Не удалось загрузить библиотеку OpenSSL
-[OpenSSL error]
-Ошибка OpenSSL
 #muuid {29517be5-779a-48e5-8950-cb4de1d43172}
 ;============================================================
 ;  File: PackUpdater.dll
@@ -21181,7 +21129,7 @@ TCP соединение
 ;============================================================
 ;  File: PluginUpdater.dll
 ;  Plugin: Plugin updater
-;  Version: 0.2.1.3
+;  Version: 0.2.1.5
 ;  Authors: Mataes, George Hazan
 ;============================================================
 [Installs and updates plugins and other Miranda NG components.]
@@ -26184,8 +26132,8 @@ StopSpam: отправьте сообщение и ответьте на воп�
 Трей
 [Options]
 Настройки
-[Text for autocomplete]
-Добавлять к именам пользователей при автозавершении
+[Text for autocomplete:]
+Добавлять к именам при автозавершении:
 [Add new rooms to group:]
 Добавлять комнаты чата в группу:
 [Log files]
@@ -26287,7 +26235,7 @@ StopSpam: отправьте сообщение и ответьте на воп�
 [Send text formatting method]
 Метод отправки форматирования
 [You can override the global setting for text formatting here. Use "Force off" to never send formatting info for this contact.]
-Смена отправки информации о формате текста. "Выключить" - отключает форматирование для этого контакта.
+Смена отправки информации о формате текста. "Принудительно выключить" - отключает форматирование для этого контакта.
 [Info panel mode]
 Режим инфо-панели
 [Show avatar in message window]
@@ -26672,8 +26620,6 @@ RTL по умолчанию
 &Копировать
 [&Quote]
 &Цитировать
-[Co&py all]
-Ко&пировать всё
 [Select &all]
 Выделить &всё
 [Clear log]
@@ -26698,8 +26644,6 @@ RTL по умолчанию
 Вставить форматированный текст
 [Paste and send immediately]
 Вставить и отправить
-[Copy all]
-Копировать всё
 [Select all]
 Выделить всё
 [Show message length indicator]
@@ -26749,23 +26693,23 @@ RTL по умолчанию
 [Send unsafe (ignore timeouts)]
 Отправлять небезопасно (без ожидания)
 [Splitter position]
-Разделители
+Положение разделителя
 [Global]
-Глобальные
+Глобальное
 [Private]
-Конфиденциальный
+Индивидуальное
 [Send text formatting]
 Отправка форматирования текста
 [BBCode]
 BBCode ([b][i][u])
 [Off]
-Откл.
+Выключить
 [This contact]
 Этот контакт
 [Global setting]
 Глобальные настройки
 [Force off]
-Выключить
+Принудительно выключить
 [Set position for this session]
 Установить положение для этой сессии
 [Set and save for all sessions]
@@ -27442,6 +27386,8 @@ TabSRMM: набор текста
 Файл уже существует. Перезаписать?
 [JPEG-compressed images]
 Изображения в формате JPEG
+[Copy all]
+Копировать всё
 [Save and close session]
 Сохранить набранное и закрыть вкладку
 [, %d %s, %d %s idle]
@@ -27933,20 +27879,66 @@ TabSRMM: %s
 ;  Version: 0.11.0.1
 ;  Authors: Miranda NG team
 ;============================================================
+[Telegram protocol support for Miranda NG.]
+Поддержка протокола Telegram в Miranda NG.
+[Country:]
+Страна:
 [Phone number:]
 Телефон:
 [Default group:]
 Группа:
+[Device name:]
+Имя устройства:
 [Do not open chat windows on creation]
 Не открывать окна комнат чата при создании
+[If a contact goes Offline, set this status instead and cache it for given timeout in seconds (0 - disabled)]
+Когда контакт выходит из сети, установить ему этот статус и сохранять в течение указанного числа секунд (0 - отключено)
+[After that, set this status to a contact and move it offline after specified timeout in seconds (0 - disabled)]
+После этого установить контакту следующий статус, а через указанное число секунд установить "Не в сети" (0 - отключено)
+[First name:]
+Имя:
+[Last name:]
+Фамилия:
+[Phone:]
+Телефон:
+[Cancel]
+Отмена
+[Enter email address for account verification]
+Введите адрес электронной почты для подтверждения учётной записи
+[Enter verification code received by email]
+Введите код подтверждения, полученный по электронной почте
+[Enter password]
+Введите пароль
+[ (hint: %s)]
+ (подсказка: %s)
+[Error]
+Ошибка
+[Invalid password]
+Неверный пароль
+[Creator]
+Создатель
+[Admin]
+Админ
+[Participant]
+Участник
+[SuperAdmin]
+СуперАдмин
+[Visitor]
+Посетитель
+[Premium user]
+Premium-подписчик
 [Network]
 Сеть
 [Account]
 Учётная запись
-[Enter password]
-Введите пароль
-[Error]
-Ошибка
+[Advanced]
+Дополнительно
+[%d member(s)]
+%d участник(ов)
+[none]
+нет
+[Chat rooms]
+Чаты
 [%s error notifications]
 Уведомления об ошибках %s
 [Errors]
@@ -28675,8 +28667,8 @@ xСтатус: пустое имя в имя по умолчанию
 Тест
 [Add shortcut]
 Добавить ярлык
-[Enabled]
-Включён
+[Enable popups]
+Включить всплывающие окна
 [This plugin requires Windows 8 or higher]
 Для этого плагина требуется Windows 8 или новее.
 [Failed to create temporary directory]
@@ -29236,7 +29228,7 @@ ID контакта не соответствует ни одному конта
 ;============================================================
 ;  File: Twitter.dll
 ;  Plugin: Twitter protocol
-;  Version: 1.3.1.6
+;  Version: 1.3.1.7
 ;  Authors: dentist, omniwolf, Thief
 ;============================================================
 [Twitter protocol support for Miranda NG.]
@@ -30878,7 +30870,7 @@ x, и сохраняет y, как переменную с именем x
 ;============================================================
 ;  File: VKontakte.dll
 ;  Plugin: VKontakte protocol
-;  Version: 0.1.14.0
+;  Version: 0.1.14.2
 ;  Authors: Miranda NG team
 ;============================================================
 [VKontakte protocol support for Miranda NG.]
@@ -31582,8 +31574,8 @@ ID получателя ошибочен или неизвестен
 Подавление эха
 [Microphone boost]
 Усиление микрофона
-[Unknown call]
-Неизвестный звонок
+[Voice call]
+Вызов
 [Call will disclose IP address to the peer and his server]
 Вызов раскроет ваш IP-адрес собеседнику и его серверу
 [M]
@@ -31615,7 +31607,7 @@ ID получателя ошибочен или неизвестен
 [Busy]
 Занят
 [Ready]
-Готово
+Готов
 [Make Voice Call]
 Позвонить
 [Answer Voice Call]
@@ -31654,16 +31646,28 @@ ID получателя ошибочен или неизвестен
 Вызов принят
 [Voice call ringing]
 Входящий вызов
-[Voice call]
-Вызов
 [Voice call on hold]
 Вызов на удержании
 [Voice call ended]
 Вызов завершён
 [Voice call busy]
 Абонент занят
+[Hold]
+Удержать
+[Holded]
+Удерживается
+[Resume]
+Продолжить
+[Close]
+Закрыть
+[Callee is busy]
+Абонент занят
+[Cancel]
+Отмена
 [Unknown number]
 Неизвестный номер
+[Call is over %s]
+Вызов завершён %s
 #muuid {fc6c81f4-837e-4430-9601-a0aa43177ae3}
 ;============================================================
 ;  File: Watrack.dll
@@ -35053,8 +35057,8 @@ URL:
 ;============================================================
 [WhatsApp protocol support for Miranda NG.]
 Поддержка протокола WhatsApp в Miranda NG.
-[Sign in using QR code]
-Войти с помощью QR-кода
+[Link a device]
+Привязка устройства
 [Open WhatsApp application on your mobile phone, choose "Linked devices" and use it to read this QR code.\nA window will disappear automatically after it.]
 Откройте приложение WhatsApp на мобильном телефоне, выберите "Связанные устройства" и отсканируйте этот QR-кол.\nПосле этого окно автоматически закроется.
 [Nick:]
@@ -35067,8 +35071,8 @@ URL:
 Имя устройства:
 [Use BBCode]
 Использовать BBCode
-[Unregister]
-Удалить
+[Log out]
+Выйти
 [Invite users]
 Пригласить пользователей
 [Choose a user]
@@ -35089,6 +35093,8 @@ URL:
 Участник
 [WhatsApp (HTTP)]
 WhatsApp (HTTP)
+[Do you really want to log out from account? You will have to link your devices again.]
+Уверены, что хотите выйти из учётной записи? Вам придётся связать устройства заново.
 [Network]
 Сеть
 [Account]
@@ -35109,7 +35115,7 @@ WhatsApp (HTTP)
 ;============================================================
 ;  File: WhenWasIt.dll
 ;  Plugin: Birthday reminder
-;  Version: 0.4.0.1
+;  Version: 0.4.0.2
 ;  Authors: Cristian Libotean
 ;============================================================
 [Notifies you of upcoming birthdays.]
@@ -35192,8 +35198,6 @@ WhatsApp (HTTP)
 Плагин протокола
 [Birthday list (%d)]
 Список дней рождения (%d)
-[Unknown]
-Неизвестно
 [Protocol]
 Протокол
 [Contact]
@@ -35206,6 +35210,10 @@ WhatsApp (HTTP)
 Возраст
 [Module]
 Модуль
+[Closing in %d seconds]
+Закрытие через %d секунд
+[Closing in %d second]
+Закрытие через %d секунд
 [Check for birthdays]
 Проверить дни рождения
 [WhenWasIt]
@@ -35258,10 +35266,6 @@ WhatsApp (HTTP)
 %s\n%s исполнится %d.
 [%s\n%s just turned %d.]
 %s\n%s исполнилось %d.
-[Closing in %d seconds]
-Закрытие через %d секунд
-[Closing in %d second]
-Закрытие через %d секунд
 [Upcoming age]
 Будущий возраст
 [Current age]
@@ -35290,22 +35294,6 @@ WhatsApp (HTTP)
 Начало обновления информации о пользователях
 [Done refreshing user details]
 Обновление информации о пользователях завершено
-[Birthdays files]
-Файлы дней рождений
-[Please select a file to import birthdays from...]
-Выберите файл для импорта дней рождения...
-[Importing birthdays from file: %s]
-Идёт импорт в файл %s
-[Done importing birthdays]
-Импорт завершён
-[All Files]
-Все файлы
-[Please select a file to export birthdays to...]
-Выберите файл для экспорта дней рождения...
-[Exporting birthdays to file: %s]
-Идёт экспорт в файл %s
-[Done exporting birthdays]
-Экспорт завершён
 [Could not open file to import birthdays]
 Невозможно открыть файл для импорта дней рождения
 [Error]
@@ -35314,10 +35302,26 @@ WhatsApp (HTTP)
 Не удалось найти UID '%s [%S]' в текущей базе, пропускаю
 [Warning]
 Предупреждение
+[Birthdays files]
+Файлы дней рождений
+[Please select a file to import birthdays from...]
+Выберите файл для импорта дней рождения...
+[Importing birthdays from file: %s]
+Идёт импорт в файл %s
+[Done importing birthdays]
+Импорт завершён
 [Could not open file to export birthdays]
 Невозможно открыть файл для экспорта дней рождения
 [Please do not edit this file by hand. Use the export function of WhenWasIt plugin.\n]
 Пожалуйста, не правьте этот файл вручную. Используйте только функцию экспорта в плагине WhenWasIt.\n
+[All Files]
+Все файлы
+[Please select a file to export birthdays to...]
+Выберите файл для экспорта дней рождения...
+[Exporting birthdays to file: %s]
+Идёт экспорт в файл %s
+[Done exporting birthdays]
+Экспорт завершён
 [Birthdays (When Was It)]
 Дни рождения
 [Add/change user &birthday]
@@ -35662,10 +35666,6 @@ WUMF: Показать подключения
 Основные настройки
 [TopToolBar button "Check mail"]
 Кнопка "Проверить почту" в Панели кнопок
-[Enable YAMN Main Menu]
-Пункт YAMN в главном меню
-[Show YAMN as a Protocol (Require Restart)]
-Показывать YAMN как протокол (нужен перезапуск)
 [MailBrowser Options]
 Настройки просмотра писем
 [Enable Close on Delete Button]

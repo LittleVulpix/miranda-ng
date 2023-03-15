@@ -38,7 +38,6 @@ CSkypeProto::CSkypeProto(const char* protoName, const wchar_t* userName) :
 	nlu.szSettingsModule = m_szModuleName;
 	m_hNetlibUser = Netlib_RegisterUser(&nlu);
 
-	CreateProtoService(PS_CREATEACCMGRUI, &CSkypeProto::OnAccountManagerInit);
 	CreateProtoService(PS_GETAVATARINFO, &CSkypeProto::SvcGetAvatarInfo);
 	CreateProtoService(PS_GETAVATARCAPS, &CSkypeProto::SvcGetAvatarCaps);
 	CreateProtoService(PS_GETMYAVATAR, &CSkypeProto::SvcGetMyAvatar);
@@ -49,38 +48,16 @@ CSkypeProto::CSkypeProto(const char* protoName, const wchar_t* userName) :
 	CreateProtoService(PS_MENU_LOADHISTORY, &CSkypeProto::GetContactHistory);
 
 	HookProtoEvent(ME_OPT_INITIALISE, &CSkypeProto::OnOptionsInit);
-	HookProtoEvent(ME_DB_EVENT_MARKED_READ, &CSkypeProto::OnDbEventRead);
 
-	m_tszAvatarFolder = std::wstring(VARSW(L"%miranda_avatarcache%")) + L"\\" + m_tszUserName;
-	CreateDirectoryTreeW(m_tszAvatarFolder.c_str());
+	CreateDirectoryTreeW(GetAvatarPath());
 
-	//sounds
+	// sounds
 	g_plugin.addSound("skype_inc_call", L"SkypeWeb", LPGENW("Incoming call"));
 	g_plugin.addSound("skype_call_canceled", L"SkypeWeb", LPGENW("Incoming call canceled"));
 
 	m_hPollingThread = ForkThreadEx(&CSkypeProto::PollingThread, NULL, NULL);
 
-	m_szSkypename = getMStringA(SKYPE_SETTINGS_ID);
-	if (m_szSkypename.IsEmpty()) {
-		m_szSkypename = getMStringA(SKYPE_SETTINGS_LOGIN);
-		if (!m_szSkypename.IsEmpty()) { // old settings format, need to update all settings
-			m_szSkypename.Insert(0, "8:");
-			setString(SKYPE_SETTINGS_ID, m_szSkypename);
-
-			for (auto &hContact : AccContacts()) {
-				CMStringA id(ptrA(getUStringA(hContact, "Skypename")));
-				if (!id.IsEmpty())
-					setString(hContact, SKYPE_SETTINGS_ID, (isChatRoom(hContact)) ? "19:"+id : "8:"+id);
-
-				ptrW wszNick(getWStringA(hContact, "Nick"));
-				if (wszNick == nullptr)
-					setUString(hContact, "Nick", id);
-
-				delSetting(hContact, "Skypename");
-			}
-		}
-	}
-
+	CheckConvert();
 	InitGroupChatModule();
 }
 
@@ -285,17 +262,14 @@ int CSkypeProto::SetStatus(int iNewStatus)
 			setAllContactStatuses(ID_STATUS_OFFLINE, false);
 		return 0;
 	}
-	else {
-		if (old_status == ID_STATUS_CONNECTING)
-			return 0;
 
-		if (old_status == ID_STATUS_OFFLINE && m_iStatus == ID_STATUS_OFFLINE)
-			Login();
-		else
-			PushRequest(new SetStatusRequest(MirandaToSkypeStatus(m_iDesiredStatus)));
-	}
+	if (m_iStatus == ID_STATUS_CONNECTING)
+		return 0;
 
-	ProtoBroadcastAck(NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE)old_status, m_iStatus);
+	if (m_iStatus == ID_STATUS_OFFLINE)
+		Login();
+	else
+		PushRequest(new SetStatusRequest(MirandaToSkypeStatus(m_iDesiredStatus)));
 	return 0;
 }
 

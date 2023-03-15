@@ -40,12 +40,6 @@
 Показ. кнопки меню і статусу
 [Draw sunken edge]
 Утоплений край
-[System tray icon]
-Значок у треї
-[Disable icon blinking]
-Вимкнути блимання
-[ms]
-мс
 [Event area]
 Область подій
 [Set base visibility on the frames menu]
@@ -268,8 +262,8 @@
 Показувати панель статусів
 [Show icons]
 Показувати значки
-[Show protocol names]
-Показувати протоколи
+[Show account names]
+
 [Show status text]
 Показувати текст статусу
 [Right click opens status menu]

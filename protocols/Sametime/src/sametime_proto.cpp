@@ -30,7 +30,6 @@ CSametimeProto::CSametimeProto(const char* pszProtoName, const wchar_t* tszUserN
 
 	HookProtoEvent(ME_MSG_WINDOWEVENT, &CSametimeProto::OnWindowEvent);
 	HookProtoEvent(ME_IDLE_CHANGED, &CSametimeProto::OnIdleChanged);
-	HookProtoEvent(ME_DB_CONTACT_DELETED, &CSametimeProto::OnSametimeContactDeleted);
 	HookProtoEvent(ME_OPT_INITIALISE, &CSametimeProto::OptInit);
 
 	// Initialize temporary DB settings
@@ -146,12 +145,12 @@ HANDLE CSametimeProto::SearchBasic(const wchar_t* id)
 	///TODO - add timeout (like at GGPROTO::searchthread)
 }
 
-HWND CSametimeProto::SearchAdvanced(HWND owner)
+HANDLE CSametimeProto::SearchAdvanced(HWND owner)
 {
 	wchar_t buf[512];
 	if (GetDlgItemText(owner, IDC_EDIT1, buf, _countof(buf))) {
 		debugLogW(L"CSametimeProto::SearchAdvanced()  buf:len=[%d]", mir_wstrlen(buf));
-		return (HWND)SearchForUser(T2Utf(buf), TRUE);
+		return (HANDLE)SearchForUser(T2Utf(buf), TRUE);
 	}
 	return nullptr;
 }

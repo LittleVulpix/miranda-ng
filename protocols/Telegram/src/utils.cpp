@@ -17,7 +17,87 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "stdafx.h"
 
-void CMTProto::UpdateString(MCONTACT hContact, const char *pszSetting, const std::string &str)
+const char *getName(const TD::usernames *pName)
+{
+	return (pName == nullptr) ? TranslateU("none") : pName->editable_username_.c_str();
+}
+
+CMStringW TG_USER::getDisplayName() const
+{
+	if (!wszFirstName.IsEmpty())
+		return (wszLastName.IsEmpty()) ? wszFirstName : wszFirstName + L" " + wszLastName;
+
+	return wszNick;
+}
+
+TG_USER* CTelegramProto::GetSender(const TD::MessageSender *pSender)
+{
+	switch (pSender->get_id()) {
+	case TD::messageSenderChat::ID:
+		return FindChat(((TD::messageSenderChat *)pSender)->chat_id_);
+
+	case TD::messageSenderUser::ID:
+		return FindUser(((TD::messageSenderUser *)pSender)->user_id_);
+	}
+
+	return nullptr;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+bool CTelegramProto::CheckSearchUser(TG_USER *pUser)
+{
+	auto pSearchId = std::find(m_searchIds.begin(), m_searchIds.end(), pUser->chatId);
+	if (pSearchId == m_searchIds.end())
+		return false;
+
+	ReportSearchUser(pUser);
+
+	m_searchIds.erase(pSearchId);
+	if (m_searchIds.empty())
+		ProtoBroadcastAck(0, ACKTYPE_SEARCH, ACKRESULT_SUCCESS, this);
+	return true;
+}
+
+void CTelegramProto::ReportSearchUser(TG_USER *pUser)
+{
+	CMStringW wszId(FORMAT, L"%lld", pUser->id), wszNick, wszLastName, wszFirstName;
+
+	PROTOSEARCHRESULT psr = {};
+	psr.cbSize = sizeof(psr);
+	psr.flags = PSR_UNICODE;
+	psr.id.w = wszId.GetBuffer();
+
+	if (pUser->hContact != INVALID_CONTACT_ID) {
+		wszNick = getMStringW(pUser->hContact, "Nick");
+		wszLastName = getMStringW(pUser->hContact, "LastName");
+		wszFirstName = getMStringW(pUser->hContact, "FirstName");
+
+		psr.nick.w = wszNick.GetBuffer();
+		psr.lastName.w = wszLastName.GetBuffer();
+		psr.firstName.w = wszFirstName.GetBuffer();
+	}
+	else {
+		psr.firstName.w = pUser->wszFirstName.GetBuffer();
+		psr.lastName.w = pUser->wszLastName.GetBuffer();
+		psr.nick.w = pUser->wszNick.GetBuffer();
+	}
+
+	ProtoBroadcastAck(0, ACKTYPE_SEARCH, ACKRESULT_DATA, this, (LPARAM)&psr);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void CTelegramProto::SetId(MCONTACT hContact, int64_t id)
+{
+	char szId[100];
+	_i64toa(id, szId, 10);
+	setString(hContact, DBKEY_ID, szId);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+void CTelegramProto::UpdateString(MCONTACT hContact, const char *pszSetting, const std::string &str)
 {
 	if (str.empty())
 		delSetting(hContact, pszSetting);
@@ -28,46 +108,69 @@ void CMTProto::UpdateString(MCONTACT hContact, const char *pszSetting, const std
 /////////////////////////////////////////////////////////////////////////////////////////
 // Users
 
-TG_USER* CMTProto::FindUser(uint64_t id)
+TG_USER* CTelegramProto::FindChat(int64_t id)
 {
-	if (auto *pCache = m_arUsers.find((TG_USER *)&id))
-		return pCache;
-
-	return nullptr;
+	auto *tmp = (TG_USER *)_alloca(sizeof(TG_USER));
+	tmp->chatId = id;
+	return m_arChats.find(tmp);
 }
 
-TG_USER* CMTProto::AddUser(uint64_t id, bool bIsChat)
+TG_USER* CTelegramProto::FindUser(int64_t id)
+{
+	return m_arUsers.find((TG_USER *)&id);
+}
+
+TG_USER* CTelegramProto::AddFakeUser(int64_t id, bool bIsChat)
+{
+	auto *pu = FindUser(id);
+	if (pu == nullptr) {
+		pu = new TG_USER(id, INVALID_CONTACT_ID, bIsChat);
+		m_arUsers.insert(pu);
+		if (!bIsChat)
+			m_arChats.insert(pu);
+	}
+	return pu;
+}
+
+TG_USER* CTelegramProto::AddUser(int64_t id, bool bIsChat)
 {
 	auto *pUser = FindUser(id);
 	if (pUser != nullptr)
-		return pUser;
+		if (pUser->hContact != INVALID_CONTACT_ID)
+			return pUser;
 
 	MCONTACT hContact = db_add_contact();
 	Proto_AddToContact(hContact, m_szModuleName);
 
-	char szId[100];
-	_i64toa(id, szId, 10);
+	SetId(hContact, id);
 
 	if (bIsChat) {
 		Clist_SetGroup(hContact, TranslateT("Chat rooms"));
 		setByte(hContact, "ChatRoom", 1);
-		setString(hContact, "ChatRoomID", szId);
+	}
+	else if (mir_wstrlen(m_wszDefaultGroup))
+		Clist_SetGroup(hContact, m_wszDefaultGroup);
+
+	if (pUser == nullptr) {
+		pUser = new TG_USER(id, hContact, bIsChat);
+		m_arUsers.insert(pUser);
+		if (!bIsChat)
+			m_arChats.insert(pUser);
 	}
 	else {
-		setString(hContact, DBKEY_ID, szId);
-		if (mir_wstrlen(m_wszDefaultGroup))
-			Clist_SetGroup(hContact, m_wszDefaultGroup);
+		pUser->hContact = hContact;
+		setWString(hContact, "Nick", pUser->wszNick);
+		setWString(hContact, "FirstName", pUser->wszFirstName);
+		setWString(hContact, "LastName", pUser->wszLastName);
 	}
 
-	pUser = new TG_USER(id, hContact, bIsChat);
-	m_arUsers.insert(pUser);
 	return pUser;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // Popups
 
-void CMTProto::InitPopups(void)
+void CTelegramProto::InitPopups(void)
 {
 	g_plugin.addPopupOption(CMStringW(FORMAT, TranslateT("%s error notifications"), m_tszUserName), m_bUsePopups);
 
@@ -90,7 +193,7 @@ void CMTProto::InitPopups(void)
 	IcoLib_ReleaseIcon(ppc.hIcon);
 }
 
-void CMTProto::Popup(MCONTACT hContact, const wchar_t *szMsg, const wchar_t *szTitle)
+void CTelegramProto::Popup(MCONTACT hContact, const wchar_t *szMsg, const wchar_t *szTitle)
 {
 	if (!m_bUsePopups)
 		return;
@@ -114,12 +217,75 @@ void CMTProto::Popup(MCONTACT hContact, const wchar_t *szMsg, const wchar_t *szT
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-CMStringA getMessageText(TD::MessageContent *pBody)
+CMStringA CTelegramProto::GetMessageText(TG_USER *pUser, TD::MessageContent *pBody)
 {
-	if (pBody->get_id() == TD::messageText::ID) {
+	switch (pBody->get_id()) {
+	case TD::messageDocument::ID:
+		{
+			auto *pDoc = ((TD::messageDocument *)pBody);
+			auto *pFile = pDoc->document_->document_.get();
+
+			if (pFile->get_id() != TD::file::ID) {
+				debugLogA("Document contains unsupported type %d, exiting", pDoc->document_->get_id());
+				break;
+			}
+			
+			auto *pFileId = pFile->remote_->unique_id_.c_str();
+
+			CMStringW wszDest(GetProtoFolder() + L"\\tmpfiles");
+			CreateDirectoryW(wszDest, 0);
+			wszDest.AppendFormat(L"\\%s", Utf2T(pDoc->document_->file_name_.c_str()).get());
+
+			auto *pRequest = new TG_FILE_REQUEST(TG_FILE_REQUEST::FILE, pFileId, wszDest);
+			m_arFiles.insert(pRequest);
+
+			auto *pszFileName = pDoc->document_->file_name_.c_str();
+
+			PROTORECVFILE pre = {};
+			pre.fileCount = 1;
+			pre.timestamp = time(0);
+			pre.files.a = &pszFileName;
+			pre.lParam = (LPARAM)pRequest;
+			if (!pDoc->caption_->text_.empty())
+				pre.descr.a = pDoc->caption_->text_.c_str();
+			ProtoChainRecvFile(pUser->hContact, &pre);
+		}
+		break;
+
+	case TD::messageSticker::ID:
+		if (m_bSmileyAdd) {
+			auto *pSticker = ((TD::messageSticker *)pBody)->sticker_.get();
+			if (pSticker->type_->get_id() != TD::stickerTypeRegular::ID)
+				break;
+
+			auto *pFile = pSticker->thumbnail_->file_.get();
+			auto *pFileId = pFile->remote_->unique_id_.c_str();
+
+			const char *pwszFileExt;
+			switch (pSticker->format_->get_id()) {
+			case TD::stickerFormatTgs::ID: pwszFileExt = "tga"; break;
+			case TD::stickerFormatWebm::ID: pwszFileExt = "webm"; break;
+			case TD::stickerFormatWebp::ID: pwszFileExt = "webp"; break;
+			default:pwszFileExt = "jpeg"; break;
+			}
+
+			CMStringW wszDest(GetAvatarPath() + L"\\Stickers");
+			CreateDirectoryW(wszDest, 0);
+			wszDest.AppendFormat(L"\\STK{%S}.%S", pFileId, pwszFileExt);
+
+			m_arFiles.insert(new TG_FILE_REQUEST(TG_FILE_REQUEST::AVATAR, pFileId, wszDest));
+
+			SendQuery(new TD::downloadFile(pFile->id_, 10, 0, 0, true));
+			return CMStringA(FORMAT, "STK{%s}", pFileId);
+		}
+		else debugLogA("SmileyAdd plugin isn't installed, skipping sticker");
+		break;
+
+	case TD::messageText::ID:
 		auto pText = ((TD::messageText *)pBody)->text_.get();
 		if (pText->get_id() == TD::formattedText::ID)
 			return CMStringA(((TD::formattedText *)pText)->text_.c_str());
+		break;
 	}
 
 	return CMStringA();

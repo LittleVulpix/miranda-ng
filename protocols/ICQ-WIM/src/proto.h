@@ -107,9 +107,9 @@ struct IcqGroup
 	}
 };
 
-struct IcqCacheItem : public MZeroedObject
+struct IcqUser : public MZeroedObject
 {
-	IcqCacheItem(const CMStringW &wszId, MCONTACT _contact) :
+	IcqUser(const CMStringW &wszId, MCONTACT _contact) :
 		m_aimid(wszId),
 		m_hContact(_contact)
 	{}
@@ -245,8 +245,8 @@ class CIcqProto : public PROTO<CIcqProto>
 	friend struct CIcqRegistrationDlg;
 	friend class CGroupchatInviteDlg;
 	friend class CEditIgnoreListDlg;
+	friend class COptionsDlg;
 	friend class CIcqEnterLoginDlg;
-	friend class CIcqOptionsDlg;
 	friend class CGroupEditDlg;
 
 	friend AsyncHttpRequest* operator <<(AsyncHttpRequest*, const AIMSID&);
@@ -260,7 +260,6 @@ class CIcqProto : public PROTO<CIcqProto>
 	void         EmailNotification(const wchar_t *pwszText);
 	void         GetPermitDeny();
 	wchar_t*     GetUIN(MCONTACT hContact);
-	void         MarkAsRead(MCONTACT hContact);
 	void         MoveContactToGroup(MCONTACT hContact, const wchar_t *pwszGroup, const wchar_t *pwszNewGroup);
 	bool         RetrievePassword();
 	void         RetrieveUserHistory(MCONTACT, __int64 startMsgId, bool bCreateRead);
@@ -283,7 +282,7 @@ class CIcqProto : public PROTO<CIcqProto>
 	void         OnLoggedOut(void);
 
 	mir_cs       m_csMarkReadQueue;
-	LIST<IcqCacheItem> m_arMarkReadQueue;
+	LIST<IcqUser> m_arMarkReadQueue;
 	void         SendMarkRead();
 
 	__int64   getId(MCONTACT hContact, const char *szSetting);
@@ -362,6 +361,9 @@ class CIcqProto : public PROTO<CIcqProto>
 	void      Chat_ProcessLogMenu(SESSION_INFO *si, int);
 	void      Chat_SendPrivateMessage(GCHOOK *gch);
 
+	SESSION_INFO* CreateGroupChat(const wchar_t *pwszId, const wchar_t *pwszNick);
+
+	void      RetrieveChatInfo(SESSION_INFO *si);
 	void      InviteUserToChat(SESSION_INFO *si);
 	void      LeaveDestroyChat(SESSION_INFO *si);
 	void      LoadChatInfo(SESSION_INFO *si);
@@ -384,10 +386,10 @@ class CIcqProto : public PROTO<CIcqProto>
 	// cache
 
 	mir_cs    m_csCache;
-	OBJLIST<IcqCacheItem> m_arCache;
+	OBJLIST<IcqUser> m_arCache;
 
 	void      InitContactCache(void);
-	IcqCacheItem* FindContactByUIN(const CMStringW &pwszId);
+	IcqUser*  FindUser(const CMStringW &pwszId);
 	MCONTACT  CreateContact(const CMStringW &pwszId, bool bTemporary);
 
 	void      GetAvatarFileName(MCONTACT hContact, wchar_t *pszDest, size_t cbLen);
@@ -407,7 +409,6 @@ class CIcqProto : public PROTO<CIcqProto>
 	INT_PTR   __cdecl GetAvatarInfo(WPARAM, LPARAM);
 	INT_PTR   __cdecl SetAvatar(WPARAM, LPARAM);
 	
-	INT_PTR   __cdecl CreateAccMgrUI(WPARAM, LPARAM);
 	INT_PTR   __cdecl EditGroups(WPARAM, LPARAM);
 	INT_PTR   __cdecl EditProfile(WPARAM, LPARAM);
 	INT_PTR   __cdecl GetEmailCount(WPARAM, LPARAM);
@@ -420,7 +421,6 @@ class CIcqProto : public PROTO<CIcqProto>
 	// events
 
 	int       __cdecl OnGroupChange(WPARAM, LPARAM);
-	int       __cdecl OnDbEventRead(WPARAM, LPARAM);
 	int       __cdecl OnOptionsInit(WPARAM, LPARAM);
 	int       __cdecl OnUserInfoInit(WPARAM, LPARAM);
 
@@ -452,7 +452,9 @@ class CIcqProto : public PROTO<CIcqProto>
 	void      OnBuildProtoMenu(void) override;
 	void      OnContactAdded(MCONTACT) override;
 	void      OnContactDeleted(MCONTACT) override;
+	MWindow   OnCreateAccMgrUI(MWindow) override;
 	void      OnEventEdited(MCONTACT, MEVENT) override;
+	void      OnMarkRead(MCONTACT, MEVENT) override;
 	void      OnModulesLoaded() override;
 	void      OnShutdown() override;
 

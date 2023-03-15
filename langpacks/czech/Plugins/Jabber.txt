@@ -689,6 +689,12 @@ Změnit přezdívku na %s
 [Reason to destroy %s]
 Důvod k uzavření %s
 ;file \protocols\JabberG\src\jabber_console.cpp
+[Filter mode]
+Filtr
+[Refresh list]
+Aktualizovat seznam
+[Presences]
+Stavy
 [Can't send data while you are offline.]
 Nelze odesílat data když jste offline.
 [Jabber Error]
@@ -1446,6 +1452,8 @@ Zobrazit transporty v seznamu kontaktů
 Automaticky přidat kontakt po úspěšné autorizaci
 [Automatically accept authorization requests]
 Automaticky přijímat žádosti o autorizaci
+[Automatically download files passed via HTTP File Upload]
+
 [Fix incorrect timestamps in incoming messages]
 Opravovat neplatné datum příchozích zpráv
 [Enable XMPP link processing (requires AssocMgr)]
@@ -1786,6 +1794,8 @@ Zadejte heslo pro %s
 Chyba: Nedostatek paměti
 [Error: Cannot connect to the server]
 Chyba: Nelze navázat spojení se serverem
+[SSL intialization failed]
+
 [Error: Connection lost]
 Chyba: Spojení nečekaně ukončeno
 [Requesting registration instruction...]
@@ -1796,8 +1806,6 @@ Požadavek na instrukce k registraci...
 
 [Unable to decrypt a carbon copy of the encrypted outgoing message]
 
-[Description]
-Popis
 [Registration canceled]
 
 [Sending registration information...]
@@ -1928,10 +1936,8 @@ Kontakty
 [Note]
 Poznámka
 ;file \protocols\JabberG\src\jabber_voip.cpp
-[Accept call from %S?\r\nIt will disclose IP address to the peer and his server]
+[Client's program does not support voice calls]
 
-[Incoming call]
-Příchozí hovor
 ;file \protocols\JabberG\src\jabber_xstatus.cpp
 [<advanced status slot>]
 <slot rozšířeného stavu>

@@ -2,7 +2,7 @@
 ;============================================================
 ;  File: TabSRMM.dll
 ;  Plugin: TabSRMM
-;  Version: 3.6.2.5
+;  Version: 3.6.2.6
 ;  Authors: The Miranda developers team and contributors
 ;============================================================
 [IM and group chat module for Miranda NG.]
@@ -38,7 +38,7 @@ Oznámení
 Oznamovací oblast
 [Options]
 Možnosti
-[Text for autocomplete]
+[Text for autocomplete:]
 
 [Add new rooms to group:]
 Nové místnosti do skupiny:
@@ -132,8 +132,6 @@ Uchovat v historii odesílání
 položek
 [More about advanced tweaks]
 Více o pokročilých úpravách
-[Revert to (safe) defaults]
-Obnovit výchozí hodnoty
 [Dialog]
 Dialog
 [Cancel]
@@ -530,8 +528,6 @@ Záznam
 Z&kopírovat
 [&Quote]
 &Citovat
-[Co&py all]
-Zko&pírovat vše
 [Select &all]
 Vybr&at vše
 [Clear log]
@@ -556,8 +552,6 @@ Vložit
 Vložit formátovaný text
 [Paste and send immediately]
 Vložit a Poslat ihned
-[Copy all]
-Zkopírovat vše
 [Select all]
 Vybrat vše
 [Show message length indicator]
@@ -913,8 +907,6 @@ Pozadí seznamu účastníků
 Pozadí skupinového rozhovoru
 [Appearance and functionality of chat room windows]
 Nastavení vzhledu a funkcí komunikačních oken
-[Appearance of the message log]
-Nastavení vzhledu záznamu komunikace
 [Open new chat rooms in the default container]
 Otevírat nové místnosti ve výchozím kontejneru
 [Flash window when someone speaks]
@@ -933,8 +925,6 @@ Zobrazit seznam uživatelů v místnosti
 Zobrazit téma jako zprávu stavu v seznamu kontaktů
 [Do not pop up the window when joining a chat room]
 Neaktivovat okno po příchodu do místnosti
-[Sync splitter position with standard IM sessions]
-Sdílet pozici oddělovače se standardními rozhovory
 [Show contact's status modes if supported by the protocol]
 Zobrazit stav kontaktu, pokud je protokol podporuje
 [Display contact's status icon before user role icon]
@@ -943,6 +933,8 @@ Zobrazit ikonu stavu kontaktu před ikonou jeho role
 Použít IRC indikátory stavu v seznamu účastníků
 [Use alternative sorting method in member list]
 Použít alternativní metodu třídění v seznamu uživatelů
+[Appearance of the message log]
+Nastavení vzhledu záznamu komunikace
 [Prefix all events with a timestamp]
 Před každou událost přidat informaci o čase
 [Only prefix with timestamp if it has changed]
@@ -1317,6 +1309,8 @@ Soubory obrázků
 Soubor existuje. Chcete jej přepsat?
 [JPEG-compressed images]
 JPEG-komprimované obrázky
+[Copy all]
+Zkopírovat vše
 [Save and close session]
 Uložit a zavřít rozhovor
 [, %d %s, %d %s idle]
@@ -1433,16 +1427,16 @@ Chcete se vzhledem nahrát také šablony záznamu?\nUPOZORNĚNÍ: Tato volba p�
 Nahrát vzhled
 [Message window behavior]
 Chování komunikačního okna
+[Always flash contact list and tray icon for new messages]
+Vždy blikat v seznamu kontaktů a v oznam. oblasti při nové zprávě
+[Delete temporary contacts on close]
+Smazat dočasné kontakty po zavření okna
 [Sending messages]
 Odesílání zpráv
 [Minimize the message window on send]
 Minimalizovat okno kliknutím na 'Poslat'
 [Close the message window on send]
 Zavřít okno kliknutím na 'Poslat'
-[Always flash contact list and tray icon for new messages]
-Vždy blikat v seznamu kontaktů a v oznam. oblasti při nové zprávě
-[Delete temporary contacts on close]
-Smazat dočasné kontakty po zavření okna
 [Enable "Paste and send" feature]
 Povolit funkci "Vložit a poslat"
 [Allow BBCode formatting in outgoing messages]
@@ -1471,24 +1465,10 @@ Tato volba obnoví všechny šablony do původního stavu. Opravdu chcete pokra�
 Sada šablon byla úspěšně obnovena do původního stavu, nyní zavřete a otevřete všechna komunikační okna. Editor šablon bude nyní ukončen.
 [Message log appearance]
 Vzhled záznamu komunikace
-[Support for external plugins]
-Podpora externích doplňků
-[Timestamp settings (note: timestamps also depend on your templates)]
-Nastavení časových údajů (pozn.: rovněž závisí na vašich šablonách)
-[Message log icons]
-Ikony v záznamu komunikace
-[Show dates in timestamps]
-Zobrazit datum v časovém údaji
-[Show seconds in timestamps]
-Zobrazit sekundy v časovém údaji
-[Use contacts local time (if timezone info available)]
-Použít lokální čas kontaktu (je-li dostupná informace o zóně)
 [Draw grid lines]
 Zobrazit mřížku
 [Log status changes]
 Zaznamenávat změny stavu
-[Use incoming/outgoing icons]
-Použít příchozí a odchozí ikony
 [Use message grouping]
 Seskupovat zprávy
 [Simple text formatting (*bold*, etc.)]
@@ -1499,14 +1479,28 @@ Formátovat text pomocí BBCode
 Umístit oddělovač do záznamu jakmile okno přestane být v popředí
 [Only place a separator when an incoming event is announced with a popup]
 Umístit oddělovač pouze pokud je příchozí událost uvozena oznámením
+[Use normal templates (uncheck to use simple templates if your template set supports them)]
+Použít normální šablony (po odznačení se použijí jednoduché šablony, pokud to sada dovoluje)
+[Support for external plugins]
+Podpora externích doplňků
 [Show events at the new line (IEView Compatibility Mode)]
 Zobrazit události na novém řádku (režim kompatibility s IEView)
 [Underline timestamp/nickname (IEView Compatibility Mode)]
 Podtrhnout čas/přezdívku (režim kompatibility s IEView)
 [Show timestamp after nickname (IEView Compatibility Mode)]
 Zobrazit čas za přezdívkou (režim kompatibility s IEView)
-[Use normal templates (uncheck to use simple templates if your template set supports them)]
-Použít normální šablony (po odznačení se použijí jednoduché šablony, pokud to sada dovoluje)
+[Timestamp settings (note: timestamps also depend on your templates)]
+Nastavení časových údajů (pozn.: rovněž závisí na vašich šablonách)
+[Show dates in timestamps]
+Zobrazit datum v časovém údaji
+[Show seconds in timestamps]
+Zobrazit sekundy v časovém údaji
+[Use contacts local time (if timezone info available)]
+Použít lokální čas kontaktu (je-li dostupná informace o zóně)
+[Message log icons]
+Ikony v záznamu komunikace
+[Use incoming/outgoing icons]
+Použít příchozí a odchozí ikony
 [** New contacts **]
 ** nové kontakty **
 [** Unknown contacts **]
@@ -1517,14 +1511,14 @@ Vždy
 Pokaždé, kromě otevřeného okna ve výhledu
 [Only when no message window is open]
 Jen když není žádné komunikační okno otevřené
-[How to create tabs and windows for incoming messages]
-Vytváření záložek a oken pro příchozí zprávy
 [Show status text on tabs]
 Zobrazit text stavu na panelu
 [Prefer xStatus icons when available]
 Preferovat ikonu rozšířeného stavu
 [Detailed tooltip on tabs (requires Tipper plugin)]
 Zobrazit tipy nad panely (vyžaduje doplněk Tipper)
+[How to create tabs and windows for incoming messages]
+Vytváření záložek a oken pro příchozí zprávy
 [ALWAYS activate new message sessions (has PRIORITY over the options below)]
 VŽDY aktivovat panel/okno s novou zprávou (má PRIORITU před nastavením uvedeném dále)
 [Automatically create new message sessions without activating them]
@@ -1551,22 +1545,22 @@ Zavřít či schovat okno, záleží na nastavení uzavíracího tlačítka
 
 [Message window tweaks]
 Komunikační okno
-[Display metacontact icons]
-Zobrazit ikonu metakontaktu
-[Error feedback]
-Hlášení o chybách
 [Close current tab on send]
 Zavřít panel po odeslání
 [Enable unattended send (experimental feature, required for multisend and send later)]
 Povolit bezobslužné odesílání (experimentální funkce vyžadovaná pro mnohonásobné či zpožděné odesílání)
 [Show client description in info panel]
 Zobrazit popis klienta v info panelu
+[Display metacontact icons]
+Zobrazit ikonu metakontaktu
 [On tab control]
 Na záložkách
 [On the button bar]
 Na tlačítkové liště
-[Disable error popups on sending failures]
-Zakázat chybové oznámení při neodeslání zprávy
+[Error feedback]
+Hlášení o chybách
+[Enable error popups on sending failures]
+Povolit chybové oznámení při neodeslání zprávy
 [Choose status modes]
 Vyberte stavy
 [General]
@@ -1795,6 +1789,9 @@ Nastavení komunikace pro kontakt %s
 ;file \plugins\TabSRMM\src\utils.cpp
 [TabSRMM message (%s)]
 TabSRMM zpráva (%s)
+;file \plugins\TabSRMM\src\warning.cpp
+[TabSRMM warning message]
+TabSRMM varování
 [Save file|Unable to save temporary file]
 
 [Edit user notes|You are editing the user notes. Click the button again or use the hotkey (default: Alt+N) to save the notes and return to normal messaging mode]
@@ -1815,5 +1812,3 @@ Zavírání okna|Pokoušíte se zavřít okno s několika otevřenými panely.\n
 Zavření okna|Pro projevení změn nahraného tématu v okně možností, musí být po nahrání tématu toto okno zavřeno\\b1 a neuložené změny mohou být ztraceny\\b0 .\n\nPřejete si pokračovat?
 [Loading a theme|Loading a color and font theme can overwrite the settings defined by your skin.\n\nDo you want to continue?]
 Nahrání tématu|Nahrání barev a písma tématu může přepsat nastavení definované vaším skinem.\n\nPřejete si pokračovat?
-[TabSRMM warning message]
-TabSRMM varování

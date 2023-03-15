@@ -89,7 +89,7 @@ EXTERN_C MIR_CORE_DLL(MCONTACT) db_add_contact(void);
 // Because all events are deleted, lots of people may end up with invalid event
 // handles from this operation, which they should be prepared for.
 
-EXTERN_C MIR_CORE_DLL(int) db_delete_contact(MCONTACT hContact);
+EXTERN_C MIR_CORE_DLL(int) db_delete_contact(MCONTACT hContact, bool bFromProto = false);
 
 // Checks if a given value is a valid contact handle, note that due
 // to the nature of multiple threading, a valid contact can still become
@@ -188,7 +188,8 @@ struct DBEVENTINFO
 	uint16_t    eventType;      // module-defined event type field
 	int         cbBlob;         // size of pBlob in bytes
 	uint8_t    *pBlob;          // pointer to buffer containing module-defined event data
-	const char *szId;           // server id
+	const char *szId;           // server message id
+	const char *szUserId;       // user id (for group chats only)
 
 	bool __forceinline markedRead() const {
 		return (flags & (DBEF_SENT | DBEF_READ)) != 0;
@@ -288,7 +289,7 @@ EXTERN_C MIR_CORE_DLL(int) db_event_count(MCONTACT hContact);
 // Returns 0 on success, or nonzero if hDbEvent was invalid
 // Triggers a db/event/deleted event just *before* the event is deleted
 
-EXTERN_C MIR_CORE_DLL(int) db_event_delete(MEVENT hDbEvent);
+EXTERN_C MIR_CORE_DLL(int) db_event_delete(MEVENT hDbEvent, bool bFromServer = false);
 
 // Edits an event in the database
 // Returns 0 on success, or nonzero on error
@@ -350,7 +351,7 @@ EXTERN_C MIR_CORE_DLL(MEVENT) db_event_last(MCONTACT hContact);
 // This is the one database write operation that does not trigger an event.
 // Modules should not save flags states for any length of time.
 
-EXTERN_C MIR_CORE_DLL(int) db_event_markRead(MCONTACT hContact, MEVENT hDbEvent);
+EXTERN_C MIR_CORE_DLL(int) db_event_markRead(MCONTACT hContact, MEVENT hDbEvent, bool bFromServer = false);
 
 // Retrieves a handle to the next event in a chain after hDbEvent
 // Returns the handle, or NULL if hDbEvent is invalid or is the last event
@@ -387,6 +388,7 @@ EXTERN_C MIR_CORE_DLL(char*)    db_get_utfa(MCONTACT hContact, const char *szMod
 EXTERN_C MIR_CORE_DLL(wchar_t*) db_get_wsa(MCONTACT hContact, const char *szModule, const char *szSetting, const wchar_t *szValue = nullptr);
 
 MIR_CORE_DLL(CMStringA)         db_get_sm(MCONTACT hContact, const char *szModule, const char *szSetting, const char *szValue = nullptr);
+MIR_CORE_DLL(CMStringA)         db_get_usm(MCONTACT hContact, const char *szModule, const char *szSetting, const char *szValue = nullptr);
 MIR_CORE_DLL(CMStringW)         db_get_wsm(MCONTACT hContact, const char *szModule, const char *szSetting, const wchar_t *szValue = nullptr);
 
 EXTERN_C MIR_CORE_DLL(int)      db_get_static(MCONTACT hContact, const char *szModule, const char *szSetting, char *pDest, int cbDest);

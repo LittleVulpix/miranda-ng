@@ -104,7 +104,9 @@ MEVENT CDbxSQLite::AddEvent(MCONTACT hContact, const DBEVENTINFO *dbei)
 	}
 
 	mir_cslockfull lock(m_csDbAccess);
-	sqlite3_stmt *stmt = InitQuery("INSERT INTO events(contact_id, module, timestamp, type, flags, data, server_id, is_read) VALUES (?, ?, ?, ?, ?, ?, ?, ?);", qEvAdd);
+	sqlite3_stmt *stmt = InitQuery(
+		"INSERT INTO events(contact_id, module, timestamp, type, flags, data, server_id, user_id, is_read) "
+		"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);", qEvAdd);
 	sqlite3_bind_int64(stmt, 1, hContact);
 	sqlite3_bind_text(stmt, 2, tmp.szModule, (int)mir_strlen(tmp.szModule), nullptr);
 	sqlite3_bind_int64(stmt, 3, tmp.timestamp);
@@ -112,7 +114,8 @@ MEVENT CDbxSQLite::AddEvent(MCONTACT hContact, const DBEVENTINFO *dbei)
 	sqlite3_bind_int64(stmt, 5, tmp.flags);
 	sqlite3_bind_blob(stmt, 6, tmp.pBlob, tmp.cbBlob, nullptr);
 	sqlite3_bind_text(stmt, 7, szEventId, (int)mir_strlen(szEventId), nullptr);
-	sqlite3_bind_int(stmt, 8, tmp.markedRead());
+	sqlite3_bind_text(stmt, 8, tmp.szUserId, (int)mir_strlen(tmp.szUserId), nullptr);
+	sqlite3_bind_int(stmt, 9, tmp.markedRead());
 	int rc = sqlite3_step(stmt);
 	logError(rc, __FILE__, __LINE__);
 	sqlite3_reset(stmt);
@@ -127,6 +130,7 @@ MEVENT CDbxSQLite::AddEvent(MCONTACT hContact, const DBEVENTINFO *dbei)
 	logError(rc, __FILE__, __LINE__);
 	sqlite3_reset(stmt);
 
+	cc->AddEvent();
 	if (ccSub != nullptr) {
 		stmt = InitQuery(add_event_sort_query, qEvAddSrt);
 		sqlite3_bind_int64(stmt, 1, hDbEvent);
@@ -135,6 +139,7 @@ MEVENT CDbxSQLite::AddEvent(MCONTACT hContact, const DBEVENTINFO *dbei)
 		rc = sqlite3_step(stmt);
 		logError(rc, __FILE__, __LINE__);
 		sqlite3_reset(stmt); //is this necessary ?
+		ccSub->AddEvent();
 	}
 
 	char *module = m_modules.find((char *)tmp.szModule);
@@ -285,7 +290,7 @@ int CDbxSQLite::GetBlobSize(MEVENT hDbEvent)
 	return res;
 }
 
-static char g_szId[100];
+static char g_szId[100], g_szUserId[100];
 
 BOOL CDbxSQLite::GetEvent(MEVENT hDbEvent, DBEVENTINFO *dbei)
 {
@@ -301,7 +306,7 @@ BOOL CDbxSQLite::GetEvent(MEVENT hDbEvent, DBEVENTINFO *dbei)
 	}
 
 	mir_cslock lock(m_csDbAccess);
-	sqlite3_stmt *stmt = InitQuery("SELECT module, timestamp, type, flags, server_id, length(data), data FROM events WHERE id = ? LIMIT 1;", qEvGet);
+	sqlite3_stmt *stmt = InitQuery("SELECT module, timestamp, type, flags, server_id, user_id, length(data), data FROM events WHERE id = ? LIMIT 1;", qEvGet);
 	sqlite3_bind_int64(stmt, 1, hDbEvent);
 	int rc = sqlite3_step(stmt);
 	logError(rc, __FILE__, __LINE__);
@@ -326,7 +331,14 @@ BOOL CDbxSQLite::GetEvent(MEVENT hDbEvent, DBEVENTINFO *dbei)
 	}
 	else dbei->szId = nullptr;
 
-	int32_t cbBlob = sqlite3_column_int64(stmt, 5);
+	char *pszUserId = (char *)sqlite3_column_text(stmt, 5);
+	if (mir_strlen(pszUserId)) {
+		mir_strncpy(g_szUserId, pszUserId, sizeof(g_szUserId));
+		dbei->szUserId = g_szUserId;
+	}
+	else dbei->szUserId = nullptr;	
+
+	int32_t cbBlob = sqlite3_column_int64(stmt, 6);
 	size_t bytesToCopy = cbBlob;
 	if (dbei->cbBlob == -1)
 		dbei->pBlob = (uint8_t*)mir_calloc(cbBlob + 2);
@@ -335,7 +347,7 @@ BOOL CDbxSQLite::GetEvent(MEVENT hDbEvent, DBEVENTINFO *dbei)
 
 	dbei->cbBlob = cbBlob;
 	if (bytesToCopy && dbei->pBlob) {
-		uint8_t *data = (uint8_t *)sqlite3_column_blob(stmt, 6);
+		uint8_t *data = (uint8_t *)sqlite3_column_blob(stmt, 7);
 
 		if (dbei->flags & DBEF_ENCRYPTED) {
 			dbei->flags &= ~DBEF_ENCRYPTED;
@@ -379,8 +391,12 @@ BOOL CDbxSQLite::MarkEventRead(MCONTACT hContact, MEVENT hDbEvent)
 	}
 
 	DBFlush();
+
+	if (rows == 0)
+		return 0;
+
 	NotifyEventHooks(g_hevMarkedRead, hContact, (LPARAM)hDbEvent);
-	return (rows == 0 ? 0 : DBEF_READ);
+	return 1;
 }
 
 MCONTACT CDbxSQLite::GetEventContact(MEVENT hDbEvent)
@@ -565,39 +581,37 @@ MEVENT CDbxSQLite::FindPrevEvent(MCONTACT hContact, MEVENT hDbEvent)
 
 BOOL CDbxSQLite::MetaMergeHistory(DBCachedContact *ccMeta, DBCachedContact *ccSub)
 {
-	//TODO: test this
-	mir_cslock lock(m_csDbAccess);
-	sqlite3_stmt *stmt = InitQuery("SELECT id, timestamp FROM events WHERE contact_id = ?;", qEvMetaMerge);
-	sqlite3_bind_int64(stmt, 1, ccSub->contactID);
-	int rc = sqlite3_step(stmt);
-	logError(rc, __FILE__, __LINE__);
-	while (rc == SQLITE_ROW) {
-		sqlite3_stmt *stmt2 = InitQuery(add_event_sort_query, qEvAddSrt);
-		sqlite3_bind_int64(stmt2, 1, sqlite3_column_int64(stmt, 0));
-		sqlite3_bind_int64(stmt2, 2, ccMeta->contactID);
-		sqlite3_bind_int64(stmt2, 3, sqlite3_column_int64(stmt, 1));
-		int rc2 = sqlite3_step(stmt2);
-		logError(rc2, __FILE__, __LINE__);
-		sqlite3_reset(stmt2);
-		rc = sqlite3_step(stmt);
+	{	mir_cslock lock(m_csDbAccess);
+		sqlite3_stmt *stmt = InitQuery(
+			"INSERT INTO events_srt(id, contact_id, timestamp) "
+				"SELECT id, ?, timestamp from events_srt where contact_id = ?;", qEvMetaMerge);
+		sqlite3_bind_int64(stmt, 1, ccMeta->contactID);
+		sqlite3_bind_int64(stmt, 2, ccSub->contactID);
+		int rc = sqlite3_step(stmt);
 		logError(rc, __FILE__, __LINE__);
+		sqlite3_reset(stmt);
+		if (rc != SQLITE_DONE)
+			return FALSE;
 	}
 
-	sqlite3_reset(stmt);
 	DBFlush();
 	return TRUE;
 }
 
-BOOL CDbxSQLite::MetaSplitHistory(DBCachedContact *ccMeta, DBCachedContact *)
+BOOL CDbxSQLite::MetaSplitHistory(DBCachedContact *ccMeta, DBCachedContact *ccSub)
 {
-	mir_cslock lock(m_csDbAccess);
-	sqlite3_stmt *stmt = InitQuery("DELETE FROM events_srt WHERE contact_id = ?;", qEvMetaSplit);
-	sqlite3_bind_int64(stmt, 1, ccMeta->contactID);
-	int rc = sqlite3_step(stmt);
-	logError(rc, __FILE__, __LINE__);
-	sqlite3_reset(stmt);
-	if (rc != SQLITE_DONE)
-		return 1;
+	{	mir_cslock lock(m_csDbAccess);
+		sqlite3_stmt *stmt = InitQuery(
+			"DELETE FROM events_srt WHERE contact_id = ? "
+				"AND id IN (SELECT id from events_srt WHERE contact_id = ?);", qEvMetaSplit);
+		sqlite3_bind_int64(stmt, 1, ccMeta->contactID);
+		sqlite3_bind_int64(stmt, 2, ccSub->contactID);
+		int rc = sqlite3_step(stmt);
+		logError(rc, __FILE__, __LINE__);
+		sqlite3_reset(stmt);
+		if (rc != SQLITE_DONE)
+			return FALSE;
+	}
 
 	DBFlush();
 	return TRUE;

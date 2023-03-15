@@ -69,6 +69,8 @@ struct CVkProto : public PROTO<CVkProto>
 
 	void     OnBuildProtoMenu() override;
 	void     OnContactDeleted(MCONTACT) override;
+	MWindow  OnCreateAccMgrUI(MWindow) override;
+	void     OnMarkRead(MCONTACT, MEVENT) override;
 	void     OnModulesLoaded() override;
 	void     OnShutdown() override;
 
@@ -80,7 +82,6 @@ struct CVkProto : public PROTO<CVkProto>
 
 	//==== Services ======================================================================
 
-	INT_PTR __cdecl SvcCreateAccMgrUI(WPARAM, LPARAM);
 	INT_PTR __cdecl SvcGetAvatarInfo(WPARAM, LPARAM);
 	INT_PTR __cdecl SvcGetAvatarCaps(WPARAM, LPARAM);
 	INT_PTR __cdecl SvcGetMyAvatar(WPARAM, LPARAM);
@@ -252,14 +253,10 @@ private:
 	//==== Hooks =========================================================================
 
 	int __cdecl OnProcessSrmmEvent(WPARAM, LPARAM);
-	int __cdecl OnDbEventRead(WPARAM, LPARAM);
 	int __cdecl OnDbSettingChanged(WPARAM, LPARAM);
 
 	//==== Search ========================================================================
 
-	void __cdecl SearchBasicThread(void *id);
-	void __cdecl SearchByMailThread(void *email);
-	void __cdecl SearchThread(void *p);
 	void FreeProtoShearchStruct(PROTOSEARCHBYNAME *pParam);
 	void OnSearch(NETLIBHTTPREQUEST*, AsyncHttpRequest*);
 	void OnSearchByMail(NETLIBHTTPREQUEST*, AsyncHttpRequest*);
@@ -357,6 +354,7 @@ private:
 	int IsHystoryMessageExist(MCONTACT hContact);
 	void SetSrmmReadStatus(MCONTACT hContact);
 	void MarkDialogAsRead(MCONTACT hContact);
+	void CheckUpdate();
 	char* GetStickerId(const char *Msg, int& stickerid);
 	CMStringA GetAttachmentsFromMessage(const char * Msg);
 	CMStringW SpanVKNotificationType(CMStringW& wszType, VKObjType& vkFeedback, VKObjType& vkParent);
@@ -396,7 +394,7 @@ private:
 	CVkChatInfo* AppendConversationChat(int iChatId, const JSONNode& jnItem);
 	void SetChatTitle(CVkChatInfo *cc, LPCWSTR wszTopic);
 	void AppendChatConversationMessage(int id, const JSONNode& jnMsg, const JSONNode& jnFUsers, bool bIsHistory);
-	void AppendChatMessage(CVkChatInfo *cc, LONG uid, int msgTime, LPCWSTR pwszBody, bool bIsHistory, bool bIsAction = false);
+	void AppendChatMessage(CVkChatInfo *cc, LONG mid, LONG uid, int msgTime, LPCWSTR pwszBody, bool bIsHistory, bool bIsAction = false);
 	void RetrieveChatInfo(CVkChatInfo*);
 	void OnReceiveChatInfo(NETLIBHTTPREQUEST*, AsyncHttpRequest*);
 	void OnSendChatMsg(NETLIBHTTPREQUEST*, AsyncHttpRequest*);
@@ -413,6 +411,7 @@ private:
 	LPTSTR ChangeChatTopic(CVkChatInfo*);
 	void SetChatStatus(MCONTACT hContact, int iStatus);
 	CVkChatInfo* GetChatById(LPCWSTR pwszId);
+	CVkChatInfo* GetChatByContact(MCONTACT hContact);
 	INT_PTR __cdecl SvcCreateChat(WPARAM, LPARAM);
 	void __cdecl GetAwayMsgThread(void* p);
 };

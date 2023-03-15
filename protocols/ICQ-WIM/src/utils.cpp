@@ -43,18 +43,18 @@ void CIcqProto::InitContactCache()
 		}
 
 		CMStringW wszId = GetUserId(it);
-		auto *pCache = FindContactByUIN(wszId);
-		if (pCache == nullptr) {
-			pCache = new IcqCacheItem(wszId, it);
-			m_arCache.insert(pCache);
+		auto *pUser = FindUser(wszId);
+		if (pUser == nullptr) {
+			pUser = new IcqUser(wszId, it);
+			m_arCache.insert(pUser);
 		}
-		pCache->m_iProcessedMsgId = getId(it, DB_KEY_LASTMSGID);
+		pUser->m_iProcessedMsgId = getId(it, DB_KEY_LASTMSGID);
 	}
 }
 
-IcqCacheItem* CIcqProto::FindContactByUIN(const CMStringW &wszId)
+IcqUser* CIcqProto::FindUser(const CMStringW &wszId)
 {
-	IcqCacheItem tmp(wszId, -1);
+	IcqUser tmp(wszId, -1);
 
 	mir_cslock l(m_csCache);
 	return m_arCache.find(&tmp);
@@ -90,9 +90,9 @@ wchar_t* CIcqProto::GetUIN(MCONTACT hContact)
 
 MCONTACT CIcqProto::CreateContact(const CMStringW &wszId, bool bTemporary)
 {
-	auto *pCache = FindContactByUIN(wszId);
-	if (pCache != nullptr)
-		return pCache->m_hContact;
+	auto *pUser = FindUser(wszId);
+	if (pUser != nullptr)
+		return pUser->m_hContact;
 
 	MCONTACT hContact = db_add_contact();
 	setWString(hContact, DB_KEY_ID, wszId);
@@ -150,13 +150,14 @@ void CIcqProto::Json2string(MCONTACT hContact, const JSONNode &node, const char 
 
 void CIcqProto::GetAvatarFileName(MCONTACT hContact, wchar_t* pszDest, size_t cbLen)
 {
-	int tPathLen = mir_snwprintf(pszDest, cbLen, L"%s\\%S", VARSW(L"%miranda_avatarcache%").get(), m_szModuleName);
-	CreateDirectoryTreeW(pszDest);
-	pszDest[tPathLen++] = '\\';
+	CMStringW wszPath(GetAvatarPath());
+	wszPath += '\\';
 
 	CMStringW wszFileName(getMStringW(hContact, "IconId"));
 	const wchar_t* szFileType = ProtoGetAvatarExtension(getByte(hContact, "AvatarType", PA_FORMAT_PNG));
-	mir_snwprintf(pszDest + tPathLen, MAX_PATH - tPathLen, L"%s%s", wszFileName.c_str(), szFileType);
+	wszPath.AppendFormat(L"%s%s", wszFileName.c_str(), szFileType);
+
+	wcsncpy_s(pszDest, cbLen, wszPath, _TRUNCATE);
 }
 
 INT_PTR __cdecl CIcqProto::GetAvatar(WPARAM wParam, LPARAM lParam)
@@ -264,9 +265,6 @@ INT_PTR __cdecl CIcqProto::SetAvatar(WPARAM, LPARAM lParam)
 
 CMStringW CIcqProto::GetUserId(MCONTACT hContact)
 {
-	if (isChatRoom(hContact))
-		return getMStringW(hContact, "ChatRoomID");
-
 	return getMStringW(hContact, DB_KEY_ID);
 }
 

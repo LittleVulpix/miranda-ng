@@ -291,17 +291,6 @@ static __inline unsigned long Proto_Status2Flag(int status)
 #define PS_AUTHDENY    "/AuthDeny"
 
 ///////////////////////////////////////////////////////////////////////////////
-// Create account manager UI form
-// wParam = 0
-// lParam = (LPARAM)(HWND)hwndAccMgr
-// Returns handle on newly created form.
-// Size for best fit is 186x134 DLUs, please avoid groupboxes
-// paddind and advanced options. This should provide minimal setup
-// for initial connect.
-
-#define PS_CREATEACCMGRUI "/CreateAccMgrUI"
-
-///////////////////////////////////////////////////////////////////////////////
 // Send a basic search request
 // wParam = 0
 // lParam = (LPARAM)(const wchar_t*)szId
@@ -735,12 +724,13 @@ struct PROTOFILERESUME
 
 struct PROTORECVEVENT
 {
-	uint32_t flags;      // combination of PREF_*
-	uint32_t timestamp;  // unix time
-	char* szMessage;     // message body in utf8
-	LPARAM lParam;       // extra space for the network level protocol module
-	const char* szMsgId; // server message id, optional, should be NULL otherwise
-	                     // ignored for protocols without PF4_SERVERMSGID in GetCaps()
+	uint32_t flags;       // combination of PREF_*
+	uint32_t timestamp;   // unix time
+	char* szMessage;      // message body in utf8
+	LPARAM lParam;        // extra space for the network level protocol module
+	const char* szMsgId;  // server message id, optional, should be NULL otherwise
+	                      // ignored for protocols without PF4_SERVERMSGID in GetCaps()
+	const char *szUserId; // user id, for group chats stored in the database
 };
 
 ///////////////////////////////////////////////////////////////////////////////

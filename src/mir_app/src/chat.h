@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 void Srmm_CreateToolbarIcons(HWND hwndDlg, int flags);
 void Srmm_ProcessToolbarHotkey(MCONTACT hContact, INT_PTR iButtonFrom, HWND hwndDlg);
 
+void CheckChatCompatibility();
+
 class CLogWindow : public CSrmmLogWindow {};
 
 extern HPLUGIN  g_pChatPlugin;
@@ -64,20 +66,20 @@ char*         Log_SetStyle(int style);
 MODULEINFO*   MM_AddModule(const char *pszModule);
 MODULEINFO*   MM_FindModule(const char *pszModule);
 
-BOOL          SM_AddEvent(const wchar_t *pszID, const char *pszModule, GCEVENT *gce, bool bIsHighlighted);
-BOOL          SM_ChangeNick(const wchar_t *pszID, const char *pszModule, GCEVENT *gce);
+BOOL          SM_AddEvent(SESSION_INFO *si, GCEVENT *gce, bool bIsHighlighted);
+BOOL          SM_ChangeNick(SESSION_INFO *si, GCEVENT *gce);
+void          SM_FreeSession(SESSION_INFO *si);
 char*         SM_GetUsers(SESSION_INFO *si);
-BOOL          SM_GiveStatus(const wchar_t *pszID, const char *pszModule, const wchar_t *pszUID, const wchar_t *pszStatus);
+BOOL          SM_GiveStatus(SESSION_INFO *si, const wchar_t *pszUID, const wchar_t *pszStatus);
 void          SM_RemoveAll(void);
-int           SM_RemoveSession(const wchar_t *pszID, const char *pszModule, bool removeContact);
-BOOL          SM_RemoveUser(const wchar_t *pszID, const char *pszModule, const wchar_t *pszUID);
-BOOL          SM_SetContactStatus(const wchar_t *pszID, const char *pszModule, const wchar_t *pszUID, uint16_t wStatus);
+BOOL          SM_RemoveUser(SESSION_INFO *si, const wchar_t *pszUID);
+BOOL          SM_SetContactStatus(SESSION_INFO *si, const wchar_t *pszUID, uint16_t wStatus);
 BOOL          SM_SetOffline(const char *pszModule, SESSION_INFO *si);
 BOOL          SM_SetStatus(const char *pszModule, SESSION_INFO *si, int wStatus);
-BOOL          SM_TakeStatus(const wchar_t *pszID, const char *pszModule, const wchar_t *pszUID, const wchar_t *pszStatus);
+BOOL          SM_TakeStatus(SESSION_INFO *si, const wchar_t *pszUID, const wchar_t *pszStatus);
 BOOL          SM_UserTyping(GCEVENT* gce);
 
-SESSION_INFO* SM_FindSession(const wchar_t *pszID, const char *pszModule);
+SESSION_INFO* SM_FindSessionByContact(MCONTACT hContact);
 SESSION_INFO* SM_FindSessionByIndex(const char *pszModule, int iItem);
 
 STATUSINFO*   TM_AddStatus(STATUSINFO **ppStatusList, const wchar_t *pszStatus, int *iCount);
@@ -90,7 +92,6 @@ void          UM_SortUser(SESSION_INFO *si);
 
 // clist.c
 MCONTACT      AddRoom(const char *pszModule, const wchar_t *pszRoom, const wchar_t *pszDisplayName, int iType);
-MCONTACT      FindRoom(const char *pszModule, const wchar_t *pszRoom);
 BOOL          SetAllOffline(BOOL bHide, const char *pszModule);
 BOOL          SetOffline(MCONTACT hContact, BOOL bHide);
 		        

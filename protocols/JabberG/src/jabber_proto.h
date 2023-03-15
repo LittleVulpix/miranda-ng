@@ -132,7 +132,7 @@ struct CJabberProto : public PROTO<CJabberProto>, public IJabberInterface
 	HANDLE   SearchBasic(const wchar_t *id) override;
 	HANDLE   SearchByEmail(const wchar_t *email) override;
 	HANDLE   SearchByName(const wchar_t *nick, const wchar_t *firstName, const wchar_t *lastName) override;
-	HWND     SearchAdvanced(HWND owner) override;
+	HANDLE   SearchAdvanced(HWND owner) override;
 	HWND     CreateExtendedSearchUI(HWND owner) override;
 
 	int      SendContacts(MCONTACT hContact, int flags, int nContacts, MCONTACT *hContactsList) override;
@@ -150,11 +150,12 @@ struct CJabberProto : public PROTO<CJabberProto>, public IJabberInterface
 
 	void     OnBuildProtoMenu(void) override;
 	void     OnContactDeleted(MCONTACT) override;
+	MWindow  OnCreateAccMgrUI(MWindow) override;
+	void     OnMarkRead(MCONTACT, MEVENT) override;
 	void     OnModulesLoaded() override;
 	void     OnShutdown() override;
 
 	//====| Services |====================================================================
-	INT_PTR  __cdecl SvcCreateAccMgrUI(WPARAM wParam, LPARAM lParam);
 	INT_PTR  __cdecl GetMyAwayMsg(WPARAM wParam, LPARAM lParam);
 
 	INT_PTR  __cdecl JabberVOIP_call(WPARAM hContact, LPARAM);
@@ -163,7 +164,6 @@ struct CJabberProto : public PROTO<CJabberProto>, public IJabberInterface
 
 	//====| Events |======================================================================
 	void __cdecl OnAddContactForever(MCONTACT hContact);
-	int  __cdecl OnDbMarkedRead(WPARAM, LPARAM);
 	int  __cdecl OnDbSettingChanged(WPARAM, LPARAM);
 	int  __cdecl OnIdleChanged(WPARAM, LPARAM);
 	int  __cdecl OnLangChanged(WPARAM, LPARAM);
@@ -193,6 +193,7 @@ struct CJabberProto : public PROTO<CJabberProto>, public IJabberInterface
 	CMOption<bool> m_bAutoJoinBookmarks;
 	CMOption<bool> m_bAutoJoinConferences;
 	CMOption<bool> m_bAutoJoinHidden;
+	CMOption<bool> m_bAutoLoadOOB;
 	CMOption<bool> m_bAutosaveNotes;
 	CMOption<bool> m_bBsDirect;
 	CMOption<bool> m_bBsDirectManual;
@@ -444,17 +445,18 @@ struct CJabberProto : public PROTO<CJabberProto>, public IJabberInterface
 
 	//---- jabber_chat.cpp ---------------------------------------------------------------
 
-	int        GcInit(JABBER_LIST_ITEM *item);
-	void       GcLogUpdateMemberStatus(JABBER_LIST_ITEM *item, const char *resource, const char *nick, const char *jid, int action, const TiXmlElement *reason, int nStatusCode = -1);
-	void       GcLogShowInformation(JABBER_LIST_ITEM *item, pResourceStatus &user, TJabberGcLogInfoType type);
-	void       GcQuit(JABBER_LIST_ITEM* jid, int code, const TiXmlElement *reason);
-			     
-	void       AdminSet(const char *to, const char *ns, const char *szItem, const char *itemVal, const char *var, const char *varVal);
-	void       AdminGet(const char *to, const char *ns, const char *var, const char *varVal, JABBER_IQ_HANDLER foo, void *pInfo = nullptr);
-	void       AdminSetReason(const char *to, const char *ns, const char *szItem, const char *itemVal, const char *var, const char *varVal, const char *rsn);
-	void       AddMucListItem(JABBER_MUC_JIDLIST_INFO* jidListInfo, const char *str);
-	void       AddMucListItem(JABBER_MUC_JIDLIST_INFO* jidListInfo, const char *str, const char *reason);
-	void       DeleteMucListItem(JABBER_MUC_JIDLIST_INFO* jidListInfo, const char* jid);
+	SESSION_INFO* GcInit(JABBER_LIST_ITEM *item);
+	
+	void GcLogUpdateMemberStatus(JABBER_LIST_ITEM *item, const char *resource, const char *nick, const char *jid, int action, const TiXmlElement *reason, int nStatusCode = -1);
+	void GcLogShowInformation(JABBER_LIST_ITEM *item, pResourceStatus &user, TJabberGcLogInfoType type);
+	void GcQuit(JABBER_LIST_ITEM* jid, int code, const TiXmlElement *reason);
+		
+	void AdminSet(const char *to, const char *ns, const char *szItem, const char *itemVal, const char *var, const char *varVal);
+	void AdminGet(const char *to, const char *ns, const char *var, const char *varVal, JABBER_IQ_HANDLER foo, void *pInfo = nullptr);
+	void AdminSetReason(const char *to, const char *ns, const char *szItem, const char *itemVal, const char *var, const char *varVal, const char *rsn);
+	void AddMucListItem(JABBER_MUC_JIDLIST_INFO* jidListInfo, const char *str);
+	void AddMucListItem(JABBER_MUC_JIDLIST_INFO* jidListInfo, const char *str, const char *reason);
+	void DeleteMucListItem(JABBER_MUC_JIDLIST_INFO* jidListInfo, const char* jid);
 
 	//---- jabber_console.cpp ------------------------------------------------------------
 
@@ -503,6 +505,7 @@ struct CJabberProto : public PROTO<CJabberProto>, public IJabberInterface
 
 	void       __cdecl FileReceiveThread(filetransfer *ft);
 	void       __cdecl FileServerThread(filetransfer *ft);
+	void       __cdecl FileReceiveHttpThread(filetransfer *ft);
 			     
 	void       FtCancel(filetransfer *ft);
 	void       FtInitiate(filetransfer *ft);
@@ -607,7 +610,7 @@ struct CJabberProto : public PROTO<CJabberProto>, public IJabberInterface
 	bool       FtIbbSend(int blocksize, filetransfer *ft);
 	bool       FtSend(HNETLIBCONN hConn, filetransfer *ft);
 	void       FtSendFinal(bool success, filetransfer *ft);
-	int        FtReceive(HNETLIBCONN hConn, filetransfer *ft, char* buffer, int datalen);
+	int        FtReceive(filetransfer *ft, char* buffer, int datalen);
 	void       FtReceiveFinal(bool success, filetransfer *ft);
 
 	//---- jabber_iqid.cpp ---------------------------------------------------------------
@@ -646,6 +649,7 @@ struct CJabberProto : public PROTO<CJabberProto>, public IJabberInterface
 	int        ListFindNext(JABBER_LIST list, int fromOffset);
 
 	pResourceStatus ListFindResource(JABBER_LIST list, const char *jid);
+	pResourceStatus ListGetBestResource(const char *jid);
 
 	bool       ListAddResource(JABBER_LIST list, const char *jid, int status, const char *statusMessage, int priority = 0, const char *nick = nullptr);
 	void       ListRemoveResource(JABBER_LIST list, const char *jid);
@@ -755,7 +759,6 @@ struct CJabberProto : public PROTO<CJabberProto>, public IJabberInterface
 
 	void       __cdecl BasicSearchThread(struct JABBER_SEARCH_BASIC *jsb);
 	void       __cdecl GetAwayMsgThread(void* hContact);
-	void       __cdecl SendMessageAckThread(void* hContact);
 			   
 	MCONTACT   AddToListByJID(const char *newJid, uint32_t flags);
 
@@ -880,6 +883,7 @@ struct CJabberProto : public PROTO<CJabberProto>, public IJabberInterface
 	bool       IsSendAck(MCONTACT hContact);
 				 
 	void       __cdecl LoadHttpAvatars(void* param);
+	CMStringA  MyNick(MCONTACT hContact = 0);
 
 	//---- jabber_vcard.c -----------------------------------------------
 
@@ -895,6 +899,7 @@ struct CJabberProto : public PROTO<CJabberProto>, public IJabberInterface
 
 	//---- jabber_voip.c -----------------------------------------------------------------
 
+	void InitVoip(bool bEnable);
 	bool OnICECandidate(const TiXmlElement *Node);
 	bool OnRTPDescription(const TiXmlElement *Node);
 	bool VOIPCreatePipeline();
@@ -908,6 +913,10 @@ struct CJabberProto : public PROTO<CJabberProto>, public IJabberInterface
 	HANDLE m_hVoiceEvent;
 	struct _GstElement *m_pipe1 = NULL;
 	struct _GstElement *m_webrtc1 = NULL;
+
+	__forceinline bool hasJingle()
+	{	return g_plugin.bJingle && m_bEnableVOIP;
+	}
 
 	//---- jabber_xml.c ------------------------------------------------------------------
 

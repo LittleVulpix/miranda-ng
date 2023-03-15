@@ -87,6 +87,9 @@ FacebookProto::FacebookProto(const char *proto_name, const wchar_t *username) :
 	m_sid = _atoi64(getMStringA(DBKEY_SID));
 	m_szSyncToken = getMStringA(DBKEY_SYNC_TOKEN);
 
+	// Avatars
+	CreateDirectoryTreeW(GetAvatarPath());
+
 	// Create standard network connection
 	NETLIBUSER nlu = {};
 	nlu.flags = NUF_INCOMING | NUF_OUTGOING | NUF_HTTPCONNS | NUF_UNICODE;
@@ -97,7 +100,6 @@ FacebookProto::FacebookProto(const char *proto_name, const wchar_t *username) :
 	db_set_resident(m_szModuleName, "UpdateNeeded");
 
 	// Services
-	CreateProtoService(PS_CREATEACCMGRUI, &FacebookProto::SvcCreateAccMgrUI);
 	CreateProtoService(PS_GETAVATARINFO, &FacebookProto::GetAvatarInfo);
 	CreateProtoService(PS_GETAVATARCAPS, &FacebookProto::GetAvatarCaps);
 
@@ -105,11 +107,10 @@ FacebookProto::FacebookProto(const char *proto_name, const wchar_t *username) :
 	HookProtoEvent(ME_GC_EVENT, &FacebookProto::GroupchatEventHook);
 	HookProtoEvent(ME_GC_BUILDMENU, &FacebookProto::GroupchatMenuHook);
 	HookProtoEvent(ME_OPT_INITIALISE, &FacebookProto::OnOptionsInit);
-	HookProtoEvent(ME_DB_EVENT_MARKED_READ, &FacebookProto::OnMarkedRead);
 
 	// Group chats
 	GCREGISTER gcr = {};
-	gcr.dwFlags = GC_TYPNOTIF;
+	gcr.dwFlags = GC_TYPNOTIF | GC_DATABASE;
 	gcr.ptszDispName = m_tszUserName;
 	gcr.pszModule = m_szModuleName;
 	Chat_Register(&gcr);
@@ -295,8 +296,7 @@ int FacebookProto::UserIsTyping(MCONTACT hContact, int type)
 //////////////////////////////////////////////////////////////////////////////
 // Services
 
-INT_PTR FacebookProto::SvcCreateAccMgrUI(WPARAM, LPARAM lParam)
+MWindow FacebookProto::OnCreateAccMgrUI(MWindow hwndParent)
 {
-	return (INT_PTR) CreateDialogParam(g_plugin.getInst(), MAKEINTRESOURCE(IDD_FACEBOOKACCOUNT),
-		(HWND) lParam, FBAccountProc, (LPARAM) this);
+	return CreateDialogParam(g_plugin.getInst(), MAKEINTRESOURCE(IDD_FACEBOOKACCOUNT), hwndParent, FBAccountProc, (LPARAM)this);
 }

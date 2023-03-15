@@ -15,11 +15,11 @@ CToxProto::CToxProto(const char* protoName, const wchar_t* userName)
 	if (m_defaultGroup == nullptr)
 		m_defaultGroup = mir_wstrdup(L"Tox");
 	
-	CreateProtoService(PS_CREATEACCMGRUI, &CToxProto::OnAccountManagerInit);
-
 	setAllContactStatuses(ID_STATUS_OFFLINE);
 
 	// avatars
+	CreateDirectoryTreeW(GetAvatarPath());
+
 	CreateProtoService(PS_GETAVATARCAPS, &CToxProto::GetAvatarCaps);
 	CreateProtoService(PS_GETAVATARINFO, &CToxProto::GetAvatarInfo);
 	CreateProtoService(PS_GETMYAVATAR, &CToxProto::GetMyAvatar);
@@ -134,7 +134,7 @@ int CToxProto::FileResume(HANDLE hTransfer, int action, const wchar_t *szFilenam
 	return OnFileResume(m_tox, hTransfer, action, szFilename);
 }
 
-HWND CToxProto::SearchAdvanced(HWND owner)
+HANDLE CToxProto::SearchAdvanced(HWND owner)
 {
 	return OnSearchAdvanced(owner);
 }

@@ -33,7 +33,7 @@
 
 #pragma warning(disable:4355)
 
-static int CompareCache(const IcqCacheItem *p1, const IcqCacheItem *p2)
+static int CompareCache(const IcqUser *p1, const IcqUser *p2)
 {
 	return mir_wstrcmp(p1->m_aimid, p2->m_aimid);
 }
@@ -63,8 +63,6 @@ CIcqProto::CIcqProto(const char *aProtoName, const wchar_t *aUserName) :
 	m_isMra = !stricmp(Proto_GetAccount(m_szModuleName)->szProtoName, "MRA");
 
 	// services
-	CreateProtoService(PS_CREATEACCMGRUI, &CIcqProto::CreateAccMgrUI);
-
 	CreateProtoService(PS_GETAVATARCAPS, &CIcqProto::GetAvatarCaps);
 	CreateProtoService(PS_GETAVATARINFO, &CIcqProto::GetAvatarInfo);
 	CreateProtoService(PS_GETMYAVATAR, &CIcqProto::GetAvatar);
@@ -76,17 +74,19 @@ CIcqProto::CIcqProto(const char *aProtoName, const wchar_t *aUserName) :
 
 	// events
 	HookProtoEvent(ME_CLIST_GROUPCHANGE, &CIcqProto::OnGroupChange);
-	HookProtoEvent(ME_DB_EVENT_MARKED_READ, &CIcqProto::OnDbEventRead);
 	HookProtoEvent(ME_GC_EVENT, &CIcqProto::GroupchatEventHook);
 	HookProtoEvent(ME_GC_BUILDMENU, &CIcqProto::GroupchatMenuHook);
 	HookProtoEvent(ME_OPT_INITIALISE, &CIcqProto::OnOptionsInit);
 
 	// group chats
 	GCREGISTER gcr = {};
-	gcr.dwFlags = GC_TYPNOTIF | GC_CHANMGR;
+	gcr.dwFlags = GC_TYPNOTIF | GC_CHANMGR | GC_DATABASE;
 	gcr.ptszDispName = m_tszUserName;
 	gcr.pszModule = m_szModuleName;
 	Chat_Register(&gcr);
+
+	// avatars
+	CreateDirectoryTreeW(GetAvatarPath());
 
 	// netlib handle
 	NETLIBUSER nlu = {};
@@ -132,7 +132,7 @@ void CIcqProto::OnModulesLoaded()
 	HookProtoEvent(ME_USERINFO_INITIALISE, &CIcqProto::OnUserInfoInit);
 
 	// load custom smilies
-	CMStringW wszPath(FORMAT, L"%s\\%S\\Stickers\\*.png", VARSW(L"%miranda_avatarcache%").get(), m_szModuleName);
+	CMStringW wszPath(GetAvatarPath() + L"\\Stickers\\*.png");
 	SMADD_CONT cont = { 2, m_szModuleName, wszPath };
 	CallService(MS_SMILEYADD_LOADCONTACTSMILEYS, 0, LPARAM(&cont));
 }
@@ -145,9 +145,9 @@ void CIcqProto::OnShutdown()
 void CIcqProto::OnContactAdded(MCONTACT hContact)
 {
 	CMStringW wszId(getMStringW(hContact, DB_KEY_ID));
-	if (!wszId.IsEmpty() && !FindContactByUIN(wszId)) {
+	if (!wszId.IsEmpty() && !FindUser(wszId)) {
 		mir_cslock l(m_csCache);
-		m_arCache.insert(new IcqCacheItem(wszId, hContact));
+		m_arCache.insert(new IcqUser(wszId, hContact));
 	}
 }
 
@@ -155,7 +155,7 @@ void CIcqProto::OnContactDeleted(MCONTACT hContact)
 {
 	CMStringW szId(GetUserId(hContact));
 	if (!isChatRoom(hContact))
-		m_arCache.remove(FindContactByUIN(szId));
+		m_arCache.remove(FindUser(szId));
 
 	Push(new AsyncHttpRequest(CONN_MAIN, REQUEST_GET, ICQ_API_SERVER "/buddylist/removeBuddy")
 		<< AIMSID(this) << WCHAR_PARAM("buddy", szId) << INT_PARAM("allGroups", 1));
@@ -182,7 +182,7 @@ void CIcqProto::OnBuildProtoMenu()
 	mi.root = Menu_GetProtocolRoot(this);
 	mi.flags = CMIF_UNMOVABLE;
 
-	// "Bookmarks..."
+	// Groups uploader
 	mi.pszService = "/UploadGroups";
 	CreateProtoService(mi.pszService, &CIcqProto::UploadGroups);
 	mi.name.a = LPGEN("Synchronize server groups");
@@ -190,6 +190,9 @@ void CIcqProto::OnBuildProtoMenu()
 	mi.hIcolibItem = Skin_GetIconHandle(SKINICON_OTHER_GROUP);
 	m_hUploadGroups = Menu_AddProtoMenuItem(&mi, m_szModuleName);
 
+	Menu_ShowItem(m_hUploadGroups, false);
+
+	// Groups editor
 	mi.pszService = "/EditGroups";
 	CreateProtoService(mi.pszService, &CIcqProto::EditGroups);
 	mi.name.a = LPGEN("Edit server groups");
@@ -197,113 +200,15 @@ void CIcqProto::OnBuildProtoMenu()
 	mi.hIcolibItem = Skin_GetIconHandle(SKINICON_OTHER_GROUP);
 	Menu_AddProtoMenuItem(&mi, m_szModuleName);
 
-	mi.pszService = "/EditProfile";
-	CreateProtoService(mi.pszService, &CIcqProto::EditProfile);
-	mi.name.a = LPGEN("Edit my web profile");
-	mi.position = 210001;
-	mi.hIcolibItem = Skin_GetIconHandle(SKINICON_OTHER_MIRANDAWEB);
-	Menu_AddProtoMenuItem(&mi, m_szModuleName);
-
-	Menu_ShowItem(m_hUploadGroups, false);
-}
-
-INT_PTR CIcqProto::UploadGroups(WPARAM, LPARAM)
-{
-	for (auto &it : AccContacts()) {
-		if (isChatRoom(it))
-			continue;
-
-		ptrW wszIcqGroup(getWStringA(it, "IcqGroup"));
-		if (wszIcqGroup == nullptr)
-			continue;
-
-		ptrW wszMirGroup(Clist_GetGroup(it));
-		if (!wszMirGroup)
-			wszMirGroup = mir_wstrdup(L"General");
-		if (mir_wstrcmp(wszIcqGroup, wszMirGroup))
-			MoveContactToGroup(it, wszIcqGroup, wszMirGroup);
+	// Profile viewer
+	if (!m_isMra) {
+		mi.pszService = "/EditProfile";
+		CreateProtoService(mi.pszService, &CIcqProto::EditProfile);
+		mi.name.a = LPGEN("Edit my web profile");
+		mi.position = 210001;
+		mi.hIcolibItem = Skin_GetIconHandle(SKINICON_OTHER_MIRANDAWEB);
+		Menu_AddProtoMenuItem(&mi, m_szModuleName);
 	}
-	return 0;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
-class CGroupEditDlg : public CIcqDlgBase
-{
-	CCtrlListView groups;
-
-public:
-	
-	static CGroupEditDlg *pDlg;
-
-	CGroupEditDlg(CIcqProto *ppro) :
-		CIcqDlgBase(ppro, IDD_EDITGROUPS),
-		groups(this, IDC_GROUPS)
-	{
-		groups.OnBuildMenu = Callback(this, &CGroupEditDlg::onMenu);
-	}
-
-	void RefreshGroups()
-	{
-		for (auto &it : m_proto->m_arGroups.rev_iter())
-			groups.AddItem(it->wszName, 0, (LPARAM)it);
-	}
-
-	bool OnInitDialog() override
-	{
-		pDlg = this;
-		groups.AddColumn(0, TranslateT("Name"), 300);
-		RefreshGroups();
-		return true;
-	}
-
-	void OnDestroy() override
-	{
-		pDlg = nullptr;
-	}
-
-	void onMenu(void *)
-	{
-		int cur = groups.GetSelectionMark();
-		if (cur == -1)
-			return;
-
-		IcqGroup *pGroup = (IcqGroup *)groups.GetItemData(cur);
-
-		HMENU hMenu = CreatePopupMenu();
-		AppendMenu(hMenu, MF_STRING, 1, TranslateT("Rename"));
-		AppendMenu(hMenu, MF_STRING, 2, TranslateT("Delete"));
-
-		POINT pt;
-		GetCursorPos(&pt);
-		int cmd = TrackPopupMenu(hMenu, TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, 0, m_hwnd, nullptr);
-		DestroyMenu(hMenu);
-
-		if (cmd == 1) { // rename
-			ENTER_STRING es = {};
-			es.szModuleName = m_proto->m_szModuleName;
-			es.caption = TranslateT("Enter new group name");
-			if (!EnterString(&es))
-				return;
-
-			m_proto->Push(new AsyncHttpRequest(CONN_MAIN, REQUEST_GET, ICQ_API_SERVER "/buddylist/renameGroup")
-				<< AIMSID(m_proto) << WCHAR_PARAM("oldGroup", pGroup->wszSrvName) << GROUP_PARAM("newGroup", es.ptszResult));
-
-			mir_free(es.ptszResult);
-		}
-		else if (cmd == 2) { // delete
-			m_proto->Push(new AsyncHttpRequest(CONN_MAIN, REQUEST_GET, ICQ_API_SERVER "/buddylist/removeGroup")
-				<< AIMSID(m_proto) << WCHAR_PARAM("group", pGroup->wszSrvName));
-		}
-	}
-};
-
-CGroupEditDlg *CGroupEditDlg::pDlg = nullptr;
-
-INT_PTR CIcqProto::EditGroups(WPARAM, LPARAM)
-{
-	(new CGroupEditDlg(this))->Show();
-	return 0;
 }
 
 INT_PTR CIcqProto::EditProfile(WPARAM, LPARAM)
@@ -311,12 +216,6 @@ INT_PTR CIcqProto::EditProfile(WPARAM, LPARAM)
 	if (mir_wstrlen(m_szOwnId))
 		Utils_OpenUrlW(CMStringW(FORMAT, L"https://icq.com/people/%s/edit/", (wchar_t*)m_szOwnId));
 	return 0;
-}
-
-void RefreshGroups(void)
-{
-	if (CGroupEditDlg::pDlg != nullptr)
-		CGroupEditDlg::pDlg->RefreshGroups();
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -340,7 +239,7 @@ void CIcqProto::SendMarkRead()
 {
 	mir_cslock lck(m_csMarkReadQueue);
 	while (m_arMarkReadQueue.getCount()) {
-		IcqCacheItem *pUser = m_arMarkReadQueue[0];
+		auto *pUser = m_arMarkReadQueue[0];
 
 		auto *pReq = new AsyncRapiRequest(this, "setDlgStateWim");
 		pReq->params << WCHAR_PARAM("sn", GetUserId(pUser->m_hContact)) << INT64_PARAM("lastRead", getId(pUser->m_hContact, DB_KEY_LASTMSGID));
@@ -350,19 +249,19 @@ void CIcqProto::SendMarkRead()
 	}
 }
 
-int CIcqProto::OnDbEventRead(WPARAM, LPARAM hDbEvent)
+void CIcqProto::OnMarkRead(MCONTACT hContact, MEVENT)
 {
-	MCONTACT hContact = db_event_getContact(hDbEvent);
-	if (!hContact)
-		return 0;
+	if (!m_bOnline)
+		return;
 
-	// filter out only events of my protocol
-	const char *szProto = Proto_GetBaseAccountName(hContact);
-	if (mir_strcmp(szProto, m_szModuleName))
-		return 0;
+	m_impl.m_markRead.Start(200);
 
-	MarkAsRead(hContact);
-	return 0;
+	auto *pUser = FindUser(GetUserId(hContact));
+	if (pUser) {
+		mir_cslock lck(m_csMarkReadQueue);
+		if (m_arMarkReadQueue.indexOf(pUser) == -1)
+			m_arMarkReadQueue.insert(pUser);
+	}
 }
 
 int CIcqProto::OnGroupChange(WPARAM hContact, LPARAM lParam)
@@ -500,8 +399,6 @@ INT_PTR CIcqProto::GetCaps(int type, MCONTACT)
 		break;
 
 	case PFLAGNUM_2:
-		return PF2_ONLINE | PF2_SHORTAWAY | PF2_LONGAWAY | PF2_LIGHTDND | PF2_HEAVYDND | PF2_INVISIBLE;
-
 	case PFLAGNUM_3:
 		return PF2_ONLINE | PF2_SHORTAWAY | PF2_LONGAWAY | PF2_LIGHTDND | PF2_HEAVYDND | PF2_INVISIBLE;
 	

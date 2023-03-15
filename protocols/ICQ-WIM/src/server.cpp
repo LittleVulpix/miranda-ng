@@ -27,6 +27,8 @@ void CIcqProto::CheckAvatarChange(MCONTACT hContact, const JSONNode &ev)
 	CMStringW wszIconId(ev["bigIconId"].as_mstring());
 	if (wszIconId.IsEmpty())
 		wszIconId = ev["iconId"].as_mstring();
+	if (wszIconId.IsEmpty())
+		wszIconId = ev["avatarId"].as_mstring();
 	
 	if (!wszIconId.IsEmpty()) {
 		CMStringW oldIconID(getMStringW(hContact, "IconId"));
@@ -71,9 +73,11 @@ MCONTACT CIcqProto::CheckOwnMessage(const CMStringA &reqId, const CMStringA &msg
 	if (pOwn == nullptr)
 		return 0;
 
-	ProtoBroadcastAck(pOwn->m_hContact, ACKTYPE_MESSAGE, ACKRESULT_SUCCESS, (HANDLE)pOwn->m_msgid, (LPARAM)msgId.c_str());
-
 	MCONTACT ret = pOwn->m_hContact;
+
+	if (!Contact::IsGroupChat(ret))
+		ProtoBroadcastAck(ret, ACKTYPE_MESSAGE, ACKRESULT_SUCCESS, (HANDLE)pOwn->m_msgid, (LPARAM)msgId.c_str());
+
 	if (bRemove) {
 		mir_cslock lck(m_csOwnIds);
 		m_arOwnIds.remove(pOwn);
@@ -265,44 +269,18 @@ void CIcqProto::OnLoggedOut()
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-void CIcqProto::MarkAsRead(MCONTACT hContact)
-{
-	if (!m_bOnline)
-		return;
-
-	m_impl.m_markRead.Start(200);
-
-	auto *pCache = FindContactByUIN(GetUserId(hContact));
-	if (pCache) {
-		mir_cslock lck(m_csMarkReadQueue);
-		if (m_arMarkReadQueue.indexOf(pCache) == -1)
-			m_arMarkReadQueue.insert(pCache);
-	}
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-
 MCONTACT CIcqProto::ParseBuddyInfo(const JSONNode &buddy, MCONTACT hContact, bool bIsPartial)
 {
 	// user chat?
 	CMStringW wszId(buddy["aimId"].as_mstring());
 	if (IsChat(wszId)) {
-		CMStringW wszChatId(buddy["aimId"].as_mstring());
+		auto *pUser = FindUser(wszId);
+		if (pUser && pUser->m_iApparentMode == ID_STATUS_OFFLINE)
+			return INVALID_CONTACT_ID;
+
 		CMStringW wszChatName(buddy["friendly"].as_mstring());
-
-		auto *pContact = FindContactByUIN(wszId);
-		if (pContact && pContact->m_iApparentMode == ID_STATUS_OFFLINE)
-			return INVALID_CONTACT_ID;
-
-		auto *si = Chat_NewSession(GCW_CHATROOM, m_szModuleName, wszChatId, wszChatName);
-		if (si == nullptr)
-			return INVALID_CONTACT_ID;
-
-		Chat_AddGroup(si, TranslateT("admin"));
-		Chat_AddGroup(si, TranslateT("member"));
-		Chat_Control(m_szModuleName, wszChatId, m_bHideGroupchats ? WINDOW_HIDDEN : SESSION_INITDONE);
-		Chat_Control(m_szModuleName, wszChatId, SESSION_ONLINE);
-		return si->hContact;
+		auto *si = CreateGroupChat(wszId, wszChatName);
+		return (si) ? si->hContact : INVALID_CONTACT_ID;
 	}
 
 	bool bIgnored = !IsValidType(buddy);
@@ -311,10 +289,10 @@ MCONTACT CIcqProto::ParseBuddyInfo(const JSONNode &buddy, MCONTACT hContact, boo
 			return INVALID_CONTACT_ID;
 
 		hContact = CreateContact(wszId, false);
-		FindContactByUIN(wszId)->m_bInList = true;
+		FindUser(wszId)->m_bInList = true;
 	}
 	else if (bIgnored) {
-		db_delete_contact(hContact);
+		db_delete_contact(hContact, true);
 		return INVALID_CONTACT_ID;
 	}
 
@@ -437,6 +415,8 @@ void CIcqProto::ParseMessage(MCONTACT hContact, __int64 &lastMsgId, const JSONNo
 	if (msgId > lastMsgId)
 		lastMsgId = msgId;
 
+	int iMsgTime = (bLocalTime) ? time(0) : it["time"].as_int();
+
 	CMStringW wszText;
 	const JSONNode &sticker = it["sticker"];
 	if (sticker) {
@@ -452,25 +432,48 @@ void CIcqProto::ParseMessage(MCONTACT hContact, __int64 &lastMsgId, const JSONNo
 		wszText = it["text"].as_mstring();
 		wszText.TrimRight();
 
-		// user added you
-		if (it["class"].as_mstring() == L"event" && it["eventTypeId"].as_mstring() == L"27:33000") {
-			if (bLocalTime) {
-				CMStringA id = getMStringA(hContact, DB_KEY_ID);
-				int pos = id.Find('@');
-				CMStringA nick = (pos == -1) ? id : id.Left(pos);
-				DB::AUTH_BLOB blob(hContact, nick, nullptr, nullptr, id, nullptr);
+		if (it["class"].as_mstring() == L"event") {
+			// user added you
+			if (it["eventTypeId"].as_mstring() == L"27:33000") {
+				if (bLocalTime) {
+					CMStringA id = getMStringA(hContact, DB_KEY_ID);
+					int pos = id.Find('@');
+					CMStringA nick = (pos == -1) ? id : id.Left(pos);
+					DB::AUTH_BLOB blob(hContact, nick, nullptr, nullptr, id, nullptr);
 
-				PROTORECVEVENT pre = {};
-				pre.timestamp = (uint32_t)time(0);
-				pre.lParam = blob.size();
-				pre.szMessage = blob;
-				ProtoChainRecv(hContact, PSR_AUTH, 0, (LPARAM)&pre);
+					PROTORECVEVENT pre = {};
+					pre.timestamp = (uint32_t)time(0);
+					pre.lParam = blob.size();
+					pre.szMessage = blob;
+					ProtoChainRecv(hContact, PSR_AUTH, 0, (LPARAM)&pre);
+				}
+				return;
 			}
-			return;
+
+			if (auto &pChat = it["chat"]) {
+				auto *si = Chat_Find(pChat["sender"].as_mstring(), m_szModuleName);
+				if (si == nullptr)
+					return;
+
+				if (pChat["type"].as_string() == "group") {
+					if (pChat["memberEvent"]["type"].as_string() == "kicked") {
+						GCEVENT gce = {};
+						gce.si = si;
+						gce.time = iMsgTime;
+						gce.iType = GC_EVENT_KICK;
+
+						for (auto &jt : pChat["memberEvent"]["members"]) {
+							auto userId = jt.as_mstring();
+							gce.pszUID.w = userId;
+							Chat_Event(&gce);
+						}
+					}
+				}
+				return;
+			}
 		}
 	}
 
-	int iMsgTime = (bLocalTime) ? time(0) : it["time"].as_int();
 	bool bIsOutgoing = it["outgoing"].as_bool(), bIsFileTransfer = false;
 	IcqFileInfo *pFileInfo = nullptr;
 
@@ -486,37 +489,16 @@ void CIcqProto::ParseMessage(MCONTACT hContact, __int64 &lastMsgId, const JSONNo
 		}
 	}
 
-	if (isChatRoom(hContact)) {
-		CMStringA reqId(it["reqId"].as_mstring());
-		CheckOwnMessage(reqId, szMsgId, true);
-
-		CMStringW wszSender(it["chat"]["sender"].as_mstring());
-		CMStringW wszChatId(getMStringW(hContact, "ChatRoomID"));
-
-		if (bIsFileTransfer) {
-			wszText = pFileInfo->szUrl;
-			if (!pFileInfo->wszDescr)
-				wszText.AppendFormat(L"\r\n%s", pFileInfo->wszDescr.c_str());
-			delete pFileInfo;
-		}
-
-		GCEVENT gce = { m_szModuleName, 0, GC_EVENT_MESSAGE };
-		gce.pszID.w = wszChatId;
-		gce.dwFlags = GCEF_ADDTOLOG;
-		gce.pszUID.w = wszSender;
-		gce.pszText.w = wszText;
-		gce.time = iMsgTime;
-		gce.bIsMe = wszSender == m_szOwnId;
-		Chat_Event(&gce);
-		return;
-	}
-
-	// skip own messages, just set the server msgid
+	// process our own messages
 	CMStringA reqId(it["reqId"].as_mstring());
 	if (CheckOwnMessage(reqId, szMsgId, true)) {
 		debugLogA("Skipping our own message %s", szMsgId.c_str());
-		return;
+		if (!Contact::IsGroupChat(hContact)) // prevent duplicates in private chats 
+			return;
+		bIsOutgoing = bCreateRead = true;
 	}
+	else if (Contact::IsGroupChat(hContact))
+		bCreateRead = true;
 
 	// ignore duplicates
 	MEVENT hDbEvent = db_event_getById(m_szModuleName, szMsgId);
@@ -554,13 +536,18 @@ void CIcqProto::ParseMessage(MCONTACT hContact, __int64 &lastMsgId, const JSONNo
 	debugLogA("Adding message %d:%lld (CR=%d)", hContact, msgId, bCreateRead);
 
 	ptrA szUtf(mir_utf8encodeW(wszText));
+	CMStringA szSender(it["chat"]["sender"].as_mstring());
 
 	PROTORECVEVENT pre = {};
-	if (bIsOutgoing) pre.flags |= PREF_SENT;
-	if (bCreateRead) pre.flags |= PREF_CREATEREAD;
 	pre.szMsgId = szMsgId;
 	pre.timestamp = iMsgTime;
 	pre.szMessage = szUtf;
+	if (bIsOutgoing)
+		pre.flags |= PREF_SENT;
+	if (bCreateRead)
+		pre.flags |= PREF_CREATEREAD;
+	if (isChatRoom(hContact))
+		pre.szUserId = szSender;
 	ProtoChainRecvMsg(hContact, &pre);
 }
 
@@ -934,7 +921,7 @@ void CIcqProto::OnGetSticker(NETLIBHTTPREQUEST *pReply, AsyncHttpRequest *pReq)
 	CMStringW wszPath(FORMAT, L"%s\\%S\\Stickers", VARSW(L"%miranda_avatarcache%").get(), m_szModuleName);
 	CreateDirectoryTreeW(wszPath);
 
-	CMStringW wszFileName(FORMAT, L"%s\\STK{%s}.png", wszPath.c_str(), pReq->pUserInfo);
+	CMStringW wszFileName(FORMAT, L"%s\\STK{%s}.png", wszPath.c_str(), (wchar_t*)pReq->pUserInfo);
 	FILE *out = _wfopen(wszFileName, L"wb");
 	fwrite(pReply->pData, 1, pReply->dataLength, out);
 	fclose(out);
@@ -961,7 +948,7 @@ void CIcqProto::OnFileInfo(NETLIBHTTPREQUEST *pReply, AsyncHttpRequest *pReq)
 	if (szUrl.empty())
 		return;
 
-	MarkAsRead(pReq->hContact);
+	OnMarkRead(pReq->hContact, 0);
 
 	bool bIsSticker;
 	CMStringW wszDescr(pInfo["file_name"].as_mstring());

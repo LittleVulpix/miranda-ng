@@ -22,21 +22,25 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 struct TextObject
 {
-	uint32_t options;
-	const char *szProto;
-	IFormattedTextDraw *ftd;
-	TextObject() : options(0), ftd(nullptr) {}
-	~TextObject() { if (ftd) delete ftd; }
+	uint32_t options = 0;
+	const char *szProto = nullptr;
+	CFormattedTextDraw *ftd = nullptr;
+
+	TextObject() {}
+
+	~TextObject()
+	{
+		delete ftd;
+	}
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
-// elper functions
+// Helper functions
 
-void MText_InitFormatting0(IFormattedTextDraw *ftd, uint32_t)
+void MText_InitFormatting0(CFormattedTextDraw *ftd, uint32_t)
 {
-	LRESULT lResult;
-
 	// urls
+	LRESULT lResult;
 	ftd->getTextService()->TxSendMessage(EM_AUTOURLDETECT, TRUE, 0, &lResult);
 }
 
@@ -62,31 +66,29 @@ void MText_InitFormatting1(TextObject *text)
 /////////////////////////////////////////////////////////////////////////////////////////
 // allocate text object (unicode)
 
-MTEXTCONTROL_DLL(HANDLE) MTextCreateW(HANDLE userHandle, const char *szProto, const wchar_t *text)
+MTEXTCONTROL_DLL(TextObject *) MTextCreateW(HANDLE userHandle, const char *szProto, const wchar_t *text)
 {
 	TextObject *result = new TextObject;
 	result->szProto = szProto;
 	result->options = TextUserGetOptions(userHandle);
-	result->ftd = new CFormattedTextDraw;
-	result->ftd->Create();
+	result->ftd = new CFormattedTextDraw();
 	InitRichEdit(result->ftd->getTextService());
 
 	MText_InitFormatting0(result->ftd, result->options);
-	result->ftd->putTextW((wchar_t*)text);
+	result->ftd->putTextW((wchar_t *)text);
 	MText_InitFormatting1(result);
 
-	return (HANDLE)result;
+	return result;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // allocate text object (advanced)
 
-MTEXTCONTROL_DLL(HANDLE) MTextCreateEx(HANDLE userHandle, void *text, uint32_t flags)
+MTEXTCONTROL_DLL(TextObject *) MTextCreateEx(HANDLE userHandle, void *text, uint32_t flags)
 {
 	TextObject *result = new TextObject;
 	result->options = TextUserGetOptions(userHandle);
-	result->ftd = new CFormattedTextDraw;
-	result->ftd->Create();
+	result->ftd = new CFormattedTextDraw();
 	InitRichEdit(result->ftd->getTextService());
 
 	MText_InitFormatting0(result->ftd, result->options);
@@ -103,12 +105,12 @@ MTEXTCONTROL_DLL(HANDLE) MTextCreateEx(HANDLE userHandle, void *text, uint32_t f
 /////////////////////////////////////////////////////////////////////////////////////////
 // measure text object
 
-MTEXTCONTROL_DLL(int) MTextMeasure(HDC dc, SIZE *sz, HANDLE text)
+MTEXTCONTROL_DLL(int) MTextMeasure(HDC dc, SIZE *sz, TextObject *text)
 {
 	if (!text) return 0;
 
 	long lWidth = sz->cx, lHeight = sz->cy;
-	((TextObject *)text)->ftd->get_NaturalSize(dc, &lWidth, &lHeight);
+	text->ftd->get_NaturalSize(dc, &lWidth, &lHeight);
 	sz->cx = lWidth;
 	sz->cy = lHeight;
 	return 0;
@@ -117,7 +119,7 @@ MTEXTCONTROL_DLL(int) MTextMeasure(HDC dc, SIZE *sz, HANDLE text)
 /////////////////////////////////////////////////////////////////////////////////////////
 // display text object
 
-MTEXTCONTROL_DLL(int) MTextDisplay(HDC dc, POINT pos, SIZE sz, HANDLE text)
+MTEXTCONTROL_DLL(int) MTextDisplay(HDC dc, POINT pos, SIZE sz, TextObject *text)
 {
 	if (!text) return 0;
 
@@ -128,19 +130,19 @@ MTEXTCONTROL_DLL(int) MTextDisplay(HDC dc, POINT pos, SIZE sz, HANDLE text)
 	cf.cbSize = sizeof(cf);
 	cf.dwMask = CFM_COLOR;
 	cf.crTextColor = cl;
-	((TextObject *)text)->ftd->getTextService()->TxSendMessage(EM_SETCHARFORMAT, SCF_ALL, (LPARAM)&cf, &lResult);
+	text->ftd->getTextService()->TxSendMessage(EM_SETCHARFORMAT, SCF_ALL, (LPARAM)&cf, &lResult);
 
 	SetBkMode(dc, TRANSPARENT);
 
 	long lWidth = sz.cx, lHeight;
-	((TextObject *)text)->ftd->get_NaturalSize(dc, &lWidth, &lHeight);
+	text->ftd->get_NaturalSize(dc, &lWidth, &lHeight);
 
 	RECT rt;
 	rt.left = pos.x;
 	rt.top = pos.y;
 	rt.right = pos.x + lWidth;
 	rt.bottom = pos.y + lHeight;
-	((TextObject *)text)->ftd->Draw(dc, &rt);
+	text->ftd->Draw(dc, &rt);
 
 	return 0;
 }
@@ -148,13 +150,16 @@ MTEXTCONTROL_DLL(int) MTextDisplay(HDC dc, POINT pos, SIZE sz, HANDLE text)
 /////////////////////////////////////////////////////////////////////////////////////////
 // set parent window for text object (this is required for mouse handling, etc)
 
-MTEXTCONTROL_DLL(int) MTextSetParent(HANDLE text, HWND hwnd)
+MTEXTCONTROL_DLL(int) MTextSetParent(TextObject *text, HWND hwnd)
 {
 	if (text) {
 		RECT rc;
 		GetClientRect(hwnd, &rc);
 
-		((TextObject *)text)->ftd->setParentWnd(hwnd, rc);
+		text->ftd->setParentWnd(hwnd, rc);
+
+		DWORD dwStyle = GetWindowLong(hwnd, GWL_STYLE);
+		SetWindowLong(hwnd, GWL_STYLE, dwStyle | 8);
 	}
 	return 0;
 }
@@ -162,17 +167,16 @@ MTEXTCONTROL_DLL(int) MTextSetParent(HANDLE text, HWND hwnd)
 /////////////////////////////////////////////////////////////////////////////////////////
 // send message to an object
 
-MTEXTCONTROL_DLL(int) MTextSendMessage(HWND hwnd, HANDLE text, UINT msg, WPARAM wParam, LPARAM lParam)
+MTEXTCONTROL_DLL(int) MTextSendMessage(HWND hwnd, TextObject *text, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	if (!text)
-		return 0;
+	if (!text) return 0;
 
 	LRESULT lResult;
-	((TextObject *)text)->ftd->getTextService()->TxSendMessage(msg, wParam, lParam, &lResult);
+	text->ftd->getTextService()->TxSendMessage(msg, wParam, lParam, &lResult);
 
 	if (hwnd && (msg == WM_MOUSEMOVE)) {
 		HDC hdc = GetDC(hwnd);
-		((TextObject *)text)->ftd->getTextService()->OnTxSetCursor(DVASPECT_CONTENT, 0, nullptr, nullptr, hdc, nullptr, nullptr, LOWORD(lParam), HIWORD(lParam));
+		text->ftd->getTextService()->OnTxSetCursor(DVASPECT_CONTENT, 0, nullptr, nullptr, hdc, nullptr, nullptr, LOWORD(lParam), HIWORD(lParam));
 		ReleaseDC(hwnd, hdc);
 	}
 
@@ -180,10 +184,25 @@ MTEXTCONTROL_DLL(int) MTextSendMessage(HWND hwnd, HANDLE text, UINT msg, WPARAM 
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
+// activates text object
+
+MTEXTCONTROL_DLL(int) MTextActivate(TextObject *text, bool bActivate)
+{
+	if (!text) return 0;
+
+	if (bActivate)
+		text->ftd->getTextService()->OnTxInPlaceActivate(0);
+	else
+		text->ftd->getTextService()->OnTxInPlaceDeactivate();
+
+	return 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
 // destroy text object
 
-MTEXTCONTROL_DLL(int) MTextDestroy(HANDLE text)
+MTEXTCONTROL_DLL(int) MTextDestroy(TextObject *text)
 {
-	delete (TextObject *)text;
+	delete text;
 	return 0;
 }

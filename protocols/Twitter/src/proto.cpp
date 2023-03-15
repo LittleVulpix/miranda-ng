@@ -25,11 +25,8 @@ static volatile LONG g_msgid = 1;
 
 CTwitterProto::CTwitterProto(const char *proto_name, const wchar_t *username) :
 	PROTO<CTwitterProto>(proto_name, username),
-	m_szChatId(mir_utf8encodeW(username)),
 	m_arChatMarks(10, NumericKeySortT)
 {
-	CreateProtoService(PS_CREATEACCMGRUI, &CTwitterProto::SvcCreateAccMgrUI);
-
 	CreateProtoService(PS_JOINCHAT, &CTwitterProto::OnJoinChat);
 	CreateProtoService(PS_LEAVECHAT, &CTwitterProto::OnLeaveChat);
 
@@ -37,8 +34,6 @@ CTwitterProto::CTwitterProto(const char *proto_name, const wchar_t *username) :
 	CreateProtoService(PS_SETMYAVATAR, &CTwitterProto::SetAvatar);
 
 	HookProtoEvent(ME_OPT_INITIALISE, &CTwitterProto::OnOptionsInit);
-	HookProtoEvent(ME_DB_CONTACT_DELETED, &CTwitterProto::OnContactDeleted);
-	HookProtoEvent(ME_DB_EVENT_MARKED_READ, &CTwitterProto::OnMarkedRead);
 	HookProtoEvent(ME_CLIST_PREBUILDSTATUSMENU, &CTwitterProto::OnBuildStatusMenu);
 
 	// Initialize hotkeys
@@ -184,9 +179,9 @@ int CTwitterProto::SetStatus(int new_status)
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-INT_PTR CTwitterProto::SvcCreateAccMgrUI(WPARAM, LPARAM lParam)
+MWindow CTwitterProto::OnCreateAccMgrUI(MWindow hwndParent)
 {
-	return (INT_PTR)CreateDialogParam(g_plugin.getInst(), MAKEINTRESOURCE(IDD_TWITTERACCOUNT), (HWND)lParam, first_run_dialog, (LPARAM)this);
+	return CreateDialogParam(g_plugin.getInst(), MAKEINTRESOURCE(IDD_TWITTERACCOUNT), hwndParent, first_run_dialog, (LPARAM)this);
 }
 
 INT_PTR CTwitterProto::ReplyToTweet(WPARAM wParam, LPARAM)
@@ -346,17 +341,17 @@ void CTwitterProto::SendTweetWorker(void *p)
 void CTwitterProto::UpdateSettings()
 {
 	if (getByte(TWITTER_KEY_CHATFEED)) {
-		if (!in_chat_)
+		if (!m_si)
 			OnJoinChat(0, 0);
 	}
 	else {
-		if (in_chat_)
+		if (m_si)
 			OnLeaveChat(0, 0);
 
 		for (MCONTACT hContact = db_find_first(m_szModuleName); hContact;) {
 			MCONTACT hNext = db_find_next(hContact, m_szModuleName);
 			if (isChatRoom(hContact))
-				db_delete_contact(hContact);
+				db_delete_contact(hContact, true);
 			hContact = hNext;
 		}
 	}

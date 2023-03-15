@@ -2,7 +2,7 @@
 ;============================================================
 ;  File: TabSRMM.dll
 ;  Plugin: TabSRMM
-;  Version: 3.6.2.5
+;  Version: 3.6.2.6
 ;  Authors: The Miranda developers team and contributors
 ;============================================================
 [IM and group chat module for Miranda NG.]
@@ -38,7 +38,7 @@
 Трэй
 [Options]
 Налады
-[Text for autocomplete]
+[Text for autocomplete:]
 
 [Add new rooms to group:]
 Дадаваць чаты ў гурт:
@@ -132,8 +132,6 @@
 пунктаў
 [More about advanced tweaks]
 Падрабязней пра дадатковыя налады
-[Revert to (safe) defaults]
-Налады па змаўчанні
 [Dialog]
 Гутарка
 [Cancel]
@@ -530,8 +528,6 @@ RTL па змаўчанні
 &Капіяваць
 [&Quote]
 &Цытаваць
-[Co&py all]
-Капіяваць усё
 [Select &all]
 Вылучыць &усё
 [Clear log]
@@ -556,8 +552,6 @@ RTL па змаўчанні
 Уставіць фарматаваны тэкст
 [Paste and send immediately]
 Уставіць і адправіць
-[Copy all]
-Капіяваць усё
 [Select all]
 Вылучыць усё
 [Show message length indicator]
@@ -913,8 +907,6 @@ RTL па змаўчанні
 Фон журнала чата
 [Appearance and functionality of chat room windows]
 Выгляд і функцыянальнасць вокнаў чата
-[Appearance of the message log]
-Вонкавы выгляд лога паведамленняў
 [Open new chat rooms in the default container]
 Адкрываць чаты і гутаркі ў адным вакне
 [Flash window when someone speaks]
@@ -933,8 +925,6 @@ RTL па змаўчанні
 Паказаць тэму чата ў спісе кантактаў як паведамленне статусу
 [Do not pop up the window when joining a chat room]
 Не адчыняць вакно чата пры ўваходзе ў чат
-[Sync splitter position with standard IM sessions]
-Сінхранізаваць пазіцыю падзельніка са стандартам
 [Show contact's status modes if supported by the protocol]
 Паказваць значкі статусаў, калі падтрымліваецца пратаколам
 [Display contact's status icon before user role icon]
@@ -943,6 +933,8 @@ RTL па змаўчанні
 IRC-стыль (тэкставы) індыкатараў роляў удзельнікаў у спісе
 [Use alternative sorting method in member list]
 Альтэрнатыўнае сартаванне мянушак у спісе
+[Appearance of the message log]
+Вонкавы выгляд лога паведамленняў
 [Prefix all events with a timestamp]
 Падстаўляць час ва ўсе падзеі
 [Only prefix with timestamp if it has changed]
@@ -1317,6 +1309,8 @@ TabSRMM: Набірае
 Файл ужо існуе. Перазахаваць?
 [JPEG-compressed images]
 Файлы jpeg
+[Copy all]
+Капіяваць усё
 [Save and close session]
 Захаваць набранае і зачыніць вакно
 [, %d %s, %d %s idle]
@@ -1433,16 +1427,16 @@ UID: %s (Shift+клік -> капіяваць у буфер)\nКлік - Інф�
 Загрузіць тэму
 [Message window behavior]
 Паводзіны вакна паведамленняў
+[Always flash contact list and tray icon for new messages]
+Заўсёды міргаць значком у трэі і спісе кантактаў пры новым паведамленні
+[Delete temporary contacts on close]
+Выдаляць часовыя кантакты пры зачыненні
 [Sending messages]
 Адпраўка паведамленняў
 [Minimize the message window on send]
 Згортваць вакно пасля адпраўкі
 [Close the message window on send]
 Зачыняць вакно пасля адпраўкі
-[Always flash contact list and tray icon for new messages]
-Заўсёды міргаць значком у трэі і спісе кантактаў пры новым паведамленні
-[Delete temporary contacts on close]
-Выдаляць часовыя кантакты пры зачыненні
 [Enable "Paste and send" feature]
 Уключыць функцыю "ўставіць і адправіць"
 [Allow BBCode formatting in outgoing messages]
@@ -1471,24 +1465,10 @@ UID: %s (Shift+клік -> капіяваць у буфер)\nКлік - Інф�
 Шаблоны скінуты. Калі ласка, зачыніце і адкрыйце зноў усе вокны паведамленняў. Гэта вакно зараз будзе зачынена.
 [Message log appearance]
 Вонкавы выгляд лога
-[Support for external plugins]
-Падтрымка вонкавых плагінаў
-[Timestamp settings (note: timestamps also depend on your templates)]
-Адлюстраванне часу (таксама залежыць ад вашых шаблонаў)
-[Message log icons]
-Значкі лога паведамленняў
-[Show dates in timestamps]
-Паказваць дату
-[Show seconds in timestamps]
-Паказваць секунды
-[Use contacts local time (if timezone info available)]
-Лакальны час кантакту (калі даступны гадзінны пояс)
 [Draw grid lines]
 Маляваць лініі сеткі
 [Log status changes]
 Запісваць змены статусаў
-[Use incoming/outgoing icons]
-Выкарыстоўваць значкі ўваходнага/выходнага паведамлення
 [Use message grouping]
 Гуртаваць паведамленні
 [Simple text formatting (*bold*, etc.)]
@@ -1499,14 +1479,28 @@ UID: %s (Shift+клік -> капіяваць у буфер)\nКлік - Інф�
 Ставіць падзельнік у логе пасля таго, як вакно губляе фокус
 [Only place a separator when an incoming event is announced with a popup]
 Ставіць падзельнік толькі пры падзеі, які суправаджаецца успл. вакном
+[Use normal templates (uncheck to use simple templates if your template set supports them)]
+Звычайныя шаблоны (адключыце для простых шаблонаў, калі ваш шаблон гэта падтрымлівае)
+[Support for external plugins]
+Падтрымка вонкавых плагінаў
 [Show events at the new line (IEView Compatibility Mode)]
 Паказваць падзеі ў новым радку (Рэжым сумяшчальнасці з IEView)
 [Underline timestamp/nickname (IEView Compatibility Mode)]
 Падкрэсліваць час/мянушку (Рэжым сумяшчальнасці з IEView)
 [Show timestamp after nickname (IEView Compatibility Mode)]
 Паказваць час пасля мянушкі (Рэжым сумяшчальнасці з IEView)
-[Use normal templates (uncheck to use simple templates if your template set supports them)]
-Звычайныя шаблоны (адключыце для простых шаблонаў, калі ваш шаблон гэта падтрымлівае)
+[Timestamp settings (note: timestamps also depend on your templates)]
+Адлюстраванне часу (таксама залежыць ад вашых шаблонаў)
+[Show dates in timestamps]
+Паказваць дату
+[Show seconds in timestamps]
+Паказваць секунды
+[Use contacts local time (if timezone info available)]
+Лакальны час кантакту (калі даступны гадзінны пояс)
+[Message log icons]
+Значкі лога паведамленняў
+[Use incoming/outgoing icons]
+Выкарыстоўваць значкі ўваходнага/выходнага паведамлення
 [** New contacts **]
 ** Новыя кантакты **
 [** Unknown contacts **]
@@ -1517,14 +1511,14 @@ UID: %s (Shift+клік -> капіяваць у буфер)\nКлік - Інф�
 Заўсёды, але не паказваць калі вакно ў фокусе
 [Only when no message window is open]
 Толькі калі не адкрыта вакно паведамленняў
-[How to create tabs and windows for incoming messages]
-Налады стварэння ўкладак і вокнаў для ўваходных паведамленняў
 [Show status text on tabs]
 Паказваць тэкст статусу ва ўкладцы
 [Prefer xStatus icons when available]
 Паказваць абразок xСтатуса, калі даступна (замест статусу)
 [Detailed tooltip on tabs (requires Tipper plugin)]
 Паказваць падказку на ўкладках (патрабуецца плагін Tipper)
+[How to create tabs and windows for incoming messages]
+Налады стварэння ўкладак і вокнаў для ўваходных паведамленняў
 [ALWAYS activate new message sessions (has PRIORITY over the options below)]
 Заўсёды ствараць укладку пры новым паведамленні (мае прыярытэт над наступнымі опцыямі)
 [Automatically create new message sessions without activating them]
@@ -1551,22 +1545,22 @@ UID: %s (Shift+клік -> капіяваць у буфер)\nКлік - Інф�
 
 [Message window tweaks]
 Налады вакна паведамленняў
-[Display metacontact icons]
-
-[Error feedback]
-Памылкі дастаўкі паведамленняў
 [Close current tab on send]
 Зачыняць укладку пры адпраўцы
 [Enable unattended send (experimental feature, required for multisend and send later)]
 Уключыць аўтаматычную адпраўку (эксперыментальная опцыя, неабходна для мультыадпраўкі і адпраўкі з затрымкай)
 [Show client description in info panel]
 Паказваць у інфо-панэлі кліент кантакту
+[Display metacontact icons]
+
 [On tab control]
 
 [On the button bar]
 
-[Disable error popups on sending failures]
-Адключыць усплывальныя вокны пра няўдалую дастаўку
+[Error feedback]
+Памылкі дастаўкі паведамленняў
+[Enable error popups on sending failures]
+Уключыць усплывальныя вокны пра няўдалую дастаўку
 [Choose status modes]
 Выбар рэжымаў статусу
 [General]
@@ -1795,6 +1789,9 @@ UID: %s (Shift+клік -> капіяваць у буфер)\nКлік - Інф�
 ;file \plugins\TabSRMM\src\utils.cpp
 [TabSRMM message (%s)]
 TabSRMM: %s
+;file \plugins\TabSRMM\src\warning.cpp
+[TabSRMM warning message]
+Заўвага TabSRMM
 [Save file|Unable to save temporary file]
 
 [Edit user notes|You are editing the user notes. Click the button again or use the hotkey (default: Alt+N) to save the notes and return to normal messaging mode]
@@ -1815,5 +1812,3 @@ TabSRMM: %s
 Зачыненне налад|Каб паказаць змены, злучаныя з імпартам схемы, у вакне налад, яно павінна быць зачынена пасля загрузкі схемы \\b1 і незахаваныя змены могуць быць страчаны\\b0 .\n\nВы жадаеце працягнуць?
 [Loading a theme|Loading a color and font theme can overwrite the settings defined by your skin.\n\nDo you want to continue?]
 Загрузка схемы|Загрузка колераў і шрыфтоў можа змяніць налады, усталяваныя Вашым скінам.\n\nВы жадаеце працягнуць?
-[TabSRMM warning message]
-Заўвага TabSRMM

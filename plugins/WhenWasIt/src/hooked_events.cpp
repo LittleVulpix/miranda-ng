@@ -92,7 +92,7 @@ int RefreshContactListIcons(MCONTACT hContact)
 		return 0;
 
 	bool hidden = Contact::IsHidden(hContact);
-	int ignored = db_get_dw(hContact, "Ignore", "Mask1", 0);
+	int ignored = db_get_dw(hContact, "Ignore", "Mask1");
 	ignored = ((ignored & 0x3f) != 0) ? 1 : 0;
 	int ok = 1;
 	if (g_plugin.notifyFor & EXCLUDE_HIDDEN)
@@ -108,10 +108,7 @@ int RefreshContactListIcons(MCONTACT hContact)
 
 	if (ok && (dtb >= 0 || dab > 0)) {
 		int age = GetContactAge(hContact);
-		db_set_b(hContact, "UserInfo", "Age", age);
-
-		if ((bShouldCheckBirthdays) && (g_plugin.bUsePopups))
-		{
+		if (bShouldCheckBirthdays && g_plugin.bUsePopups) {
 			if (dtb >= 0) {
 				bBirthdayFound = 1; //only set it if we're called from our CheckBirthdays service
 				PopupNotifyBirthday(hContact, dtb, age);
@@ -124,7 +121,7 @@ int RefreshContactListIcons(MCONTACT hContact)
 			if (dtb >= 0)
 				SoundNotifyBirthday(dtb);
 
-		if ((bShouldCheckBirthdays) && (g_plugin.bUseDialog)) {
+		if (bShouldCheckBirthdays && g_plugin.bUseDialog) {
 			if (dtb >= 0)
 				DialogNotifyBirthday(hContact, dtb, age);
 			else if (dab > 0)
@@ -176,4 +173,3 @@ VOID CALLBACK OnDateChangeTimer(HWND, UINT, UINT_PTR, DWORD)
 
 	currentDay = now.wDay;
 }
-

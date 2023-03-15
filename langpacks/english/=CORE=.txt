@@ -1,7 +1,7 @@
 ;============================================================
 ;  File: miranda32/64.exe
 ;  Module: Miranda Core
-;  Version: 0.96.2
+;  Version: 0.96.3
 ;============================================================
 ;file \src\core\stdautoaway\res\resource.rc
 [Become idle if the following is left unattended:]
@@ -110,7 +110,7 @@
 [Status bar]
 [Show status bar]
 [Show icons]
-[Show protocol names]
+[Show account names]
 [Show status text]
 [Right click opens status menu]
 [Right click opens Miranda NG menu]
@@ -719,8 +719,8 @@
 [View user's details]
 [View user's history]
 [User menu]
-[Canceled]
 [This file transfer has been canceled by the other side]
+[Canceled]
 ;file \src\core\stdfile\src\filesenddlg.cpp
 [%d files]
 [%d directories]
@@ -1397,6 +1397,7 @@
 [Account ID]
 [<unknown>]
 [Protocol is not loaded.]
+[Account is disabled.]
 [Create new account]
 [Editing account]
 [Upgrading account]
@@ -1462,6 +1463,7 @@
 ;file \src\mir_app\src\srmm_log.cpp
 [Log viewer]
 ;file \src\mir_app\src\srmm_log_rtf.cpp
+[Copy all]
 [Look up '%s':]
 [No word to look up]
 ;file \src\mir_app\src\srmm_statusicon.cpp
