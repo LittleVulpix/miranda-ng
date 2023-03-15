@@ -84,7 +84,7 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,102,248,10
     CONTROL         "Use subgroups for server channels (requires restart)",IDC_USEGROUPS,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,114,248,10
-    CONTROL         "Delete messages in Miranda when they are deleted from server",IDC_DELETE_MSGS,
+    CONTROL         "Delete messages and channels in Miranda when they are deleted from server",IDC_DELETE_MSGS,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,126,275,10
 END
 
@@ -128,6 +128,10 @@ BEGIN
     IDD_OPTIONS_ACCMGR, DIALOG
     BEGIN
     END
+
+    IDD_EXTSEARCH, DIALOG
+    BEGIN
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
@@ -156,4 +160,3 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
-

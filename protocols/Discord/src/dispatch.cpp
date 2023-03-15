@@ -97,6 +97,9 @@ void CDiscordProto::OnCommandChannelCreated(const JSONNode &pRoot)
 
 void CDiscordProto::OnCommandChannelDeleted(const JSONNode &pRoot)
 {
+	if (!m_bSyncDeleteMsgs)
+		return;
+
 	CDiscordUser *pUser = FindUserByChannel(::getId(pRoot["id"]));
 	if (pUser == nullptr)
 		return;
@@ -108,10 +111,8 @@ void CDiscordProto::OnCommandChannelDeleted(const JSONNode &pRoot)
 	}
 	else {
 		CDiscordGuild *pGuild = FindGuild(guildId);
-		if (pGuild != nullptr) {
-			db_delete_contact(pUser->si->hContact);
-			pUser->si = nullptr;
-		}
+		if (pGuild != nullptr)
+			Chat_Terminate(m_szModuleName, pUser->wszUsername, true);
 	}
 }
 
@@ -132,13 +133,14 @@ void CDiscordProto::OnCommandChannelUpdated(const JSONNode &pRoot)
 		CMStringW wszName = pRoot["name"].as_mstring();
 		if (!wszName.IsEmpty()) {
 			CMStringW wszNewName = pGuild->wszName + L"#" + wszName;
-			Chat_ChangeSessionName(pUser->si, wszNewName);
+			Chat_ChangeSessionName(m_szModuleName, pUser->wszUsername, wszNewName);
 		}
 
 		CMStringW wszTopic = pRoot["topic"].as_mstring();
-		Chat_SetStatusbarText(pUser->si, wszTopic);
+		Chat_SetStatusbarText(m_szModuleName, pUser->wszUsername, wszTopic);
 
-		GCEVENT gce = { pUser->si, GC_EVENT_TOPIC };
+		GCEVENT gce = { m_szModuleName, 0, GC_EVENT_TOPIC };
+		gce.pszID.w	 = pUser->wszUsername;
 		gce.pszText.w = wszTopic;
 		gce.time = time(0);
 		Chat_Event(&gce);
@@ -179,18 +181,20 @@ void CDiscordProto::OnCommandGuildCreated(const JSONNode &pRoot)
 
 void CDiscordProto::OnCommandGuildDeleted(const JSONNode &pRoot)
 {
+	if (!m_bSyncDeleteMsgs)
+		return;
+
 	CDiscordGuild *pGuild = FindGuild(::getId(pRoot["id"]));
 	if (pGuild == nullptr)
 		return;
 
 	for (auto &it : arUsers.rev_iter())
 		if (it->pGuild == pGuild) {
-			db_delete_contact(it->si->hContact);
+			Chat_Terminate(m_szModuleName, it->wszUsername, true);
 			arUsers.removeItem(&it);
 		}
 
-	db_delete_contact(pGuild->pParentSi->hContact);
-	pGuild->pParentSi = nullptr;
+	Chat_Terminate(m_szModuleName, pRoot["name"].as_mstring(), true);
 
 	arGuilds.remove(pGuild);
 }
@@ -228,7 +232,7 @@ void CDiscordProto::OnCommandGuildMemberListUpdate(const JSONNode &pRoot)
 				else if (iStatus) {
 					CMStringW wszUserId(FORMAT, L"%lld", pm->userId);
 
-					GCEVENT gce = { 0, GC_EVENT_SETCONTACTSTATUS };
+					GCEVENT gce = { m_szModuleName, 0, GC_EVENT_SETCONTACTSTATUS };
 					gce.time = time(0);
 					gce.pszUID.w = wszUserId;
 
@@ -236,7 +240,7 @@ void CDiscordProto::OnCommandGuildMemberListUpdate(const JSONNode &pRoot)
 						if (!cc->bIsGroup)
 							continue;
 						
-						gce.si = cc->si;
+						gce.pszID.w = cc->wszChannelName;
 						gce.dwItemData = iStatus;
 						Chat_Event(&gce);
 					}
@@ -260,7 +264,7 @@ void CDiscordProto::OnCommandGuildMemberRemoved(const JSONNode &pRoot)
 		if (pUser->pGuild != pGuild)
 			continue;
 
-		GCEVENT gce = { pUser->si, GC_EVENT_PART };
+		GCEVENT gce = { m_szModuleName, 0, GC_EVENT_PART };
 		gce.pszUID.w = pUser->wszUsername;
 		gce.time = time(0);
 		gce.pszUID.w = wszUserId;
@@ -296,7 +300,8 @@ void CDiscordProto::OnCommandGuildMemberUpdated(const JSONNode &pRoot)
 				wszOldNick = ui->pszNick;
 		}
 
-		GCEVENT gce = { si, GC_EVENT_NICK };
+		GCEVENT gce = { m_szModuleName, 0, GC_EVENT_NICK };
+		gce.pszID.w = it->wszUsername;
 		gce.time = time(0);
 		gce.pszUID.w = wszUserId;
 		gce.pszNick.w = wszOldNick;
@@ -361,8 +366,8 @@ void CDiscordProto::OnCommandMessageUpdate(const JSONNode &pRoot)
 void CDiscordProto::OnCommandMessage(const JSONNode &pRoot, bool bIsNew)
 {
 	CMStringW wszMessageId = pRoot["id"].as_mstring();
-	CMStringA szUserId = pRoot["author"]["id"].as_mstring();
-	SnowFlake userId = _atoi64(szUserId);
+	CMStringW wszUserId = pRoot["author"]["id"].as_mstring();
+	SnowFlake userId = _wtoi64(wszUserId);
 	SnowFlake msgId = _wtoi64(wszMessageId);
 
 	// try to find a sender by his channel
@@ -408,24 +413,45 @@ void CDiscordProto::OnCommandMessage(const JSONNode &pRoot, bool bIsNew)
 		if (!edited.isnull())
 			wszText.AppendFormat(L" (%s %s)", TranslateT("edited at"), edited.as_mstring().c_str());
 
-		// if a message has myself as an author, add some flags
-		PROTORECVEVENT recv = {};
-		if (bOurMessage)
-			recv.flags = PREF_CREATEREAD | PREF_SENT;
+		if (pUser->bIsPrivate && !pUser->bIsGroup) {
+			// if a message has myself as an author, add some flags
+			PROTORECVEVENT recv = {};
+			if (bOurMessage)
+				recv.flags = PREF_CREATEREAD | PREF_SENT;
 
-		debugLogA("store a message from private user %lld, channel id %lld", pUser->id, pUser->channelId);
-		ptrA buf(mir_utf8encodeW(wszText));
+			debugLogA("store a message from private user %lld, channel id %lld", pUser->id, pUser->channelId);
+			ptrA buf(mir_utf8encodeW(wszText));
 
-		recv.timestamp = (uint32_t)StringToDate(pRoot["timestamp"].as_mstring());
-		recv.szMessage = buf;
-		recv.szMsgId = szMsgId;
-
-		if (!pUser->bIsPrivate || pUser->bIsGroup) {
-			recv.szUserId = szUserId;
-			ProcessChatUser(pUser, userId, pRoot);
+			recv.timestamp = (uint32_t)StringToDate(pRoot["timestamp"].as_mstring());
+			recv.szMessage = buf;
+			recv.szMsgId = szMsgId;
+			ProtoChainRecvMsg(pUser->hContact, &recv);
 		}
+		else {
+			debugLogA("store a message into the group channel id %lld", channelId);
 
-		ProtoChainRecvMsg(pUser->hContact, &recv);
+			SESSION_INFO *si = g_chatApi.SM_FindSession(pUser->wszUsername, m_szModuleName);
+			if (si == nullptr) {
+				debugLogA("message to unknown channel %lld ignored", channelId);
+				return;
+			}
+
+			ProcessChatUser(pUser, wszUserId, pRoot);
+
+			ParseSpecialChars(si, wszText);
+			wszText.Replace(L"%", L"%%");
+
+			GCEVENT gce = { m_szModuleName, 0, GC_EVENT_MESSAGE };
+			gce.pszID.w = pUser->wszUsername;
+			gce.dwFlags = GCEF_ADDTOLOG;
+			gce.pszUID.w = wszUserId;
+			gce.pszText.w = wszText;
+			gce.time = (uint32_t)StringToDate(pRoot["timestamp"].as_mstring());
+			gce.bIsMe = bOurMessage;
+			Chat_Event(&gce);
+
+			debugLogW(L"New channel %s message from %s: %s", si->ptszID, gce.pszUID.w, gce.pszText.w);
+		}
 	}
 
 	pUser->lastMsgId = msgId;
@@ -457,7 +483,7 @@ void CDiscordProto::OnCommandMessageDelete(const JSONNode &pRoot)
 	if (!msgid.IsEmpty()) {
 		MEVENT hEvent = db_event_getById(m_szModuleName, msgid);
 		if (hEvent)
-			db_event_delete(hEvent, true);
+			db_event_delete(hEvent);
 	}
 }
 
@@ -528,7 +554,8 @@ void CDiscordProto::OnCommandTyping(const JSONNode &pRoot)
 		CMStringW wszUerId = pRoot["user_id"].as_mstring();
 		ProcessGuildUser(pChannel->pGuild, pRoot); // never returns null
 
-		GCEVENT gce = { pChannel->si, GC_EVENT_TYPING };
+		GCEVENT gce = { m_szModuleName, 0, GC_EVENT_TYPING };
+		gce.pszID.w = pChannel->wszUsername;
 		gce.pszUID.w = wszUerId;
 		gce.dwItemData = 1;
 		gce.time = time(0);

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(ProjectDir)..\..\build\vc.common\common.filters" />
   <ItemGroup>
@@ -69,5 +69,19 @@
     <ResourceCompile Include="res\version.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\discord.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\groupchat.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\voiceCall.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\voiceEnded.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>
