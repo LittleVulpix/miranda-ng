@@ -114,7 +114,7 @@ void CDiscordProto::ServerThread(void*)
 			return;
 		}
 
-		JSONNode root; root << WCHAR_PARAM("email", m_wszEmail) << WCHAR_PARAM("password", wszPassword);
+		JSONNode root; root << WCHAR_PARAM("login", m_wszEmail) << WCHAR_PARAM("password", wszPassword);
 		Push(new AsyncHttpRequest(this, REQUEST_POST, "/auth/login", &CDiscordProto::OnReceiveToken, &root));
 	}
 
@@ -139,7 +139,7 @@ void CDiscordProto::ServerThread(void*)
 				break;
 			ExecuteRequest(pReq);
 			if (need_sleep) {
-				Sleep(330);
+				Sleep(1230);
 				debugLogA("CDiscordProto::WorkerThread: %s", "need to sleep");
 			}
 		}
